@@ -22,7 +22,7 @@ public class AppTest extends TestCase {
     }
 
     /**
-     * Rigourous Test :-)
+     * Rigourous Test :-))
      */
     public void testApp() {
         assertTrue(true);
