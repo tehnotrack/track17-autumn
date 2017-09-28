@@ -1,7 +1,6 @@
 package ru.track.io;
 
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
@@ -17,7 +16,6 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
-    @Contract("_, _ -> fail")
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
@@ -33,40 +31,48 @@ public final class TaskImplementation implements FileEncoder {
 
         try (
                 final FileInputStream fis = new FileInputStream(fin);
-                final OutputStream os = new FileOutputStream(fout);
+                final OutputStream os = new Base64OutputStream(new FileOutputStream(fout));
         ) {
-            byte[] input = IOUtils.toByteArray(fis);
-            StringBuilder output = new StringBuilder();
-            int lengthOfChunk = 3;
-            int lengthWithoutLastChunk = input.length / lengthOfChunk * lengthOfChunk;
-            for(int i = 0; i < lengthWithoutLastChunk ; i+=3) {
-                int b = (input[i] & 0xff) << 16 |
-                        (input[i + 1] & 0xff) << 8 |
-                        (input[i + 2] & 0xff);
-                output.append(toBase64[b >>> 18 & 0x3f]);
-                output.append(toBase64[b >>> 12 & 0x3f]);
-                output.append(toBase64[b >>> 6 & 0x3f]);
-                output.append(toBase64[b & 0x3f]);
-            }
-            if ((input.length - lengthWithoutLastChunk) == 2) {
-                int b = (input[lengthWithoutLastChunk] & 0xff) << 16 |
-                        (input[lengthWithoutLastChunk + 1] & 0xff) << 8;
-                output.append(toBase64[b >>> 18 & 0x3f]);
-                output.append(toBase64[b >>> 12 & 0x3f]);
-                output.append(toBase64[b >>> 6 & 0x3c]);
-                output.append('=');
-            }
-            else if ((input.length - lengthWithoutLastChunk) == 1) {
-                int b = (input[lengthWithoutLastChunk] & 0xff) << 16;
-                output.append(toBase64[b >>> 18 & 0x3f]);
-                output.append(toBase64[b >>> 12 & 0x30]);
-                output.append('=');
-                output.append('=');
-            }
-            os.write(output.toString().getBytes());
+            int bytesCopied = IOUtils.copy(fis, os); // result unused
         }
 
         return fout;
+    }
+
+    private static class Base64OutputStream extends FilterOutputStream {
+
+        Base64OutputStream(OutputStream os) {
+            super(os);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            int lengthOfChunk = 3;
+            int lengthWithoutLastChunk = len / lengthOfChunk * lengthOfChunk;
+            for (int i = 0; i < lengthWithoutLastChunk; i += 3) {
+                int part = (b[i] & 0xff) << 16 |
+                        (b[i + 1] & 0xff) << 8 |
+                        (b[i + 2] & 0xff);
+                out.write(toBase64[part >>> 18 & 0x3f]);
+                out.write(toBase64[part >>> 12 & 0x3f]);
+                out.write(toBase64[part >>> 6 & 0x3f]);
+                out.write(toBase64[part & 0x3f]);
+            }
+            if ((len - lengthWithoutLastChunk) == 2) {
+                int part = (b[lengthWithoutLastChunk] & 0xff) << 16 |
+                        (b[lengthWithoutLastChunk + 1] & 0xff) << 8;
+                out.write(toBase64[part >>> 18 & 0x3f]);
+                out.write(toBase64[part >>> 12 & 0x3f]);
+                out.write(toBase64[part >>> 6 & 0x3c]);
+                out.write('=');
+            } else if ((len - lengthWithoutLastChunk) == 1) {
+                int part = (b[lengthWithoutLastChunk] & 0xff) << 16;
+                out.write(toBase64[part >>> 18 & 0x3f]);
+                out.write(toBase64[part >>> 12 & 0x30]);
+                out.write('=');
+                out.write('=');
+            }
+        }
     }
 
     private static final char[] toBase64 = {
