@@ -8,12 +8,15 @@ import ru.track.io.vendor.FileEncoder;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public final class TaskImplementation implements FileEncoder {
 
-    int convertToUnsigned(byte k) {
+    private int convertToUnsigned(byte k) {
         return k & 0xff;
     }
+    private HashMap<String, String> encodedFiles = new HashMap<>(); // maps input to output fnames
 
     /**
      * @param finPath  where to read binary data from
@@ -23,49 +26,53 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        // throw new UnsupportedOperationException(); // TODO: implement
         final File fout;
+
+        if (encodedFiles.containsKey(finPath)) {
+            fout = new File(encodedFiles.get(finPath));
+            return fout;
+        }
 
         if (foutPath != null) {
             fout = new File(foutPath);
         } else {
             fout = File.createTempFile("based_file_", ".base64");
-            fout.deleteOnExit();
         }
+        fout.deleteOnExit();
 
-        byte[] data = Files.readAllBytes(Paths.get(finPath));
-        int n;
+        final byte[] data = Files.readAllBytes(Paths.get(finPath));
+        final StringBuilder builder = new StringBuilder();
+        final int maxK = (int) Math.pow(64, 3);
+        int chunkValue;
         int k;
-        StringBuilder builder = new StringBuilder();
-        for(int i = 0; i < data.length / 3; i++) {
-            n =     convertToUnsigned(data[i * 3]) * 65536 +
-                    convertToUnsigned(data[i * 3 + 1]) * 256 +
-                    convertToUnsigned(data[i * 3 + 2]);
-            k = 262144;
-            for (int j=0;j<4;j++){
-                builder.append(toBase64[n / k]);
-                n %= k;
+
+        for(int tripletNumber = 0; tripletNumber < data.length / 3; tripletNumber++) {
+            chunkValue =convertToUnsigned(data[tripletNumber * 3]) * 65536 +
+                        convertToUnsigned(data[tripletNumber * 3 + 1]) * 256 +
+                        convertToUnsigned(data[tripletNumber * 3 + 2]);
+            k = maxK;
+            for (int quadrupletNumber =  0; quadrupletNumber < 4; quadrupletNumber++) {
+                builder.append(toBase64[chunkValue / k]);
+                chunkValue %= k;
                 k /= 64;
             }
         }
 
-        n = 0;
+        chunkValue = 0;
         int last = (data.length / 3) * 3;
         k = 65536;
         for (int i=0; i < 3; i++) {
             if (last + i < data.length) {
-                n += k * convertToUnsigned(data[last + i]);
+                chunkValue += k * convertToUnsigned(data[last + i]);
                 k /= 256;
             }
         }
-        k = 262144;
 
-
+        k = maxK;
         if (data.length != last) {
             for (int j = 0; j < (data.length - last + 1); j++) {
-                builder.append(toBase64[n / k]);
-                n %= k;
+                builder.append(toBase64[chunkValue / k]);
+                chunkValue %= k;
                 k /= 64;
             }
 
@@ -77,11 +84,8 @@ public final class TaskImplementation implements FileEncoder {
 
         String res = builder.toString();
         Files.write(fout.toPath(), res.getBytes());
+        encodedFiles.put(finPath, fout.getPath());
 
-        final int L = 64;
-        for (int i=0;i<res.length() / L; i++) {
-            System.out.println(res.substring(i * L, i * L + L));
-        }
 
         return fout;
     }
@@ -96,7 +100,6 @@ public final class TaskImplementation implements FileEncoder {
 
     public static void main(String[] args) throws IOException {
         final FileEncoder encoder = new TaskImplementation();
-        // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
 
