@@ -11,6 +11,18 @@ import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
+    private StringBuilder convertThreeBytes(int value, int zeros)
+    {
+        StringBuilder res = new StringBuilder();
+        res.append(toBase64[(value >> 18) & 63]);
+        res.append(toBase64[(value >> 12) & 63]);
+        res.append(toBase64[(value >> 6) & 63]);
+        res.append(toBase64[value & 63]);
+        res.setLength(res.length() - zeros);
+        res.append("==", 0, zeros);
+        return res;
+    }
+
     /**
      * @param finPath  where to read binary data from
      * @param foutPath where to write encoded data. if null, please create and use temporary file.
@@ -29,7 +41,7 @@ public final class TaskImplementation implements FileEncoder {
         }
         else
             fout = new File(foutPath);
-        OutputStream out = new FileOutputStream(fout);
+        StringBuilder result = new StringBuilder();
         int data = in.read();
         while (data != -1){
             data = (data << 16);
@@ -38,29 +50,22 @@ public final class TaskImplementation implements FileEncoder {
                 data += second << 8;
             }
             else {
-                out.write(toBase64[(data >> 18) & 63]);
-                out.write(toBase64[(data >> 12) & 63]);
-                out.write('=');
-                out.write('=');
+                result.append(convertThreeBytes(data, 2));
                 break;
             }
             int last = in.read();
             if(last != -1)
                 data += last;
             else {
-                out.write(toBase64[(data >> 18) & 63]);
-                out.write(toBase64[(data >> 12) & 63]);
-                out.write(toBase64[(data >> 6) & 63]);
-                out.write('=');
+                result.append(convertThreeBytes(data, 1));
                 break;
             }
-            out.write(toBase64[(data >> 18) & 63]);
-            out.write(toBase64[(data >> 12) & 63]);
-            out.write(toBase64[(data >> 6) & 63]);
-            out.write(toBase64[data & 63]);
+            result.append(convertThreeBytes(data, 0));
             data = in.read();
         }
         in.close();
+        OutputStream out = new FileOutputStream(fout);
+        out.write(result.toString().getBytes());
         out.close();
         return fout;
     }
