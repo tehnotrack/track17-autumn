@@ -32,10 +32,10 @@ public final class TaskImplementation implements FileEncoder {
              PrintStream output = new PrintStream(new FileOutputStream(fout))) {
             byte[] bytes = new byte[3];
             int numOfBytesRead;
-            while((numOfBytesRead = input.read(bytes, 0, 3)) > 0) {
+            while ((numOfBytesRead = input.read(bytes, 0, 3)) > 0) {
                 int threeBytes = 0;
-                for (int i = 0; i < numOfBytesRead; i++){
-                    final int shift = (8 * (2 - i));  // 16, 8, 0
+                for (int i = 0; i < numOfBytesRead; i++) {
+                    final int shift = 8 * (2 - i);  // 16, 8, 0
                     threeBytes = threeBytes | (bytes[i] & 0xff) << shift;
                 }
 
