@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
+import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
 
@@ -28,9 +29,9 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
 
-        final int bufSize = 3000;
-        final byte[] byteBuf = new byte[bufSize];
-        int numOfBytes = bufSize;
+        final int base64InputLength = 3;
+        final byte[] byteBuf = new byte[base64InputLength];
+        int numOfBytes = base64InputLength;
 
         try (
                 final BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
