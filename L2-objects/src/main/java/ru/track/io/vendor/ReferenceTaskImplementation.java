@@ -14,9 +14,12 @@ public class ReferenceTaskImplementation implements FileEncoder {
         final File fin = new File(finPath);
         final File fout;
 
-        if (foutPath != null) {
+        if (foutPath != null)
+        {
             fout = new File(foutPath);
-        } else {
+        }
+        else
+        {
             fout = File.createTempFile("based_file_", ".txt");
             fout.deleteOnExit();
         }
