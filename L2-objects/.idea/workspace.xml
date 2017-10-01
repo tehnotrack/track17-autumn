@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="ae3182e1-eab0-4e51-a5fa-c9bbe2c4f6a1" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/ru/track/io/TaskImplementation.java" afterPath="$PROJECT_DIR$/src/main/java/ru/track/io/TaskImplementation.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/ru/track/io/vendor/ReferenceTaskImplementation.java" afterPath="$PROJECT_DIR$/src/main/java/ru/track/io/vendor/ReferenceTaskImplementation.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/java/ru/track/io/vendor/FileEncoderTest.java" afterPath="$PROJECT_DIR$/src/test/java/ru/track/io/vendor/FileEncoderTest.java" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -22,8 +20,8 @@
       <file leaf-file-name="TaskImplementation.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/ru/track/io/TaskImplementation.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-85">
-              <caret line="19" column="9" lean-forward="false" selection-start-line="19" selection-start-column="9" selection-end-line="19" selection-end-column="9" />
+            <state relative-caret-position="153">
+              <caret line="9" column="17" lean-forward="false" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -423,8 +421,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/ru/track/io/TaskImplementation.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-85">
-          <caret line="19" column="9" lean-forward="false" selection-start-line="19" selection-start-column="9" selection-end-line="19" selection-end-column="9" />
+        <state relative-caret-position="153">
+          <caret line="9" column="17" lean-forward="false" selection-start-line="9" selection-start-column="17" selection-end-line="9" selection-end-column="17" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>

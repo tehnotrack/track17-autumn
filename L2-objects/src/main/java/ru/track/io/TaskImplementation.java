@@ -8,7 +8,6 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
-import java.util.Base64;
 
 public final class TaskImplementation implements FileEncoder {
 
