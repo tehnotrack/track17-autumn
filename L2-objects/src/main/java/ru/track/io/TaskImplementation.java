@@ -12,7 +12,7 @@ import java.io.*;
 public final class TaskImplementation implements FileEncoder {
 
 
-    private int toUnsigned(byte[] buffer)
+    private static int toUnsigned(byte[] buffer)
     {
         int unsigned =0;
         for(int i=0;i<3;++i)
