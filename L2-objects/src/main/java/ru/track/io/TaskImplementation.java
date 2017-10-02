@@ -29,7 +29,7 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(fin));
-             PrintStream output = new PrintStream(new FileOutputStream(fout))) {
+             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(fout))) {
             byte[] bytes = new byte[3];
             int numOfBytesRead;
             while ((numOfBytesRead = input.read(bytes, 0, 3)) > 0) {
@@ -39,12 +39,16 @@ public final class TaskImplementation implements FileEncoder {
                     threeBytes = threeBytes | (bytes[i] & 0xff) << shift;
                 }
 
-                char[] result = new char[]{'=', '=', '=', '='};
                 for (int i = 0; i < numOfBytesRead + 1; i++) {
                     final int shift = 6 * (3 - i);  // 18, 12, 6, 0
-                    result[i] = toBase64[threeBytes >> shift & 0x3f];
+                    output.write(toBase64[threeBytes >> shift & 0x3f]);
                 }
-                output.print(result);
+                if (numOfBytesRead < 3) {
+                    output.write('=');
+                    if (numOfBytesRead < 2) {
+                        output.write('=');
+                    }
+                }
             }
         }
         return fout;
