@@ -1,6 +1,10 @@
 package ru.track;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -40,7 +44,17 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        long n = 0;
+        BufferedReader in = new BufferedReader(new FileReader(file));
+        String s;
+        while ((s = in.readLine()) != null){
+            try {
+                n += Integer.parseInt(s);
+            }
+            catch (NumberFormatException e)
+            {}
+            }
+        return n;
     }
 
 
@@ -52,7 +66,25 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        BufferedReader in = new BufferedReader(new FileReader(file));
+        String s;
+        StringBuilder s1 = new StringBuilder();
+        while ((s = in.readLine()) != null){
+           if ((!s.equals("")) & (!s.equals(skipWord)))
+               try {
+                Integer.parseInt(s);
+                }
+             catch (NumberFormatException e)
+                {
+                 s1.append(s + " ");
+                }
+        }
+        return s1.toString();
+    }
+
+    public static void main(String args[])
+    {
+
     }
 
 }
