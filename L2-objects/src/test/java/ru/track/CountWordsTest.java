@@ -1,3 +1,4 @@
+/*
 package ru.track;
 
 import java.io.BufferedReader;
@@ -9,9 +10,11 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+*/
 /**
  *
- */
+ *//*
+
 public class CountWordsTest {
 
     static File file;
@@ -41,4 +44,4 @@ public class CountWordsTest {
 
     }
 
-}
+}*/
