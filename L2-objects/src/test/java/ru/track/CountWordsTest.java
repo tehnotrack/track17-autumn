@@ -12,7 +12,7 @@ import org.junit.Test;
  *
  */
 public class CountWordsTest {
-
+/*
     static File file;
 
     @BeforeClass
@@ -39,5 +39,5 @@ public class CountWordsTest {
         Assert.assertEquals("Integer sum: ", (long) Integer.MAX_VALUE + 1, number);
 
     }
-
+*/
 }
