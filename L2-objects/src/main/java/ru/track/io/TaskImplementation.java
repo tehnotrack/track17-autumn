@@ -1,5 +1,6 @@
 package ru.track.io;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,8 +9,16 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-public final class TaskImplementation implements FileEncoder {
+public final class TaskImplementation implements FileEncoder
+{
 
 
     private static int toUnsigned(byte[] buffer)
@@ -51,10 +60,14 @@ public final class TaskImplementation implements FileEncoder {
         int index;
         while (s>=0)
         {
-            for(int i=0;i<4;++i)
+            for(int i=0;i<s+1;++i)
             {
                 index=((unsigned<<(i*6+8))>>(18+8))&63;
                 os.write(toBase64[index]);
+            }
+            for(int i=0;i<3-s;++i)
+            {
+                os.write('=');
             }
             for(int i=0;i<3;++i) buffer[i]=0;
             s=fis.read(buffer);
@@ -71,9 +84,42 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    public static void main(String[] args) throws IOException {
+    private static @NotNull
+    File createTempFile() throws IOException {
+        final File f = File.createTempFile("test_tempfile_", ".tmp");
+        f.deleteOnExit();
+        return f;
+    }
+    public static void test(String data) throws IOException
+    {
+        final Path p = Files.write(
+                createTempFile().toPath(),
+                data.getBytes(StandardCharsets.US_ASCII),
+                StandardOpenOption.WRITE
+        );
+
+        final File expected = (new ReferenceTaskImplementation()).encodeFile(p.toString(), "D:\\Downloads\\out1.txt");
+        final File actual = (new TaskImplementation()).encodeFile(p.toString(), "D:\\Downloads\\out2.txt");
+
+
+        System.out.println(FileUtils.readFileToString(expected, StandardCharsets.US_ASCII));
+        System.out.println(FileUtils.readFileToString(actual, StandardCharsets.US_ASCII));
+        System.out.println();
+    }
+
+    public static void main(String[] args) throws IOException
+    {
+//        List<String> teststrs= Arrays.asList(
+//                "xxx",
+//                "xx",
+//                "x",
+//                "xxx000",
+//                "xxx00",
+//                "xxx0"
+//        );
+//        for(String teststr:teststrs) test(teststr);
         final FileEncoder encoder = new TaskImplementation();
-        // NOTE: open http://localhost:9000/ in your web browser
+//         NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
 }
