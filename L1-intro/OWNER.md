@@ -1,1 +1,1 @@
-Dmitry Arkhangelskiy
+Karina Zainullina
