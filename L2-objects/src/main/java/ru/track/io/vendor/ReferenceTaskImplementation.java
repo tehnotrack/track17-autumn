@@ -11,6 +11,8 @@ public class ReferenceTaskImplementation implements FileEncoder {
 
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
+
+
         final File fin = new File(finPath);
         final File fout;
 

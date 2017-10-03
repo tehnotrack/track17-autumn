@@ -34,7 +34,7 @@ public final class TaskImplementation implements FileEncoder {
     public static void main(String[] args) throws IOException {
         final FileEncoder encoder = new ReferenceTaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
-        new Bootstrapper(args, encoder).bootstrap(9000);
+        new Bootstrapper(args, encoder).bootstrap(8000);
     }
 
 }
