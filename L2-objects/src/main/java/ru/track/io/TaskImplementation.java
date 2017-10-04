@@ -14,12 +14,12 @@ public final class TaskImplementation implements FileEncoder {
     private StringBuilder convertThreeBytes(int value, int zeros)
     {
         StringBuilder res = new StringBuilder();
-        res.append(toBase64[(value >> 18) & 63]);
-        res.append(toBase64[(value >> 12) & 63]);
-        res.append(toBase64[(value >> 6) & 63]);
-        res.append(toBase64[value & 63]);
-        res.setLength(res.length() - zeros);
-        res.append("==", 0, zeros);
+        for(int i = 3; i >= zeros; --i){
+            res.append(toBase64[(value >> (i * 6)) & 0x3f]);
+        }
+        for(int i = 0; i < zeros; ++i){
+            res.append("=");
+        }
         return res;
     }
 
@@ -42,26 +42,16 @@ public final class TaskImplementation implements FileEncoder {
         else
             fout = new File(foutPath);
         StringBuilder result = new StringBuilder();
-        int data = in.read();
-        while (data != -1){
-            data = (data << 16);
-            int second = in.read();
-            if(second != -1){
-                data += second << 8;
+        byte[] buf = new byte[3];
+        int readBytes = in.read(buf);
+        while (readBytes > 0){
+            int threeBytes = 0;
+            for(int i = 0; i < readBytes; ++i){
+                threeBytes += (buf[i] << ((2 - i) * 8));
             }
-            else {
-                result.append(convertThreeBytes(data, 2));
-                break;
-            }
-            int last = in.read();
-            if(last != -1)
-                data += last;
-            else {
-                result.append(convertThreeBytes(data, 1));
-                break;
-            }
-            result.append(convertThreeBytes(data, 0));
-            data = in.read();
+            result.append(convertThreeBytes(threeBytes, 3 - readBytes));
+            buf = new byte[3];
+            readBytes = in.read(buf);
         }
         in.close();
         OutputStream out = new FileOutputStream(fout);
