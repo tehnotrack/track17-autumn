@@ -1,6 +1,6 @@
 package ru.track;
 
-import java.io.File;
+import java.io.*;
 
 
 /**
@@ -32,6 +32,15 @@ public class CountWords {
         this.skipWord = skipWord;
     }
 
+    static BufferedReader openFile(File file) throws FileNotFoundException{
+        String fileName = file.getName();
+
+        FileInputStream fstream = new FileInputStream(fileName);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(fstream));
+
+        return reader;
+    }
+
     /**
      * Метод на вход принимает объект File, изначально сумма = 0
      * Нужно пройти по всем строкам файла, и если в строке стоит целое число,
@@ -40,7 +49,23 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        BufferedReader reader = openFile(file);
+        String line;
+        long number;
+        long sum = 0;
+
+        while ((line = reader.readLine()) != null) {
+            try{
+                number = Long.parseLong(line);
+            }
+            catch (NumberFormatException exception){
+                number = 0;
+            }
+
+            sum += number;
+        }
+
+        return sum;
     }
 
 
@@ -52,7 +77,22 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        BufferedReader reader = openFile(file);
+        String line;
+        StringBuilder sum = new StringBuilder();
+
+        while ((line = reader.readLine()) != null){
+            try{
+                Long.parseLong(line);
+            }
+            catch (NumberFormatException exception){
+                if (!line.isEmpty() && !line.equals(skipWord)) {
+                    sum.append(line + " ");
+                }
+            }
+        }
+
+        return sum.toString();
     }
 
 }
