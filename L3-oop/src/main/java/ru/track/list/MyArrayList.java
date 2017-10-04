@@ -11,31 +11,47 @@ import java.util.NoSuchElementException;
  */
 public class MyArrayList extends List {
 
-    public MyArrayList() {
+    private int[] arr;
 
+    public MyArrayList() {
+        this.arr = new int[50];
     }
 
     public MyArrayList(int capacity) {
-
+        this.arr = new int[capacity];
     }
 
     @Override
     void add(int item) {
-
+        if(this.size < this.arr.length) {
+            this.arr[this.size] = item;
+            this.size++;
+        }
+        else {
+            int[] temp = new int[size + 1];
+            System.arraycopy(this.arr, 0, temp, 0, this.arr.length);
+            temp[this.size] = item;
+            this.size++;
+            this.arr = temp;
+        }
     }
 
     @Override
     int remove(int idx) throws NoSuchElementException {
-        return 0;
+        int temp;
+        if(idx < this.size) {
+            temp = this.arr[idx];
+            System.arraycopy(this.arr, idx + 1, this.arr, idx, this.size - 1 - idx);
+            this.size--;
+            return temp;
+        }
+        else throw new NoSuchElementException();
     }
 
     @Override
     int get(int idx) throws NoSuchElementException {
-        return 0;
-    }
-
-    @Override
-    int size() {
-        return 0;
+        if(idx < this.size)
+            return this.arr[idx];
+        else throw new NoSuchElementException();
     }
 }
