@@ -20,7 +20,16 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        File inFile = new File(finPath);
+        File outFile;
+        if (foutPath != null) {
+            outFile = new File(foutPath);
+        } else {
+            outFile = File.createTempFile("temporary_file", ".txt");
+            outFile.deleteOnExit();
+        }
+        // TODO
+        return outFile;
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +41,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
