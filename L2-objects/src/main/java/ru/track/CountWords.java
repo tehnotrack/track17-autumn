@@ -1,6 +1,12 @@
 package ru.track;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
@@ -40,7 +46,19 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        int i = 0;
+        long result = 0;
+        String path = file.getAbsolutePath();
+        List<String> lines = Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);
+        for(String line : lines){
+            if (!line.equals(this.skipWord))
+                try {
+                    result += Integer.parseInt(line);
+                } catch (NumberFormatException e) {
+
+                }
+        }
+        return result;
     }
 
 
@@ -52,7 +70,20 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        StringBuilder builder = new StringBuilder();
+        String path = file.getAbsolutePath();
+        List<String> lines = Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);
+        for(String line : lines){
+            if (!line.equals(this.skipWord))
+                try {
+                    Integer.parseInt(line);
+                } catch (NumberFormatException e) {
+                    builder.append(line);
+                    builder.append(" ");
+                }
+        }
+        String result = builder.toString();
+        return result;
     }
 
 }
