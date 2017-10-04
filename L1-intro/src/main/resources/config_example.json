@@ -1,0 +1,23 @@
+{
+  "pocket":
+  {
+    "items": [
+      {
+        "name": "key",
+        "count": 10,
+        "color": "black"
+      },
+      {
+        "name": "coin",
+        "count": 1,
+        "color": "blue"
+      },
+      {
+        "name": "ticket",
+        "count": 7,
+        "color": "green"
+      }
+    ]
+  },
+  "age": 30
+}
