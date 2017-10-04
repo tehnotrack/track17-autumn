@@ -1,6 +1,6 @@
 package ru.track;
 
-import java.io.File;
+import java.io.*;
 
 
 /**
@@ -25,7 +25,6 @@ import java.io.File;
  *
  */
 public class CountWords {
-
     String skipWord;
 
     public CountWords(String skipWord) {
@@ -40,7 +39,24 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        long result = 0;
+
+        try{
+            FileInputStream fstream = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+            String strLine;
+            while ((strLine = br.readLine()) != null){
+                try {
+                    result += Integer.parseInt(strLine);
+                } catch(NumberFormatException e) {
+                    // ignore
+                }
+            }
+        }catch (IOException e){
+            System.out.println("Input error");
+        }
+
+        return result;
     }
 
 
@@ -52,8 +68,29 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
-    }
+        String result = "";
 
+        try{
+            FileInputStream fstream = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+            String strLine;
+
+            // STRING_BUILDER !!!
+
+            while ((strLine = br.readLine()) != null){
+                try {
+                    Integer.parseInt(strLine);
+                } catch(NumberFormatException e) {
+                    if (!strLine.trim().isEmpty() && !strLine.equals(skipWord)) {
+                        result += strLine + " ";
+                    }
+                }
+            }
+        }catch (IOException e){
+            System.out.println("Input error");
+        }
+
+        return result;
+    }
 }
 
