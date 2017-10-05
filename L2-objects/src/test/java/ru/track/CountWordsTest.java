@@ -35,6 +35,7 @@ public class CountWordsTest {
             expected.append(line + " ");
         }
 
+        System.out.println(number);
         Assert.assertEquals("String concat: ", expected.toString(), result);
         Assert.assertEquals("Integer sum: ", (long) Integer.MAX_VALUE + 1, number);
 
