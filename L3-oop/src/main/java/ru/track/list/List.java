@@ -11,6 +11,17 @@ import java.util.NoSuchElementException;
  */
 public abstract class List {
 
+    protected int size;
+
+    List(){
+        this.size = 0;
+    }
+
+    void checkID(int idx) throws NoSuchElementException {
+        if (idx >= size)
+            throw new NoSuchElementException();
+    }
+
     /**
      * Добавить элемент в конец списка
      */
@@ -35,7 +46,7 @@ public abstract class List {
     /**
      * Кол-во элементов списка
      */
-    abstract int size();
-
-
+    int size() {
+        return size;
+    }
 }
