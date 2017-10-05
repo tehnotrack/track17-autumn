@@ -47,10 +47,10 @@ public final class TaskImplementation implements FileEncoder {
         while (readBytes > 0){
             int threeBytes = 0;
             for(int i = 0; i < readBytes; ++i){
-                threeBytes += (buf[i] << ((2 - i) * 8));
+                int c = buf[i] & 0xFF;
+                threeBytes += (c << (16 - 8 * i));
             }
             result.append(convertThreeBytes(threeBytes, 3 - readBytes));
-            buf = new byte[3];
             readBytes = in.read(buf);
         }
         in.close();
