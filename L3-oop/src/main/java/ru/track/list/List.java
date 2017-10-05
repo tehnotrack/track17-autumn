@@ -37,5 +37,9 @@ public abstract class List {
      */
     abstract int size();
 
+    public static void main(String args[])
+    {
+
+    }
 
 }
