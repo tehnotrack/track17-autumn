@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * Сейчас все методы помечены как abstract - эту метку можно убирать, если вы реализовываете его в этом классе
  */
 public abstract class List {
-
+    static MyLinkedList list = new MyLinkedList();
     /**
      * Добавить элемент в конец списка
      */
@@ -24,7 +24,13 @@ public abstract class List {
      * Метод, который может бросить ошибку должен быть отмечен как throws НазваниеИсключения
      * как сделано для этого метода
      */
-    abstract int remove(int idx) throws NoSuchElementException;
+    abstract int remove(int idx) throws NoSuchElementException;//{
+   //     int tmp = list.get(idx);
+   //     list.remove(idx);
+   //     return tmp;
+
+
+    //}
 
 
     /**

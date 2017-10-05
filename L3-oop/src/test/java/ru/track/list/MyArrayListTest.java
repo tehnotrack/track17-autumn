@@ -15,7 +15,9 @@ public class MyArrayListTest {
         MyArrayList list = new MyArrayList(0);
         for (int i = 0; i < 1000; i++) {
             list.add(i);
+            //System.out.println(list.size());
         }
+        //System.out.println(list.size());
 
         Assert.assertTrue(list.size() == 1000);
     }
