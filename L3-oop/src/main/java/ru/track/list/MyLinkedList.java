@@ -8,9 +8,6 @@ import java.util.NoSuchElementException;
  */
 public class MyLinkedList extends List {
 
-    Node first;
-    Node last;
-    int size = 0;
     /**
      * private - используется для сокрытия этого класса от других.
      * Класс доступен только изнутри того, где он объявлен
@@ -31,4 +28,20 @@ public class MyLinkedList extends List {
 
     @Override
     void add(int item) {
-        if(size != 0){
+    }
+
+    @Override
+    int remove(int idx) throws NoSuchElementException {
+        return 0;
+    }
+
+    @Override
+    int get(int idx) throws NoSuchElementException {
+        return 0;
+    }
+
+    @Override
+    int size() {
+        return 0;
+    }
+}
