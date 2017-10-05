@@ -1,0 +1,12 @@
+**/.idea
+*.iml
+*.ipr
+
+*.class
+**/out/
+**/target/
+*~
+**/temp/
+**/tmp/
+
+*.DS_Store
