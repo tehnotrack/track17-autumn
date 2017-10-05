@@ -4,12 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public final class TaskImplementation implements FileEncoder {
+
 
     /**
      * @param finPath  where to read binary data from
@@ -17,10 +19,23 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
-    @NotNull
+
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
+
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        Path path = Paths.get(finPath);
+        byte[] content = Files.readAllBytes(path);
+        String encodedStr = encode(content);
+
+        byte [] writeValue = encodedStr.getBytes();
+        if (foutPath == null)
+            foutPath = "./result_pic";
+        FileOutputStream outputstream = new FileOutputStream(foutPath);
+        outputstream.write(writeValue);
+        outputstream.close();
+        File retValue = new File(foutPath);
+        return retValue;
+
     }
 
     private static final char[] toBase64 = {
@@ -31,8 +46,42 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
+
+    private static String encode(byte[] data)
+    {
+
+        StringBuilder buffer = new StringBuilder();
+        int align = 0;
+        for (int i = 0; i < data.length; i += 3) {
+
+            int data3bytes = ((data[i] & 0xFF) << 16) & 0xFFFFFF; // сдвигаем 8 бит в старший байт ячейки из 3 байт
+            if (i + 1 < data.length) {
+                data3bytes |= (data[i+1] & 0xFF) << 8; // записываем во второй из 3 байт значение второго символа
+            } else {
+                align++; // если достигли конца исходного массива
+            }
+            if (i + 2 < data.length) {
+                data3bytes |= (data[i+2] & 0xFF); // записываем в третий из 3 байт значиение третьего
+            } else {
+                align++; // если достигли конца исходного массива
+            }
+
+            for (int j = 0; j < 4 - align; j++) { // дозаписать
+                int c = (data3bytes & 0xFC0000) >> 18; // FC - старшие 6 единиц
+                buffer.append(toBase64[c]);
+                data3bytes <<= 6; // и пошло поехало по 6 битов
+            }
+        }
+        for (int j = 0; j < align; j++) {
+            buffer.append("="); // последнии символы, в случае, если ровно по 3 разбить нельзя заполняются "="
+        }
+
+        return buffer.toString();
+    }
+
+
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
