@@ -1,1 +1,0 @@
-Ivanov Vasiliy Pavlovich
