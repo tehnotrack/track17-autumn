@@ -45,22 +45,22 @@ public class FileEncoderTest extends TestCase {
         this.data = data;
     }
 
-//    @Test
-//    public void testEncoderImplementation() throws Exception {
-//        final Path p = Files.write(
-//                createTempFile().toPath(),
-//                data.getBytes(StandardCharsets.US_ASCII),
-//                StandardOpenOption.WRITE
-//        );
-//
-//        final File expected = (new ReferenceTaskImplementation()).encodeFile(p.toString(), null);
-//        final File actual = (new TaskImplementation()).encodeFile(p.toString(), null);
-//
-//        assertEquals(
-//                FileUtils.readFileToString(expected, StandardCharsets.US_ASCII),
-//                FileUtils.readFileToString(actual, StandardCharsets.US_ASCII)
-//        );
-//    }
+    @Test
+    public void testEncoderImplementation() throws Exception {
+        final Path p = Files.write(
+                createTempFile().toPath(),
+                data.getBytes(StandardCharsets.US_ASCII),
+                StandardOpenOption.WRITE
+        );
+
+        final File expected = (new ReferenceTaskImplementation()).encodeFile(p.toString(), null);
+        final File actual = (new TaskImplementation()).encodeFile(p.toString(), null);
+
+        assertEquals(
+                FileUtils.readFileToString(expected, StandardCharsets.US_ASCII),
+                FileUtils.readFileToString(actual, StandardCharsets.US_ASCII)
+        );
+    }
 
     private static @NotNull
     File createTempFile() throws IOException {
