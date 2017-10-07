@@ -6,8 +6,8 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -20,8 +20,65 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        //throw new UnsupportedOperationException(); // TODO: implement
+        final File fin = new File(finPath);
+        final File fout;
+
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".txt");
+            fout.deleteOnExit();
+        }
+
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fin), StandardCharsets.UTF_8));
+        StringBuilder str = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            str.append(line);
+            System.out.println(line);
+        }
+        String begstr = str.toString();
+        StringBuilder end = new StringBuilder();
+
+
+
+        String res = new String();
+        String add = new String();
+
+        for (int i = 0 ; i < begstr.length() % 3; i++) {
+            add += "=";
+            begstr += '\0';
+        }
+
+
+        for (int i = 0; i < begstr.length(); i += 3) {
+            int n = 0;
+            for (int j = 0; j <= 2; j++)
+            {
+                n += begstr.charAt(i + j) << (16 - 8 * j);
+            }
+            for (int j = 3 ; j >= 0 ; j--)
+            {
+                res += toBase64[ (n >> (6 * j)) & 63 ];
+            }
+
+        }
+
+        end.append(res.substring(0, res.length() - add.length()) + add);
+
+        PrintWriter out = new PrintWriter(fout.getAbsoluteFile());
+        try {
+
+            out.print(end.toString());
+        } finally {
+            out.close();
+        }
+        return fout;
     }
+
+
 
     private static final char[] toBase64 = {
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -32,7 +89,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
