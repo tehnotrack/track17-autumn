@@ -63,20 +63,3 @@ public class MyArrayList extends List {
     }
 
 }
-
-//class Main {
-//    public static void main(String[] args) {
-//        MyArrayList myarr = new MyArrayList(2);
-//        myarr.add(1);
-//        System.out.println(myarr.arr.length);
-//        System.out.println(myarr.elem_count);
-//
-//        myarr.add(2);
-//        System.out.println(myarr.arr.length);
-//        System.out.println(myarr.elem_count);
-//
-//        myarr.add(3);
-//        System.out.println(myarr.arr.length);
-//        System.out.println(myarr.elem_count);
-//    }
-//}
