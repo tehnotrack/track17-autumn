@@ -5,9 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -22,40 +20,43 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
+        final File fin = new File(finPath);
+
+        final File fout;
+
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        byte[] bytes = Files.readAllBytes(Paths.get(finPath));
-        byte[] encodedBytes = encode(bytes).getBytes();
         if (Objects.isNull(foutPath)) {
-            foutPath = "./default_picture";
+            fout = File.createTempFile("default_picture", ".txt");
+            fout.deleteOnExit();
         }
-        FileOutputStream os = new FileOutputStream(foutPath);
-        os.write(encodedBytes);
-        os.close();
-        return new File(foutPath);
-    }
-
-    private static String encode(byte[] buf) {
-        char[] bytes = new char[((buf.length + 2) / 3) * 4];
-        int a = 0;
-        int i = 0;
-        while (i < buf.length) {
-            byte b0 = buf[i++];
-            byte b1 = (i < buf.length) ? buf[i++] : 0;
-            byte b2 = (i < buf.length) ? buf[i++] : 0;
-
-            bytes[a++] = toBase64[(b0 >> 2) & 0x3F];
-            bytes[a++] = toBase64[((b0 << 4) | ((b1 & 0xFF) >> 4)) & 0x3F];
-            bytes[a++] = toBase64[((b1 << 2) | ((b2 & 0xFF) >> 6)) & 0x3F];
-            bytes[a++] = toBase64[b2 & 0x3F];
+        else {
+            fout = new File(foutPath);
         }
-        switch (buf.length % 3) {
-            case 1:
-                bytes[--a] = '=';
-            case 2:
-                bytes[--a] = '=';
 
+        try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(fin));
+             final FileWriter fw = new FileWriter(fout)) {
+
+            byte[] bytes = new byte[3];
+            int readingBytes;
+
+            //читаем 3 байта из входного потока
+            while ((readingBytes = input.read(bytes, 0, 3)) > 0) {
+                int threeBytes = 0;
+                for (int i = 0; i < readingBytes; i++) {
+                    threeBytes = threeBytes | (bytes[i] & 0xFF) << (16 - 8*i);
+                }
+
+                //4 байта, каждый символ равен '=', пишем 4 байта в выходной поток
+                String str = "====";
+                char[] encodedData = str.toCharArray();
+                for (int i = 0; i <= readingBytes; i++) {
+                    encodedData[i] = toBase64[threeBytes >> (18 - 6*i) & 0x3F];
+                }
+                fw.write(encodedData);
+            }
         }
-        return new String(bytes);
+
+        return fout;
     }
 
     private static final char[] toBase64 = {
