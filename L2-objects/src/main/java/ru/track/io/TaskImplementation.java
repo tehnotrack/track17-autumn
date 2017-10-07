@@ -49,8 +49,7 @@ public final class TaskImplementation implements FileEncoder {
                     if (c == -1)
                     {
                         if (i % 4 == 2) {
-                            sb.append ("00000000");
-                            sb.append ("00000000");
+                            sb.append ("0000");
                             for (int j = 0; j < 2; j++) {
                                 arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2);
                                 fout1.print(toBase64[arr[j]]);
@@ -58,7 +57,7 @@ public final class TaskImplementation implements FileEncoder {
                             fout1.print('=');fout1.print('=');
                         }
                         if (i % 4 == 3) {
-                            sb.append ("00000000");
+                            sb.append ("00");
                             for (int j = 0; j < 3; j++) {
                                 arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2);
                                 fout1.print(toBase64[arr[j]]);
