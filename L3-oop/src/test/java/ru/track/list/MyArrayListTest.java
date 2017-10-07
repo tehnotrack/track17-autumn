@@ -15,9 +15,7 @@ public class MyArrayListTest {
         MyArrayList list = new MyArrayList(0);
         for (int i = 0; i < 1000; i++) {
             list.add(i);
-            //System.out.println(list.size());
         }
-        //System.out.println(list.size());
 
         Assert.assertTrue(list.size() == 1000);
     }
@@ -47,7 +45,6 @@ public class MyArrayListTest {
     public void listAdd() throws Exception {
         List list = new MyArrayList();
         list.add(1);
-
         Assert.assertTrue(list.size() == 1);
     }
 
@@ -59,7 +56,6 @@ public class MyArrayListTest {
         list.add(3);
 
         Assert.assertEquals(3, list.size());
-
         Assert.assertEquals(1, list.get(0));
         Assert.assertEquals(2, list.get(1));
         Assert.assertEquals(3, list.get(2));

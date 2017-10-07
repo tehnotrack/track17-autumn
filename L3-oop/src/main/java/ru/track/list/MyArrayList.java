@@ -15,7 +15,6 @@ public class MyArrayList extends List {
     LinkedList<Integer> list = new LinkedList<>();
     public MyArrayList() {
         LinkedList<Integer> list = new LinkedList<>();
-
     }
 
     public MyArrayList(int capacity) {

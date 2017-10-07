@@ -41,17 +41,14 @@ public class MyLinkedList extends List {
             head.next = tail;
             size++;
             return;
-
         } else {
             tail = new Node(tail,null, item);
             tail.prev.next = tail;
             size++;
             return;
-
         }
-
     }
-//
+
     @Override
     int remove(int idx) throws NoSuchElementException {
         if (head == null){
@@ -85,7 +82,6 @@ public class MyLinkedList extends List {
             return r.val;
         }
     }
-//
     @Override
     int get(int idx) throws NoSuchElementException {
         if (idx < 0 || idx >= size()) {
@@ -101,7 +97,6 @@ public class MyLinkedList extends List {
             return r.val;
         }
     }
-//
     @Override
     int size() {
         return size;
