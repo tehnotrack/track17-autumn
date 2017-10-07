@@ -31,7 +31,7 @@ public class MyArrayList extends List {
         int tmp = list.get(idx);
         list.remove(idx);
         int []arr = new int[list.size()];
-        for (int i =0; i< arr.length;i++) {
+        for (int i = 0; i < arr.length; i++) {
             arr[i] = list.get(i);
         }
         return tmp;

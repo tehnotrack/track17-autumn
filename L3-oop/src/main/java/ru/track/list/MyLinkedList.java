@@ -56,7 +56,7 @@ public class MyLinkedList extends List {
             throw new NoSuchElementException();
         }else{
             Node r = head;
-            for (int i =0;i< idx;i++){
+            for (int i = 0; i < idx; i++){
                 r = r.next;
             }
             if(r.prev!=null){
@@ -72,7 +72,7 @@ public class MyLinkedList extends List {
                     return r.val;
                 }
             }else{
-                if(r.next!=null){
+                if(r.next != null){
                     r.next.prev = null;
                     head = r.next;
                     size--;
