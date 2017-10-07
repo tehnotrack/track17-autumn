@@ -37,7 +37,7 @@ public class MyLinkedList extends List {
             tail = head;
             size++;
             return;
-        } else if (size ==1){
+        } else if (size == 1){
             tail = new Node(tail,null, item);
             head.next = tail;
             size++;
@@ -59,8 +59,8 @@ public class MyLinkedList extends List {
             for (int i = 0; i < idx; i++){
                 r = r.next;
             }
-            if(r.prev!=null){
-                if (r.next!=null) {
+            if(r.prev != null){
+                if (r.next != null) {
                     r.prev.next = r.next;
                     r.next.prev = r.prev;
                     size--;
