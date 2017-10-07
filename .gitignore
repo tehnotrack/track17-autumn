@@ -53,3 +53,6 @@ fabric.properties
 
 # Project info
 *.iml
+
+# Binary
+*.class
