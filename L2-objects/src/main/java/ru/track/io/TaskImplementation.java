@@ -20,7 +20,6 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        //throw new UnsupportedOperationException(); // TODO: implement
         final File fin = new File(finPath);
         final File fout;
 
@@ -30,51 +29,46 @@ public final class TaskImplementation implements FileEncoder {
             fout = File.createTempFile("based_file_", ".txt");
             fout.deleteOnExit();
         }
-
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fin), StandardCharsets.UTF_8));
-        StringBuilder str = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            str.append(line);
-            System.out.println(line);
-        }
-        String begstr = str.toString();
-        StringBuilder end = new StringBuilder();
-
-
-
-        String res = new String();
-        String add = new String();
-
-        for (int i = 0 ; i < begstr.length() % 3; i++) {
-            add += "=";
-            begstr += '\0';
-        }
-
-
-        for (int i = 0; i < begstr.length(); i += 3) {
-            int n = 0;
-            for (int j = 0; j <= 2; j++)
-            {
-                n += begstr.charAt(i + j) << (16 - 8 * j);
-            }
-            for (int j = 3 ; j >= 0 ; j--)
-            {
-                res += toBase64[ (n >> (6 * j)) & 63 ];
-            }
-
-        }
-
-        end.append(res.substring(0, res.length() - add.length()) + add);
-
+        InputStreamReader reader = new InputStreamReader(new FileInputStream(fin));
         PrintWriter out = new PrintWriter(fout.getAbsoluteFile());
-        try {
 
-            out.print(end.toString());
-        } finally {
-            out.close();
+        StringBuilder add = new StringBuilder();
+
+        int [] mas = new int [3];
+        while(true) {
+            StringBuilder res = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+                mas[i] = reader.read();
+
+
+            if (mas[0] == -1)
+                break;
+
+            for (int i = 1; i < 3; i++)
+                if (mas[i] == -1)
+                {
+                    mas[i] = Integer.parseInt("0");
+                    add.append('=');
+                }
+
+            int n = 0;
+            for (int j = 0; j < 3; j++)
+            {
+                n += mas[j] << (16 - 8 * j);
+            }
+
+            for (int j = 3; j > -1; j--)
+            {
+                res.append(toBase64[ (n >> (6 * j)) & 63 ]);
+            }
+            res.setLength(res.length()-add.length());
+            res.append(add);
+            out.print(res.toString());
+
+
         }
+
+        out.close();
         return fout;
     }
 
