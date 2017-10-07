@@ -1,11 +1,7 @@
 package ru.track.io;
 
-import com.sun.xml.internal.txw2.NamespaceResolver;
-import jdk.nashorn.internal.runtime.ListAdapter;
-import org.eclipse.jetty.util.thread.Scheduler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
