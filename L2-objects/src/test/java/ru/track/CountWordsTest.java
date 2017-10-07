@@ -11,18 +11,17 @@ import org.junit.Test;
 /**
  *
  */
-
 public class CountWordsTest {
 
     static File file;
 
     @BeforeClass
     public static void init() {
-        //file = new File("words.txt");
+        file = new File("words.txt");
     }
 
     @Test
-    public void countNumbers() throws Exception {/*
+    public void countNumbers() throws Exception {
 
         CountWords cw = new CountWords("vu53f28MvpQ4PclHvxHZ");
         long number = cw.countNumbers(file);
@@ -37,9 +36,8 @@ public class CountWordsTest {
         }
 
         Assert.assertEquals("String concat: ", expected.toString(), result);
-        Assert.assertEquals("Integer sum: ", (long) Integer.MAX_VALUE + 1, number);*/
+        Assert.assertEquals("Integer sum: ", (long) Integer.MAX_VALUE + 1, number);
 
-    
+    }
 
-}
 }
