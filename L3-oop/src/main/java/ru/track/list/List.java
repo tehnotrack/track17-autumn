@@ -37,5 +37,5 @@ public abstract class List {
      */
     abstract int size();
 
-
+    protected int elem_count = 0;
 }
