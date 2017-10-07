@@ -33,7 +33,6 @@ public class MyArrayList extends List {
             }
         }
         arr[elem_count++] = item;
-        //elem_count++;
     }
 
     @Override
