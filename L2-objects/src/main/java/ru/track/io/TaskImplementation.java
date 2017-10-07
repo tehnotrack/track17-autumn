@@ -6,8 +6,6 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 public final class TaskImplementation implements FileEncoder {
@@ -28,8 +26,7 @@ public final class TaskImplementation implements FileEncoder {
         if (Objects.isNull(foutPath)) {
             fout = File.createTempFile("default_picture", ".txt");
             fout.deleteOnExit();
-        }
-        else {
+        } else {
             fout = new File(foutPath);
         }
 
@@ -43,14 +40,14 @@ public final class TaskImplementation implements FileEncoder {
             while ((readingBytes = input.read(bytes, 0, 3)) > 0) {
                 int threeBytes = 0;
                 for (int i = 0; i < readingBytes; i++) {
-                    threeBytes = threeBytes | (bytes[i] & 0xFF) << (16 - 8*i);
+                    threeBytes = threeBytes | (bytes[i] & 0xFF) << (16 - 8 * i);
                 }
 
                 //4 байта, каждый символ равен '=', пишем 4 байта в выходной поток
                 String str = "====";
                 char[] encodedData = str.toCharArray();
                 for (int i = 0; i <= readingBytes; i++) {
-                    encodedData[i] = toBase64[threeBytes >> (18 - 6*i) & 0x3F];
+                    encodedData[i] = toBase64[threeBytes >> (18 - 6 * i) & 0x3F];
                 }
                 fw.write(encodedData);
             }
