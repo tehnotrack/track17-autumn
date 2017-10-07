@@ -1,7 +1,5 @@
 package ru.track.io;
 
-import com.sun.org.apache.xerces.internal.impl.io.UTF8Reader;
-import javafx.util.converter.IntegerStringConverter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
@@ -9,7 +7,6 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
-import java.util.Base64;
 
 
 
@@ -38,7 +35,6 @@ public final class TaskImplementation implements FileEncoder {
             BufferedReader bf = new BufferedReader(fr); // read
 
 
-            //File file = new File (foutPath);
             PrintWriter fout1 = new PrintWriter(fout.getAbsoluteFile());
 
             StringBuilder sb = new StringBuilder();
@@ -50,7 +46,6 @@ public final class TaskImplementation implements FileEncoder {
             for (int i = 1; ; i++) {
                 if (i%4 != 0) {
                     c = bf.read();
-                    System.out.println(c);
                     if (c == -1)
                     {
                         if (i % 4 == 2) {
@@ -92,7 +87,6 @@ public final class TaskImplementation implements FileEncoder {
             return fout;
 
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        //throw new UnsupportedOperationException(); // TODO: implement
     }
 
     private static final char[] toBase64 = {
