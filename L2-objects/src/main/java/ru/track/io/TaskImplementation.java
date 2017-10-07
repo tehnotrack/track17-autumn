@@ -44,8 +44,7 @@ public final class TaskImplementation implements FileEncoder {
                 }
 
                 //4 байта, каждый символ равен '=', пишем 4 байта в выходной поток
-                String str = "====";
-                char[] encodedData = str.toCharArray();
+                char[] encodedData = new char[]{'=', '=', '=', '='};
                 for (int i = 0; i <= readingBytes; i++) {
                     encodedData[i] = toBase64[threeBytes >> (18 - 6 * i) & 0x3F];
                 }
