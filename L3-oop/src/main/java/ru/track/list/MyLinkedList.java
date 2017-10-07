@@ -101,7 +101,5 @@ public class MyLinkedList extends List {
     }
 
     @Override
-    int size() {
-        return size;
-    }
+    int size() {return size;}
 }
