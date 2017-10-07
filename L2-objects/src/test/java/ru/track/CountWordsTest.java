@@ -20,6 +20,7 @@ public class CountWordsTest {
         file = new File("words.txt");
     }
 
+@Ignore
     @Test
     public void countNumbers() throws Exception {
 
