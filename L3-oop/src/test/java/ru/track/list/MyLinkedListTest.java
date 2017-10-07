@@ -21,6 +21,7 @@ public class MyLinkedListTest {
     public void listAdd() throws Exception {
         List list = new MyLinkedList();
         list.add(1);
+
         Assert.assertTrue(list.size() == 1);
     }
 
@@ -32,7 +33,7 @@ public class MyLinkedListTest {
         list.add(3);
 
         Assert.assertEquals(3, list.size());
-        
+
         Assert.assertEquals(1, list.get(0));
         Assert.assertEquals(2, list.get(1));
         Assert.assertEquals(3, list.get(2));
@@ -52,6 +53,7 @@ public class MyLinkedListTest {
         List list = new MyLinkedList();
         list.add(1);
         list.remove(0);
+
         Assert.assertTrue(list.size() == 0);
     }
 }

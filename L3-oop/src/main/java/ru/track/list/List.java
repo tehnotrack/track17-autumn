@@ -24,13 +24,7 @@ public abstract class List {
      * Метод, который может бросить ошибку должен быть отмечен как throws НазваниеИсключения
      * как сделано для этого метода
      */
-    abstract int remove(int idx) throws NoSuchElementException;//{
-   //     int tmp = list.get(idx);
-   //     list.remove(idx);
-   //     return tmp;
-
-
-    //}
+    abstract int remove(int idx) throws NoSuchElementException;
 
 
     /**

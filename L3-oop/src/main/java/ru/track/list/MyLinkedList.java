@@ -29,6 +29,7 @@ public class MyLinkedList extends List {
     public Node head = null;
     public Node tail = null;
     int size = 0;
+
     @Override
     void add(int item) {
         if (size == 0){
@@ -82,6 +83,7 @@ public class MyLinkedList extends List {
             return r.val;
         }
     }
+
     @Override
     int get(int idx) throws NoSuchElementException {
         if (idx < 0 || idx >= size()) {
@@ -97,6 +99,7 @@ public class MyLinkedList extends List {
             return r.val;
         }
     }
+
     @Override
     int size() {
         return size;
