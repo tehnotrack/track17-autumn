@@ -43,3 +43,9 @@ hs_err_pid*
 *.DS_Store
 *.iml
 /*.iml
+/L2-objects/
+*/L2-objects/
+**/L2-objects/
+/L3-oop/
+*/L3-oop/
+**/L3-oop/
