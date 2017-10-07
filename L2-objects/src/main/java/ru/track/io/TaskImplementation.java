@@ -5,9 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -22,16 +20,24 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
+        final File fout;
+
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        byte[] bytes = Files.readAllBytes(Paths.get(finPath));
-        byte[] encodedBytes = encode(bytes).getBytes();
         if (Objects.isNull(foutPath)) {
-            foutPath = "./default_picture";
+            fout = File.createTempFile("default_picture", ".txt");
+            fout.deleteOnExit();
         }
-        FileOutputStream os = new FileOutputStream(foutPath);
-        os.write(encodedBytes);
-        os.close();
-        return new File(foutPath);
+        else {
+            fout = new File(foutPath);
+        }
+
+        try (final FileOutputStream os = new FileOutputStream(fout)) {
+            os.write(encode(Files.readAllBytes(Paths.get(finPath))).getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot write to this file");
+        }
+
+        return fout;
     }
 
     private static String encode(byte[] buf) {
@@ -48,12 +54,14 @@ public final class TaskImplementation implements FileEncoder {
             bytes[a++] = toBase64[((b1 << 2) | ((b2 & 0xFF) >> 6)) & 0x3F];
             bytes[a++] = toBase64[b2 & 0x3F];
         }
+
         switch (buf.length % 3) {
             case 1:
                 bytes[--a] = '=';
             case 2:
+                /* fallthrough */
                 bytes[--a] = '=';
-
+                break;
         }
         return new String(bytes);
     }
