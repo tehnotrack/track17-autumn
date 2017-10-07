@@ -4,10 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -20,7 +23,39 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        byte[] bytes = Files.readAllBytes(Paths.get(finPath));
+        byte[] encodedBytes = encode(bytes).getBytes();
+        if (Objects.isNull(foutPath)) {
+            foutPath = "./default_picture";
+        }
+        FileOutputStream os = new FileOutputStream(foutPath);
+        os.write(encodedBytes);
+        os.close();
+        return new File(foutPath);
+    }
+
+    private static String encode(byte[] buf) {
+        char[] bytes = new char[((buf.length + 2) / 3) * 4];
+        int a = 0;
+        int i = 0;
+        while (i < buf.length) {
+            byte b0 = buf[i++];
+            byte b1 = (i < buf.length) ? buf[i++] : 0;
+            byte b2 = (i < buf.length) ? buf[i++] : 0;
+
+            bytes[a++] = toBase64[(b0 >> 2) & 0x3F];
+            bytes[a++] = toBase64[((b0 << 4) | ((b1 & 0xFF) >> 4)) & 0x3F];
+            bytes[a++] = toBase64[((b1 << 2) | ((b2 & 0xFF) >> 6)) & 0x3F];
+            bytes[a++] = toBase64[b2 & 0x3F];
+        }
+        switch (buf.length % 3) {
+            case 1:
+                bytes[--a] = '=';
+            case 2:
+                bytes[--a] = '=';
+
+        }
+        return new String(bytes);
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +67,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
