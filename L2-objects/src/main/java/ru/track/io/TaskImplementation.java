@@ -6,17 +6,12 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.HashSet;
 
 public final class TaskImplementation implements FileEncoder {
 
     private static int convertToUnsigned(byte k) {
         return k & 0xff;
     }
-    private HashMap<String, String> encodedFiles = new HashMap<>(); // maps input to output fnames
 
     /**
      * @param finPath  where to read binary data from
@@ -28,11 +23,6 @@ public final class TaskImplementation implements FileEncoder {
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         final File fout;
 
-        if (encodedFiles.containsKey(finPath)) {
-            fout = new File(encodedFiles.get(finPath));
-            return fout;
-        }
-
         if (foutPath != null) {
             fout = new File(foutPath);
         } else {
@@ -40,51 +30,52 @@ public final class TaskImplementation implements FileEncoder {
         }
         fout.deleteOnExit();
 
-        final byte[] data = Files.readAllBytes(Paths.get(finPath));
-        final StringBuilder builder = new StringBuilder();
-        final int maxK = (int) Math.pow(64, 3);
+        InputStream inputStream = new FileInputStream(finPath);
+        OutputStream outputStream = new FileOutputStream(fout);
+
+        final int MAX_K = (int) Math.pow(64, 3);
         int chunkValue;
         int k;
 
-        for(int tripletNumber = 0; tripletNumber < data.length / 3; tripletNumber++) {
-            chunkValue =convertToUnsigned(data[tripletNumber * 3]) * 65536 +
-                        convertToUnsigned(data[tripletNumber * 3 + 1]) * 256 +
-                        convertToUnsigned(data[tripletNumber * 3 + 2]);
-            k = maxK;
+        while(inputStream.available() > 2) {
+            chunkValue =inputStream.read() * 65536 +
+                    inputStream.read() * 256 +
+                    inputStream.read();
+            k = MAX_K;
             for (int quadrupletNumber =  0; quadrupletNumber < 4; quadrupletNumber++) {
-                builder.append(toBase64[chunkValue / k]);
+                outputStream.write(toBase64[chunkValue / k]);
                 chunkValue %= k;
                 k /= 64;
             }
-        }
+        } // no more than 3 bytes are unprocessed now
 
         chunkValue = 0;
-        int last = (data.length / 3) * 3;
         k = 65536;
+        int strayBytes = 0;
         for (int i=0; i < 3; i++) {
-            if (last + i < data.length) {
-                chunkValue += k * convertToUnsigned(data[last + i]);
+            if (inputStream.available() > 0) {
+                chunkValue += k * inputStream.read();
                 k /= 256;
+                strayBytes++;
             }
-        }
+        } // now the remaining bytes are saved into chunkValue
 
-        k = maxK;
-        if (data.length != last) {
-            for (int j = 0; j < (data.length - last + 1); j++) {
-                builder.append(toBase64[chunkValue / k]);
+        k = MAX_K;
+        if (strayBytes != 0) {
+            for (int j = 0; j < strayBytes; j++) {
+                outputStream.write(toBase64[chunkValue / k]);
                 chunkValue %= k;
                 k /= 64;
             }
 
-            for (int j = 0; j < 4 - (data.length - last + 1); j++) {
-                builder.append("=");
+            for (int j = 0; j < 4 - strayBytes; j++) {
+                outputStream.write('=');
             }
         }
 
 
-        String res = builder.toString();
-        Files.write(fout.toPath(), res.getBytes());
-        encodedFiles.put(finPath, fout.getPath());
+        inputStream.close();
+        outputStream.close();
 
 
         return fout;
