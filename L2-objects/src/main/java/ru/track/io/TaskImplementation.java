@@ -13,7 +13,7 @@ import java.util.HashSet;
 
 public final class TaskImplementation implements FileEncoder {
 
-    private int convertToUnsigned(byte k) {
+    private static int convertToUnsigned(byte k) {
         return k & 0xff;
     }
     private HashMap<String, String> encodedFiles = new HashMap<>(); // maps input to output fnames
