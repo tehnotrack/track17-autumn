@@ -2,7 +2,6 @@ package ru.track.io;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
@@ -31,11 +30,11 @@ public final class TaskImplementation implements FileEncoder {
              fileToWrite.deleteOnExit();
         }
 
-        InputStream in = new FileInputStream(fileToRead);
-        OutputStream out = new FileOutputStream(fileToWrite);
-        byte[] bytes = new byte[3];
+        try (InputStream in = new FileInputStream(fileToRead);
+            OutputStream out = new FileOutputStream(fileToWrite)) {
+            byte[] bytes = new byte[3];
 
-        int n = 0;
+            int n = 0;
             while ((n = in.read(bytes, 0, 3)) > 0) {
                 byte[] b = new byte[n];
 
@@ -45,7 +44,7 @@ public final class TaskImplementation implements FileEncoder {
                 }
 
                 int dex = 0;
-                for(int i = 0; i < b.length; i++) {
+                for (int i = 0; i < b.length; i++) {
                     //Запись (b[i] & 0xff) возвращает нам int(содержащий 32 бита)
                     //в котором 8 бит это b[i] (текущий считанный байт), а остальные нули
                     //эти 8 бит находятся на определённой позиции, их нужно сдвинуть влево в зависимости
@@ -68,7 +67,7 @@ public final class TaskImplementation implements FileEncoder {
                     out.write('=');
                 }
             }
-
+        }
         return fileToWrite;
     }
 
