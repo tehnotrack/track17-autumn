@@ -1,9 +1,12 @@
 package ru.track.io;
 
+import com.sun.tools.doclets.internal.toolkit.util.DocFinder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
+import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
 
@@ -43,18 +46,19 @@ public final class TaskImplementation implements FileEncoder {
                 }
 
                 int dex = 0;
-                for(int i = b.length - 1; i >= 0; i--) {
+                for(int i = 0; i < b.length; i++) {
                     //Запись (b[i] & 0xff) возвращает нам int(содержащий 32 бита)
-                    //в котором 8 бит это b[i], а остальные нули
-                    //эти 8 бит нужно сдвинуть влево в зависимости от номера байта
-                    dex |= ((b[b.length - 1 - i] & 0xff) << (8 * i));
+                    //в котором 8 бит это b[i] (текущий считанный байт), а остальные нули
+                    //эти 8 бит находятся на определённой позиции, их нужно сдвинуть влево в зависимости
+                    // от текущего номера байта
+                    dex |= ((b[i] & 0xff) << (8 * (2 - i)));
                 }
 
                 //Получили в dex int, содержащий все наши байты на своих позициях
                 for (int i = 0; i < n + 1; i++) {
                     // Находим байт с нужным индексом и наклыдываем на байт маску 111111 = 63
-                    // маска соответствует 6 битам
-                    // чтобы получить int, соответствующий индексу в массиве символов
+                    // маска соответствует 6 битам.
+                    // Это нужно, чтобы получить int, соответствующий индексу в массиве символов
                     out.write(toBase64[0x3f & (dex >> 6 * (3 - i))]);
                 }
                 if (n == 1) {
