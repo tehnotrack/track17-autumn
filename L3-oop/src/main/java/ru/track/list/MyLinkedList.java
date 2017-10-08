@@ -26,22 +26,87 @@ public class MyLinkedList extends List {
         }
     }
 
+    private Node head = null;
+    private Node tail = null;
+    private int size = 0;
+
     @Override
     void add(int item) {
+        Node newNode;
+
+        if (this.size == 0) {
+            newNode = new Node(null, null, item);
+            this.head = newNode;
+            this.tail = newNode;
+        } else {
+            newNode = new Node(this.tail, null, item);
+            this.tail.next = newNode;
+            this.tail = newNode;
+        }
+
+        ++this.size;
     }
 
     @Override
     int remove(int idx) throws NoSuchElementException {
-        return 0;
+        if (checkIndex(idx)) {
+            throw new NoSuchElementException();
+        }
+
+        Node node = this.head;
+
+        for (int i = 0; i < idx; ++i) {
+            node = node.next;
+
+            if (node == null) {
+                throw new NoSuchElementException();
+            }
+        }
+
+        int removedElement = node.val;
+
+        if (node.prev != null) {
+            node.prev.next = node.next;
+        } else {
+            this.head = node.next;
+        }
+
+        if (node.next != null) {
+            node.next.prev = node.prev;
+        } else {
+            this.tail = node.prev;
+        }
+
+        --this.size;
+
+        return removedElement;
     }
 
     @Override
     int get(int idx) throws NoSuchElementException {
-        return 0;
+        if (checkIndex(idx)) {
+            throw new NoSuchElementException();
+        }
+
+        Node node = this.head;
+
+        for (int i = 0; i < idx; ++i) {
+            node = node.next;
+
+            if (node == null) {
+                throw new NoSuchElementException();
+            }
+        }
+
+        return node.val;
     }
 
     @Override
     int size() {
-        return 0;
+        return this.size;
+    }
+
+    private boolean checkIndex(int idx) {
+        return idx < 0 || idx >= this.size;
     }
 }
