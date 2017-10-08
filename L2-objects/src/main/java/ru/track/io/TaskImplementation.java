@@ -26,12 +26,12 @@ public final class TaskImplementation implements FileEncoder {
         if (foutPath != null) {
             fileToWrite = new File(foutPath);
         } else {
-             fileToWrite = File.createTempFile("tmp", ".txt");
-             fileToWrite.deleteOnExit();
+            fileToWrite = File.createTempFile("tmp", ".txt");
+            fileToWrite.deleteOnExit();
         }
 
         try (InputStream in = new FileInputStream(fileToRead);
-            OutputStream out = new FileOutputStream(fileToWrite)) {
+             OutputStream out = new FileOutputStream(fileToWrite)) {
             byte[] bytes = new byte[3];
 
             int n = 0;
