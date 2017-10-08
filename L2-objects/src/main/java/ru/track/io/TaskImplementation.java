@@ -6,10 +6,8 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -22,7 +20,7 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        FileInputStream input = new FileInputStream(finPath);
+        final BufferedInputStream input = new BufferedInputStream(new FileInputStream(finPath));
         File outFile;
         if (foutPath != null) {
             outFile = new File(foutPath);
@@ -30,10 +28,11 @@ public final class TaskImplementation implements FileEncoder {
             outFile = File.createTempFile("temporary_file", ".tmp");
             outFile.deleteOnExit();
         }
-        FileWriter output = new FileWriter(outFile);
+        final BufferedWriter output = new BufferedWriter(new FileWriter(outFile));
+        byte bytes[] = new byte[3];
+        char characters[] = new char[4];
         while (input.available() > 0) {
-            byte bytes[] = new byte[3];
-            char characters[] = new char[4];
+            Arrays.fill(bytes, (byte) 0);
             int bytesRead = input.read(bytes);
             // & 0xff is applied to get 8 lower bits (for correct cast to unsigned int)
             characters[0] = toBase64[(bytes[0] & 0xff) >> 2];
