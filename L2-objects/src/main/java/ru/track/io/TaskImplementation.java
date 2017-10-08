@@ -32,46 +32,38 @@ public final class TaskImplementation implements FileEncoder {
                 final FileInputStream fis = new FileInputStream(fin);
                 final FileWriter fos = new FileWriter(fout);
         ) {
-            byte[] inBytes = new byte[(int)(fin.length())];
-            fis.read(inBytes);
-            int remainder = inBytes.length % 3;
-
-            char[] outChars = new char[(inBytes.length + 2) / 3 * 4];
-
-            int outCharsIndex = 0;
             int index = 0;
-            for (; index < inBytes.length - 2; index += 3) {
-                char[] charsToWrite = new char[4];
-                charsToWrite[0] = toBase64[(inBytes[index] >> 2) & 0x3f];
-                charsToWrite[1] = toBase64[(inBytes[index] << 4) & 0x30 | ((inBytes[index + 1] >> 4) & 0x0f)];
-                charsToWrite[2] = toBase64[(inBytes[index + 1] << 2) & 0x3f | (inBytes[index + 2] >> 6) & 0x03];
-                charsToWrite[3] = toBase64[inBytes[index + 2] & 0x3f];
-                for (int sliceIndex = 0; sliceIndex < 4; ++sliceIndex) {
-                    outChars[outCharsIndex++] = charsToWrite[sliceIndex];
-                }
+            byte[] bytesRead = new byte[3];
+            char[] charsToWrite = new char[4];
+            for (; index < fin.length() - 2; index += 3) {
+                fis.read(bytesRead, 0, 3);
+                charsToWrite[0] = toBase64[(bytesRead[0] >> 2) & 0x3f];
+                charsToWrite[1] = toBase64[(bytesRead[0] << 4) & 0x30 | ((bytesRead[1] >> 4) & 0x0f)];
+                charsToWrite[2] = toBase64[(bytesRead[1] << 2) & 0x3f | (bytesRead[2] >> 6) & 0x03];
+                charsToWrite[3] = toBase64[bytesRead[2] & 0x3f];
+                fos.write(charsToWrite);
             }
 
+            int remainder = (int) fin.length() % 3;
             if (remainder != 0) {
-                char[] charsToWrite = new char[4];
 
                 if (remainder == 1) {
-                    charsToWrite[0] = toBase64[(inBytes[index] >> 2) & 0x3f];
-                    charsToWrite[1] = toBase64[(inBytes[index] << 4) & 0x30];
+                    byte zeroByte = (byte) fis.read();
+                    charsToWrite[0] = toBase64[(zeroByte >> 2) & 0x3f];
+                    charsToWrite[1] = toBase64[(zeroByte << 4) & 0x30];
                     charsToWrite[2] = '=';
                     charsToWrite[3] = '=';
                 } else {
-                    charsToWrite[0] = toBase64[(inBytes[index] >> 2) & 0x7f];
-                    charsToWrite[1] = toBase64[(inBytes[index] << 4) & 0x30 | ((inBytes[index + 1] >> 4) & 0x0f)];
-                    charsToWrite[2] = toBase64[(inBytes[index + 1] << 2) & 0x3f];
+                    byte zeroByte = (byte) fis.read();
+                    byte firstByte = (byte) fis.read();
+                    charsToWrite[0] = toBase64[(zeroByte >> 2) & 0x7f];
+                    charsToWrite[1] = toBase64[(zeroByte << 4) & 0x30 | ((firstByte >> 4) & 0x0f)];
+                    charsToWrite[2] = toBase64[(firstByte << 2) & 0x3f];
                     charsToWrite[3] = '=';
                 }
 
-                for (int sliceIndex = 0; sliceIndex < 4; ++sliceIndex) {
-                    outChars[outCharsIndex++] = charsToWrite[sliceIndex];
-                }
+                fos.write(charsToWrite);
             }
-
-            fos.write(outChars);
         }
 
         return fout;
