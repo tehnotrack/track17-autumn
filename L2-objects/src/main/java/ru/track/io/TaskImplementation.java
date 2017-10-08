@@ -5,19 +5,19 @@ import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
+
 import java.io.File;
 
 import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
-    private StringBuilder convertThreeBytes(int value, int zeros)
-    {
+    private StringBuilder convertThreeBytes(int value, int zeros) {
         StringBuilder res = new StringBuilder();
-        for(int i = 3; i >= zeros; --i){
+        for (int i = 3; i >= zeros; --i) {
             res.append(toBase64[(value >> (i * 6)) & 0x3f]);
         }
-        for(int i = 0; i < zeros; ++i){
+        for (int i = 0; i < zeros; ++i) {
             res.append("=");
         }
         return res;
@@ -35,18 +35,18 @@ public final class TaskImplementation implements FileEncoder {
         InputStream in = new FileInputStream(finPath);
 
         File fout;
-        if( foutPath == null) {
+        if (foutPath == null) {
             fout = File.createTempFile(finPath, "x64");
             fout.deleteOnExit();
-        }
-        else
+        } else {
             fout = new File(foutPath);
+        }
         StringBuilder result = new StringBuilder();
         byte[] buf = new byte[3];
         int readBytes = in.read(buf);
-        while (readBytes > 0){
+        while (readBytes > 0) {
             int threeBytes = 0;
-            for(int i = 0; i < readBytes; ++i){
+            for (int i = 0; i < readBytes; ++i) {
                 int c = buf[i] & 0xFF;
                 threeBytes += (c << (16 - 8 * i));
             }
