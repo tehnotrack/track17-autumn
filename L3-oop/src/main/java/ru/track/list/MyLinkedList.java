@@ -14,6 +14,7 @@ public class MyLinkedList extends List {
      * <p>
      * static - позволяет использовать Node без создания экземпляра внешнего класса
      */
+
     private static class Node {
         Node prev;
         Node next;
@@ -26,22 +27,75 @@ public class MyLinkedList extends List {
         }
     }
 
+    private Node head;
+    int sz = 0;
+
+
+
     @Override
     void add(int item) {
+        if (head == null) {
+            head = new Node(null, null, item);
+            sz++;
+            }
+        else {
+            Node tmp = head;
+            while (tmp.next != null) {
+                tmp = tmp.next;
+            }
+            tmp.next = new Node(tmp, null, item);
+            sz++;
+        }
     }
 
     @Override
     int remove(int idx) throws NoSuchElementException {
-        return 0;
+        if (idx < 0 || sz== 0 || idx > sz)
+            throw new NoSuchElementException();
+        Node tmp = head;
+        while (idx != 0 && tmp.next != null) {
+            idx--;
+            tmp = tmp.next;
+            }
+        if (idx == 0) {
+            int result = tmp.val;
+            if (tmp.prev == null) {
+                head=null;
+                sz--;
+                return result;
+                }
+            if (tmp.next == null) {
+                tmp.prev.next = null;
+                sz--;
+                return result;
+                }
+            tmp.prev.next = tmp.next;
+            sz--;
+            return result;
+            }
+        throw new NoSuchElementException();
     }
 
     @Override
     int get(int idx) throws NoSuchElementException {
-        return 0;
+
+        if (idx < 0 || sz == 0 || idx > sz)
+            throw new NoSuchElementException();
+        Node tmp = head;
+        while (idx != 0 && tmp.next != null) {
+            idx--;
+            tmp = tmp.next;
+            }
+        if (idx == 0)
+            return tmp.val;
+        throw new NoSuchElementException();
     }
 
     @Override
     int size() {
-        return 0;
+
+        return sz;
     }
 }
+
+
