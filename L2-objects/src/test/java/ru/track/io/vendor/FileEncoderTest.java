@@ -37,13 +37,13 @@ public class FileEncoderTest extends TestCase {
                 new Sample("xxx00"),
                 new Sample("xxx0"),
                 /* edge cases for 4 KiB buffer */
-                new Sample(StringUtils.repeat("x", 4097)),
-                new Sample(StringUtils.repeat("x", 4098)),
-                new Sample(StringUtils.repeat("x", 4099)),
+                new Sample(StringUtils.repeat("x", 4097), false),
+                new Sample(StringUtils.repeat("x", 4098), false),
+                new Sample(StringUtils.repeat("x", 4099), false),
                 /* edge cases for 8 KiB buffer */
-                new Sample(StringUtils.repeat("x", 8193)),
-                new Sample(StringUtils.repeat("x", 8194)),
-                new Sample(StringUtils.repeat("x", 8195)),
+                new Sample(StringUtils.repeat("x", 8193), false),
+                new Sample(StringUtils.repeat("x", 8194), false),
+                new Sample(StringUtils.repeat("x", 8195), false),
                 /* jpeg header -- mixed endianness */
                 new Sample(new byte[]{(byte) 0xd8, (byte) 0xff, (byte) 0xe0, (byte) 0xff}),
                 new Sample(new byte[]{(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xe0})
@@ -51,30 +51,30 @@ public class FileEncoderTest extends TestCase {
     }
 
     @NotNull
-    private final Sample data;
+    private final Sample sample;
 
-    public FileEncoderTest(@NotNull Sample data) {
-        this.data = data;
+    public FileEncoderTest(@NotNull Sample sample) {
+        this.sample = sample;
     }
 
     @Test
     public void testEncoderImplementation() throws Exception {
         final Path p = Files.write(
                 createTempFile().toPath(),
-                data.get(),
+                sample.getData(),
                 StandardOpenOption.WRITE
         );
 
         final File expected = (new ReferenceTaskImplementation()).encodeFile(p.toString(), null);
         final File actual = (new TaskImplementation()).encodeFile(p.toString(), null);
 
-        if (!data.isPrintable()) {
-            assertBinaryEquals(expected, actual);
-        } else {
+        if (sample.isPrintable()) {
             assertEquals(
                     FileUtils.readFileToString(expected, StandardCharsets.US_ASCII),
                     FileUtils.readFileToString(actual, StandardCharsets.US_ASCII)
             );
+        } else {
+            assertBinaryEquals(expected, actual);
         }
     }
 
@@ -88,25 +88,32 @@ public class FileEncoderTest extends TestCase {
 
     private static class Sample {
 
-        private final byte[] raw;
-        private final String printable;
+        private final byte[] data;
+        private final boolean printable;
 
-        Sample(@NotNull byte[] raw) {
-            this.raw = raw;
-            this.printable = null;
-        }
-
-        Sample(@NotNull String printable) {
+        Sample(@NotNull byte[] data, boolean printable) {
+            this.data = data;
             this.printable = printable;
-            this.raw = null;
         }
 
-        byte[] get() {
-            return printable != null ? printable.getBytes() : raw;
+        byte[] getData() {
+            return data;
         }
 
         boolean isPrintable() {
-            return printable != null;
+            return printable;
+        }
+
+        Sample(@NotNull String data, boolean printable) {
+            this(data.getBytes(), printable);
+        }
+
+        Sample(@NotNull byte[] data) {
+            this(data, true);
+        }
+
+        Sample(@NotNull String data) {
+            this(data, true);
         }
 
     }
