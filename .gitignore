@@ -1,5 +1,5 @@
 **/*.iml
-/.idea
+**/.idea
 **/target/
 *.DS_Store
 /L1-intro/src/main/java/ru/track/App.java
