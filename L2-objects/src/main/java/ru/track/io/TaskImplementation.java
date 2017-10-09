@@ -20,7 +20,6 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        final BufferedInputStream input = new BufferedInputStream(new FileInputStream(finPath));
         File outFile;
         if (foutPath != null) {
             outFile = new File(foutPath);
@@ -28,31 +27,34 @@ public final class TaskImplementation implements FileEncoder {
             outFile = File.createTempFile("temporary_file", ".tmp");
             outFile.deleteOnExit();
         }
-        final BufferedWriter output = new BufferedWriter(new FileWriter(outFile));
-        byte bytes[] = new byte[3];
-        char characters[] = new char[4];
-        while (input.available() > 0) {
-            Arrays.fill(bytes, (byte) 0);
-            int bytesRead = input.read(bytes);
-            // & 0xff is applied to get 8 lower bits (for correct cast to unsigned int)
-            characters[0] = toBase64[(bytes[0] & 0xff) >> 2];
-            // & 0x3 is applied to get 2 lower bits
-            characters[1] = toBase64[((bytes[0] & 0x3) << 4) + ((bytes[1] & 0xff) >> 4)];
-            if (bytesRead >= 2) {
-                // & 0xf is applied to get 4 lower bits
-                characters[2] = toBase64[((bytes[1] & 0xf) << 2) + ((bytes[2] & 0xff) >> 6)];
-            } else {
-                characters[2] = '=';
+        try (final BufferedInputStream input = new BufferedInputStream(new FileInputStream(finPath));
+                final BufferedWriter output = new BufferedWriter(new FileWriter(outFile))) {
+            byte bytes[] = new byte[3];
+            char characters[] = new char[4];
+            while (input.available() > 0) {
+                int bytesRead = input.read(bytes);
+                for (int i = bytesRead; i < 3; ++i) {
+                    bytes[i] = (byte) 0;
+                }
+                // & 0xff is applied to get 8 lower bits (for correct cast to unsigned int)
+                characters[0] = toBase64[(bytes[0] & 0xff) >> 2];
+                // & 0x3 is applied to get 2 lower bits
+                characters[1] = toBase64[((bytes[0] & 0x3) << 4) + ((bytes[1] & 0xff) >> 4)];
+                if (bytesRead >= 2) {
+                    // & 0xf is applied to get 4 lower bits
+                    characters[2] = toBase64[((bytes[1] & 0xf) << 2) + ((bytes[2] & 0xff) >> 6)];
+                } else {
+                    characters[2] = '=';
+                }
+                if (bytesRead >= 3) {
+                    // & 0x3f is applied to get 6 lower bits
+                    characters[3] = toBase64[(bytes[2] & 0x3f)];
+                } else {
+                    characters[3] = '=';
+                }
+                output.write(characters);
             }
-            if (bytesRead >= 3) {
-                // & 0x3f is applied to get 6 lower bits
-                characters[3] = toBase64[(bytes[2] & 0x3f)];
-            } else {
-                characters[3] = '=';
-            }
-            output.write(characters);
         }
-        output.close();
         return outFile;
     }
 
