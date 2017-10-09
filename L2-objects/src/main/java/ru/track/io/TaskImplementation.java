@@ -47,14 +47,14 @@ public final class TaskImplementation implements FileEncoder {
     };
 
 
-    private static String encode(byte[] data)
+    private String encode(byte[] data)
     {
 
         StringBuilder buffer = new StringBuilder();
         int align = 0;
         for (int i = 0; i < data.length; i += 3) {
 
-            int data3bytes = ((data[i] & 0xFF) << 16) & 0xFFFFFF; // сдвигаем 8 бит в старший байт ячейки из 3 байт
+/*            int data3bytes = ((data[i] & 0xFF) << 16);// сдвигаем 8 бит в старший байт ячейки из 3 байт
             if (i + 1 < data.length) {
                 data3bytes |= (data[i+1] & 0xFF) << 8; // записываем во второй из 3 байт значение второго символа
             } else {
@@ -65,11 +65,19 @@ public final class TaskImplementation implements FileEncoder {
             } else {
                 align++; // если достигли конца исходного массива
             }
+*/
+            int data3bytes = 0;
+            for (int j = i; (j - i) < 3; ++j) {
+                if (j >= data.length) {
+                    ++align;
+                    continue;
+                }
+                data3bytes |= ((data[j] & 0xFF) << (8*(2 - (j - i))));
+            }
 
             for (int j = 0; j < 4 - align; j++) { // дозаписать
-                int c = (data3bytes & 0xFC0000) >> 18; // FC - старшие 6 единиц
+                int c = ((data3bytes <<  6*j) & 0xFC0000) >> 18; // FC - старшие 6 единиц
                 buffer.append(toBase64[c]);
-                data3bytes <<= 6; // и пошло поехало по 6 битов
             }
         }
         for (int j = 0; j < align; j++) {
