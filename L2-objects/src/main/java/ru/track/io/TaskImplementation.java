@@ -7,7 +7,6 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
-import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -29,30 +28,30 @@ public final class TaskImplementation implements FileEncoder {
         }
         try (final BufferedInputStream input = new BufferedInputStream(new FileInputStream(finPath));
                 final BufferedWriter output = new BufferedWriter(new FileWriter(outFile))) {
-            byte bytes[] = new byte[3];
-            char characters[] = new char[4];
             while (input.available() > 0) {
-                int bytesRead = input.read(bytes);
-                for (int i = bytesRead; i < 3; ++i) {
-                    bytes[i] = (byte) 0;
-                }
+                int firstByte = input.read();
+                int secondByte = input.read();
+                int thirdByte = input.read();
                 // & 0xff is applied to get 8 lower bits (for correct cast to unsigned int)
-                characters[0] = toBase64[(bytes[0] & 0xff) >> 2];
-                // & 0x3 is applied to get 2 lower bits
-                characters[1] = toBase64[((bytes[0] & 0x3) << 4) + ((bytes[1] & 0xff) >> 4)];
-                if (bytesRead >= 2) {
+                output.write(toBase64[(firstByte & 0xff) >> 2]);
+                if (secondByte == -1) {
+                    // & 0x3 is applied to get 2 lower bits
+                    output.write(toBase64[((firstByte & 0x3) << 4)]);
+                    output.write('=');
+                    output.write('=');
+                    continue;
+                }
+                output.write(toBase64[((firstByte & 0x3) << 4) + ((secondByte & 0xff) >> 4)]);
+                if (thirdByte == -1) {
                     // & 0xf is applied to get 4 lower bits
-                    characters[2] = toBase64[((bytes[1] & 0xf) << 2) + ((bytes[2] & 0xff) >> 6)];
-                } else {
-                    characters[2] = '=';
+                    output.write(toBase64[((secondByte & 0xf) << 2)]);
+                    output.write('=');
+                    continue;
                 }
-                if (bytesRead >= 3) {
-                    // & 0x3f is applied to get 6 lower bits
-                    characters[3] = toBase64[(bytes[2] & 0x3f)];
-                } else {
-                    characters[3] = '=';
-                }
-                output.write(characters);
+                output.write(toBase64[((secondByte & 0xf) << 2) + ((thirdByte & 0xff) >> 6)]);
+                // & 0x3f is applied to get 6 lower bits
+                output.write(toBase64[(thirdByte & 0x3f)]);
+                continue;
             }
         }
         return outFile;
