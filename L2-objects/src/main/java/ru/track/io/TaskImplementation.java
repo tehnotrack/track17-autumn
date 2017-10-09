@@ -33,6 +33,7 @@ public final class TaskImplementation implements FileEncoder {
         InputStream is = new FileInputStream(fin);
 
         StringBuilder sb = new StringBuilder();
+        
 
 
         while (true) {
