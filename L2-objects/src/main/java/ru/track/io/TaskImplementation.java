@@ -37,24 +37,20 @@ public final class TaskImplementation implements FileEncoder {
         try (BufferedInputStream bis = new BufferedInputStream(fis); FileWriter fw = new FileWriter(outFile)) {
 
             byte[] data = new byte[3];
-            int counter = 0;
+            int counter;
 
-            while ((counter = bis.read(data)) != -1) {
+            while ((counter = bis.read(data,0,3)) !=-1) {
                 char[] rtn = new char[]{'=', '=', '=', '='};
                 if (counter == 3) {
                     // these three 8-bit (ASCII) characters become one 24-bit number
-                    int n = (data[0] << 16) | (data[1] << 8) | (data[2]);
+                    int n = ((data[0]&0xFF) << 16) | ((data[1]&0xFF) << 8) | (data[2]&0xFF);
 
                     // this 24-bit number gets separated into four 6-bit numbers
                     for(int i=0;i<4;i++){
                         rtn[i]=toBase64[(n>>18-6*i)&63];
                     }
-//                    int n1 = (n >> 18) & 63, n2 = (n >> 12) & 63, n3 = (n >> 6) & 63, n4 = n & 63;
-//
-//                    r += "" + toBase64[n1] + toBase64[n2]
-//                            + toBase64[n3] + toBase64[n4];
                 }
-                if (counter < 3) {
+                if (counter != 3) {
                     for (int i = counter; i <=2; i++)
                         data[i] = 0;
                     int n = (data[0] << 16) | (data[1] << 8) | (data[2]);
