@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
 
@@ -28,52 +27,42 @@ public final class TaskImplementation implements FileEncoder {
             fout = File.createTempFile("based_file_", ".txt");
             fout.deleteOnExit();
         }
-
-        final int base64InputLength = 3;
-        final byte[] byteBuf = new byte[base64InputLength];
-        int numOfBytes = base64InputLength;
-
         try (
                 final BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
                 final BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(fout));
         ) {
-            while (fis.available() != 0) {
-                numOfBytes = fis.read(byteBuf);
-                base64Write(byteBuf, numOfBytes, os);
+            byte a, b, c;
+            while (fis.available() >= 3) {
+                a = (byte) fis.read();
+                b = (byte) fis.read();
+                c = (byte) fis.read();
+                int part = (a & 0xff) << 16
+                        | (b & 0xff) << 8
+                        | (c & 0xff);
+                os.write(toBase64[part >>> 18 & 0x3f]);
+                os.write(toBase64[part >>> 12 & 0x3f]);
+                os.write(toBase64[part >>> 6 & 0x3f]);
+                os.write(toBase64[part & 0x3f]);
+            }
+            if (fis.available() == 2) {
+                a = (byte) fis.read();
+                b = (byte) fis.read();
+                int part = (a & 0xff) << 16
+                        | (b & 0xff) << 8;
+                os.write(toBase64[part >>> 18 & 0x3f]);
+                os.write(toBase64[part >>> 12 & 0x3f]);
+                os.write(toBase64[part >>> 6 & 0x3c]);
+                os.write('=');
+            } else if (fis.available() == 1) {
+                a = (byte) fis.read();
+                int part = (a & 0xff) << 16;
+                os.write(toBase64[part >>> 18 & 0x3f]);
+                os.write(toBase64[part >>> 12 & 0x30]);
+                os.write('=');
+                os.write('=');
             }
         }
-
         return fout;
-    }
-
-    public void base64Write(byte[] b, int len, BufferedOutputStream out) throws IOException {
-        int lengthOfChunk = 3;
-        int lengthWithoutLastChunk = len / lengthOfChunk * lengthOfChunk;
-        if (lengthWithoutLastChunk != 0) {
-            for (int i = 0; i < lengthWithoutLastChunk; i += 3) {
-                int part = (b[i] & 0xff) << 16 |
-                        (b[i + 1] & 0xff) << 8 |
-                        (b[i + 2] & 0xff);
-                out.write(toBase64[part >>> 18 & 0x3f]);
-                out.write(toBase64[part >>> 12 & 0x3f]);
-                out.write(toBase64[part >>> 6 & 0x3f]);
-                out.write(toBase64[part & 0x3f]);
-            }
-        }
-        if ((len - lengthWithoutLastChunk) == 2) {
-            int part = (b[lengthWithoutLastChunk] & 0xff) << 16 |
-                    (b[lengthWithoutLastChunk + 1] & 0xff) << 8;
-            out.write(toBase64[part >>> 18 & 0x3f]);
-            out.write(toBase64[part >>> 12 & 0x3f]);
-            out.write(toBase64[part >>> 6 & 0x3c]);
-            out.write('=');
-        } else if ((len - lengthWithoutLastChunk) == 1) {
-            int part = (b[lengthWithoutLastChunk] & 0xff) << 16;
-            out.write(toBase64[part >>> 18 & 0x3f]);
-            out.write(toBase64[part >>> 12 & 0x30]);
-            out.write('=');
-            out.write('=');
-        }
     }
 
     private static final char[] toBase64 = {
