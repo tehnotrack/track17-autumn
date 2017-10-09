@@ -19,9 +19,6 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        //throw new UnsupportedOperationException(); // TODO: implement
-
-        final char[] alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
 
         File fin = new File(finPath);
         File fout;
@@ -34,10 +31,9 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         InputStream is = new FileInputStream(fin);
-        BufferedReader buf = new BufferedReader(new InputStreamReader(is));
 
         StringBuilder sb = new StringBuilder();
-        int blocks = 0;
+
 
         while (true) {
             int c0 = is.read();
@@ -48,17 +44,22 @@ public final class TaskImplementation implements FileEncoder {
 
             int block = ((c0 & 0xFF) << 16) | ((Math.max(c1, 0) & 0xFF) << 8) | (Math.max(c2, 0) & 0xFF);
 
-            sb.append(alpha[block >> 18 & 63]);
-            sb.append(alpha[block >> 12 & 63]);
-            sb.append(c1 == -1 ? '=' : alpha[block >> 6 & 63]);
-            sb.append(c2 == -1 ? '=' : alpha[block & 63]);
+            sb.append(toBase64[block >> 18 & 63]);
+            sb.append(toBase64[block >> 12 & 63]);
+            sb.append(c1 == -1 ? '=' : toBase64[block >> 6 & 63]);
+            sb.append(c2 == -1 ? '=' : toBase64[block & 63]);
 
         }
 
 
         PrintWriter pw = new PrintWriter( fout );
-        pw.write(sb.toString());
-        pw.close();
+
+        try {
+            pw.write(sb.toString());
+
+        } finally {
+            pw.close();
+        }
 
         return fout;
 
