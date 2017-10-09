@@ -1,12 +1,11 @@
 package ru.track;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 
-@Ignore
+
 public class AppTest extends TestCase {
     /**
      * Create the test case
