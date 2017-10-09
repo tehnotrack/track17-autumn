@@ -54,18 +54,6 @@ public final class TaskImplementation implements FileEncoder {
         int align = 0;
         for (int i = 0; i < data.length; i += 3) {
 
-/*            int data3bytes = ((data[i] & 0xFF) << 16);// сдвигаем 8 бит в старший байт ячейки из 3 байт
-            if (i + 1 < data.length) {
-                data3bytes |= (data[i+1] & 0xFF) << 8; // записываем во второй из 3 байт значение второго символа
-            } else {
-                align++; // если достигли конца исходного массива
-            }
-            if (i + 2 < data.length) {
-                data3bytes |= (data[i+2] & 0xFF); // записываем в третий из 3 байт значиение третьего
-            } else {
-                align++; // если достигли конца исходного массива
-            }
-*/
             int data3bytes = 0;
             for (int j = i; (j - i) < 3; ++j) {
                 if (j >= data.length) {
