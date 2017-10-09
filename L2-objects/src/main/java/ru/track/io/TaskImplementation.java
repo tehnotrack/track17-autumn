@@ -42,27 +42,26 @@ public final class TaskImplementation implements FileEncoder {
             while ((counter = bis.read(data)) != -1) {
                 //byte[] output = new byte[4];
                 String r = "", p = "";
+                char[] rtn = new char[]{'=', '=', '=', '='};
                 if (counter == 3) {
                     // these three 8-bit (ASCII) characters become one 24-bit number
-                    int n = (data[0] << 16) + (data[1] << 8) + (data[2]);
+                    int n = (data[0] << 16) | (data[1] << 8) | (data[2]);
+
                     // this 24-bit number gets separated into four 6-bit numbers
-                    int n1 = (n >> 18) & 63, n2 = (n >> 12) & 63, n3 = (n >> 6) & 63, n4 = n & 63;
-                    r += "" + toBase64[n1] + toBase64[n2]
-                            + toBase64[n3] + toBase64[n4];
+                    for(int i=0;i<4;i++){
+                        rtn[i]=toBase64[(n>>18-6*i)&63];
+                    }
+
                 }
                 if (counter < 3) {
                     for (int i = counter; i >= counter; i--)
                         data[i] = 0;
-                    int n = (data[0] << 16) + (data[1] << 8) + (data[2]);
+                    int n = (data[0] << 16) | (data[1] << 8) | (data[2]);
                     for (int i = 0; i <= counter; i++) {
-                        int ni = (n >> 18 - 6 * i) & 63;
-                        r += "" + toBase64[ni];
+                        rtn[i]=toBase64[(n>>18-6*i)&63];
                     }
-                    for (; counter < 3; counter++)
-                        p += "=";
-                    r += p;
                 }
-                fw.write(r);
+                fw.write(rtn);
 
             }
 
