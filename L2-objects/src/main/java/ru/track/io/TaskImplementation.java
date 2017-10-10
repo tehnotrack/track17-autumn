@@ -8,7 +8,6 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
@@ -39,27 +38,27 @@ public final class TaskImplementation implements FileEncoder {
 
         int dataRead = 0;
 
-        while(ifStream.available() > 0) {
+        while (ifStream.available() > 0) {
             Arrays.fill(data, (byte) 0);
-            if(ifStream.available() > 2) {
+            if (ifStream.available() > 2) {
                 ifStream.read(data, 0, 3);
                 dataRead += 3;
             } else {
                 dataRead += ifStream.available();
                 ifStream.read(data, 0, ifStream.available());
             }
-            int buffer = ((data[0] & 0b11111111) << 16) + ((data[1] & 0b11111111) << 8) + ((data[2] & 0b11111111));
-            ofStream.write(this.toBase64[((buffer >> 18) & 0b111111)]);
-            ofStream.write(this.toBase64[((buffer >> 12) & 0b111111)]);
-            if(dataRead % 3 == 1) {
+            int buffer = ((data[0] & 0xff) << 16) + ((data[1] & 0xff) << 8) + ((data[2] & 0xff));
+            ofStream.write(this.toBase64[((buffer >> 18) & 0x3f)]);
+            ofStream.write(this.toBase64[((buffer >> 12) & 0x3f)]);
+            if (dataRead % 3 == 1) {
                 ofStream.write((byte) '=');
             } else {
-                ofStream.write(this.toBase64[((buffer >> 6) & 0b111111)]);
+                ofStream.write(this.toBase64[((buffer >> 6) & 0x3f)]);
             }
-            if(dataRead % 3 == 1 || dataRead % 3 == 2) {
+            if (dataRead % 3 == 1 || dataRead % 3 == 2) {
                 ofStream.write((byte) '=');
             } else {
-                ofStream.write(this.toBase64[((buffer >> 0) & 0b111111)]);
+                ofStream.write(this.toBase64[((buffer >> 0) & 0x3f)]);
             }
         }
 
