@@ -50,11 +50,11 @@ public final class TaskImplementation implements FileEncoder {
 
                 int n = 0;
                 for (int j = 0; j < m; j++) {
-                    n += (mas[j] & 0xff) << (16 - 8 * j);
+                    n += (mas[j] & 255) << (16 - 8 * j);
                 }
 
                 for (int j = 0; j < m + 1; j++) {
-                    res.append(toBase64[(n >> (18 - 6 * j)) & 0x3f]);
+                    res.append(toBase64[(n >> (18 - 6 * j)) & 63]);
                 }
 
                 res.append(add);
