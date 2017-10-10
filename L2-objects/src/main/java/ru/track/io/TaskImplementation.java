@@ -54,7 +54,7 @@ public final class TaskImplementation implements FileEncoder {
 
 
         String toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        String encoded = "", split = "";
+        String encoded = "";
 
         int paddingCount = (3 - (bytes.length % 3)) % 3;
 
