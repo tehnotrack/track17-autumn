@@ -185,8 +185,6 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        System.out.println(args.length);
-        System.out.println(args[0]);
         final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
