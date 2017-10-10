@@ -30,8 +30,8 @@ public final class TaskImplementation implements FileEncoder {
             fileToWrite.deleteOnExit();
         }
 
-        try (InputStream in = new FileInputStream(fileToRead);
-             OutputStream out = new FileOutputStream(fileToWrite)) {
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileToRead));
+             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileToWrite))) {
             byte[] bytes = new byte[3];
 
             int n = 0;
