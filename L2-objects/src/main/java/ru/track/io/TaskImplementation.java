@@ -23,9 +23,10 @@ public final class TaskImplementation implements FileEncoder {
         File fout;
 
         if (foutPath == null) {
-            fout = File.createTempFile("Base64", ".txt");
+            fout = File.createTempFile("Base_64", ".txt");
             fout.deleteOnExit();
         }
+
         else fout = new File(foutPath);
 
         FileInputStream is = new FileInputStream(fin);
