@@ -31,32 +31,34 @@ public final class TaskImplementation implements FileEncoder {
                 fout.deleteOnExit();
             }
 
-            FileReader fr = new FileReader(fin);
-            BufferedReader bf = new BufferedReader(fr); // read
+            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fin));
+            PrintWriter fout1 = new PrintWriter(fout.getAbsoluteFile()); //стрим для записи в файл
 
+            StringBuilder sb = new StringBuilder();//в sb лежит строка в 24 элемента (24 бита соответственно)
 
-            PrintWriter fout1 = new PrintWriter(fout.getAbsoluteFile());
+            Integer c;                              //считываю символ сюда
 
-            StringBuilder sb = new StringBuilder();
+            int [] arr = new int[4];                //массив, в который записываю 4 числа по 6 бит после их обработки
 
-            Integer c;
-
-            int [] arr = new int[4];
-
-            for (int i = 1; ; i++) {
-                if (i%4 != 0) {
-                    c = bf.read();
+            for (int i = 1; ; i++) {                //цикл в 4 хода: если i%4 отлично от нуля, то есть 1,2,3,
+                if (i%4 != 0) {                     //то я дописываю символ который считал в двоичном виде в sb
+                    c = bis.read();                 //если же i%4==0 то идет обработка того, что у меня лежит в sb
                     if (c == -1)
                     {
+                        //тут обработка исключительных случаев: когда файл закончился,
+                        //но мы успели считать только 1 или 2 байта (соответственно это когда
+                        //i%4==2 или 3
+
                         if (i % 4 == 2) {
-                            sb.append ("0000");
-                            for (int j = 0; j < 2; j++) {
+                            sb.append ("0000");          //если считали 1 байт, то надо в sb дописать 4 нуля, чтобы добить
+                                                         //до 12 бит
+                            for (int j = 0; j < 2; j++) {           //обработка этих 12 бит и запись в выходной файл
                                 arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2);
                                 fout1.print(toBase64[arr[j]]);
                             }
-                            fout1.print('=');fout1.print('=');
+                            fout1.print('=');fout1.print('='); //в конце 2 '='
                         }
-                        if (i % 4 == 3) {
+                        if (i % 4 == 3) {               //то же самое только когда успели считать 2 байта
                             sb.append ("00");
                             for (int j = 0; j < 3; j++) {
                                 arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2);
@@ -66,19 +68,25 @@ public final class TaskImplementation implements FileEncoder {
                         }
                         break;
                     }
-                    else {
+
+                    else {      //случай, когда надо считывать, но и конца файла мы еще не достигли:
                         for (int k = 0; k < 8 - Integer.toBinaryString(c).length(); k++)
-                            sb.insert (8 * (i % 4 - 1) + k, "0");
-                        sb.append(Integer.toBinaryString(c));
+                            sb.insert (8 * (i % 4 - 1) + k, "0"); //по выхлопам, понял что компилятор опускает
+                                                                             //нули которые идут в начале. то есть чтобы мой алгоритм
+                                                                             //работал правильно, надо их туда добавить
+                        sb.append(Integer.toBinaryString(c));                //тут уже после того как добавил нужное число нулей, пишу само число в 2чном виде
                     }
 
                 }
-                else {
+
+                else {   //случай когда надо обработать то, что записал в sb (если зашел сюда, значит гарантировано в
+                         //sb лежит 24 бита
                     for (int j = 0; j < 4; j++) {
-                        arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2);
+                        arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2); //в arr[j] записываю число разбитое по 6 бит
+                                                                                              //в системе счисления - 2
                         fout1.print(toBase64[arr[j]]);
                     }
-                    sb.setLength(0);
+                    sb.setLength(0); // очищаю sb
                 }
             }
 
