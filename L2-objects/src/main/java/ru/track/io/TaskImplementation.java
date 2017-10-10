@@ -30,14 +30,15 @@ public final class TaskImplementation implements FileEncoder {
             fout = new File(foutPath);
         }
 
+        FileInputStream is = new FileInputStream(fin);
 
-        try (InputStream is = new FileInputStream(fin); FileWriter fw = new FileWriter(fout)) {
+        try (BufferedInputStream bis = new BufferedInputStream(is); FileWriter fw = new FileWriter(fout)) {
             while (true) {
-                int c0 = is.read();
+                int c0 = bis.read();
                 if (c0 == -1)
                     break;
-                int c1 = is.read();
-                int c2 = is.read();
+                int c1 = bis.read();
+                int c2 = bis.read();
 
                 int block = ((c0 & 0xFF) << 16) | ((Math.max(c1, 0) & 0xFF) << 8) | (Math.max(c2, 0) & 0xFF);
 
