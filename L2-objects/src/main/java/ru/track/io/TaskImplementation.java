@@ -8,6 +8,8 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -30,37 +32,38 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
 
-        InputStream ifStream = new FileInputStream(fin);
+        final InputStream ifStream = new FileInputStream(fin);
+        final OutputStream ofStream = new FileOutputStream(fout);
 
-        byte[] data = new byte[ifStream.available()];
+        byte[] data = new byte[3];
 
-        ifStream.read(data, 0, ifStream.available());
+        int dataRead = 0;
 
-        int padding = (3 - (data.length % 3)) % 3;
-
-        byte[] paddedData = new byte[data.length + padding];
-
-        System.arraycopy(data, 0, paddedData, 0, data.length);
-
-        String encodedData = new String();
-
-        int buffer;
-
-        for(int i = 0; i < paddedData.length; i+= 3) {
-              buffer = ((paddedData[i] & 0b11111111) << 16) + ((paddedData[i + 1] & 0b11111111) << 8) + ((paddedData[i + 2] & 0b11111111));
-              encodedData = encodedData
-                      + this.toBase64[((buffer >> 18) & 0b111111)]
-                      + this.toBase64[((buffer >> 12) & 0b111111)]
-                      + this.toBase64[((buffer >> 6) & 0b111111)]
-                      + this.toBase64[((buffer >> 0) & 0b111111)];
+        while(ifStream.available() > 0) {
+            Arrays.fill(data, (byte) 0);
+            if(ifStream.available() > 2) {
+                ifStream.read(data, 0, 3);
+                dataRead += 3;
+            } else {
+                dataRead += ifStream.available();
+                ifStream.read(data, 0, ifStream.available());
+            }
+            int buffer = ((data[0] & 0b11111111) << 16) + ((data[1] & 0b11111111) << 8) + ((data[2] & 0b11111111));
+            ofStream.write(this.toBase64[((buffer >> 18) & 0b111111)]);
+            ofStream.write(this.toBase64[((buffer >> 12) & 0b111111)]);
+            if(dataRead % 3 == 1) {
+                ofStream.write((byte) '=');
+            } else {
+                ofStream.write(this.toBase64[((buffer >> 6) & 0b111111)]);
+            }
+            if(dataRead % 3 == 1 || dataRead % 3 == 2) {
+                ofStream.write((byte) '=');
+            } else {
+                ofStream.write(this.toBase64[((buffer >> 0) & 0b111111)]);
+            }
         }
 
-        encodedData = encodedData.substring(0, encodedData.length() - padding) + "==".substring(0, padding);
-
-        final PrintWriter pWriter = new PrintWriter(new FileOutputStream(fout));
-        pWriter.write(encodedData);
-        pWriter.close();
-
+        ifStream.close();
         return fout;
     }
 
