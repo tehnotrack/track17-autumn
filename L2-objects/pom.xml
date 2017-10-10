@@ -36,6 +36,7 @@
         <junit-addons.version>1.4</junit-addons.version>
         <jol.version>0.9</jol.version>
         <commons-io.version>2.5</commons-io.version>
+        <commons-lang3.version>3.6</commons-lang3.version>
         <jetty.version>9.4.6.v20170531</jetty.version>
         <mustache.version>0.9.5</mustache.version>
 
@@ -72,6 +73,12 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
         </dependency>
 
         <dependency>
