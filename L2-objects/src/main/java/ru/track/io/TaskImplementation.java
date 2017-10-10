@@ -8,6 +8,7 @@ import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -31,10 +32,11 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         final FileEncoder encoder = new ReferenceTaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
-        new Bootstrapper(args, encoder).bootstrap(9000);
+        (new Bootstrapper(args, encoder))
+                .bootstrap("", new InetSocketAddress("127.0.0.1", 9000));
     }
 
 }

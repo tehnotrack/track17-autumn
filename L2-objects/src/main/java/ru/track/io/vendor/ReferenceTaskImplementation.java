@@ -23,10 +23,10 @@ public class ReferenceTaskImplementation implements FileEncoder {
 
         final Base64.Encoder encoder = Base64.getEncoder();
         try (
-                final FileInputStream fis = new FileInputStream(fin);
-                final OutputStream os = encoder.wrap(new FileOutputStream(fout));
+                final InputStream is = new FileInputStream(fin);
+                final OutputStream os = encoder.wrap(new BufferedOutputStream(new FileOutputStream(fout)));
         ) {
-            int bytesCopied = IOUtils.copy(fis, os); // result unused
+            int bytesCopied = IOUtils.copy(is, os); // result unused
         }
 
         return fout;
