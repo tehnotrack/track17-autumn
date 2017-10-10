@@ -27,26 +27,27 @@ public final class TaskImplementation implements FileEncoder {
             fout = File.createTempFile("based_file_", ".txt");
             fout.deleteOnExit();
         }
-        FileInputStream fis = new FileInputStream(fin);
-        FileOutputStream os = new FileOutputStream(fout);
-        byte[] in = new byte[3];
-        char[] out = new char[4];
-        StringBuffer strb = new StringBuffer();
-        int n, i;
-        while((n = fis.read(in)) > 0){
-            for(i = n; i < in.length; i++)
-                in[i] = 0;
-            out[0] = toBase64[63 & (in[0] >>> 2)];
-            out[1] = toBase64[63 & (((in[1] >>> 4) & 15) | in[0] << 4)];
-            out[2] = out[3] = '=';
-            if(n > 1) {
-                out[2] = toBase64[63 & (((in[2] >>> 6) & 3) | in[1] << 2)];
-                if(n > 2)
-                    out[3] = toBase64[in[2] & 63];
+        try(FileInputStream fis = new FileInputStream(fin);
+            FileOutputStream os = new FileOutputStream(fout);
+            BufferedOutputStream bos = new BufferedOutputStream(os)){
+            byte[] in = new byte[3];
+            char[] out = new char[4];
+            String str;
+            int n, i;
+            while((n = fis.read(in)) > 0){
+                for(i = n; i < in.length; i++)
+                    in[i] = 0;
+                out[0] = toBase64[63 & (in[0] >>> 2)];
+                out[1] = toBase64[63 & (((in[1] >>> 4) & 15) | in[0] << 4)];
+                out[2] = out[3] = '=';
+                if(n > 1) {
+                    out[2] = toBase64[63 & (((in[2] >>> 6) & 3) | in[1] << 2)];
+                    if(n > 2)
+                        out[3] = toBase64[in[2] & 63];
+                }
+                bos.write(new String(out).getBytes("UTF-8"));
             }
-            strb.append(out);
         }
-        os.write(strb.toString().getBytes("UTF-8"));
         return fout;
     }
 
