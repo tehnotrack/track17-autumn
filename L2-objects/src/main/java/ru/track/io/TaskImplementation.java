@@ -29,49 +29,43 @@ public final class TaskImplementation implements FileEncoder {
             fout = File.createTempFile("based_file_", ".txt");
             fout.deleteOnExit();
         }
-        InputStreamReader reader = new InputStreamReader(new FileInputStream(fin));
-        PrintWriter out = new PrintWriter(fout.getAbsoluteFile());
 
-        StringBuilder add = new StringBuilder();
+        try (
+                BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
+                PrintWriter out = new PrintWriter(fout.getAbsoluteFile());
+        ) {
+            StringBuilder add = new StringBuilder();
 
-        int [] mas = new int [3];
-        while(true) {
-            StringBuilder res = new StringBuilder();
-            for (int i = 0; i < 3; i++)
-                mas[i] = reader.read();
+            byte[] mas = new byte[3];
+            while (true) {
+                StringBuilder res = new StringBuilder();
 
 
-            if (mas[0] == -1)
-                break;
+                int m = reader.read(mas, 0, 3);
+                if (m <= 0)
+                    break;
 
-            for (int i = 1; i < 3; i++)
-                if (mas[i] == -1)
-                {
-                    mas[i] = Integer.parseInt("0");
+                for (int j = 0; j < 3 - m; j++)
                     add.append('=');
+
+                int n = 0;
+                for (int j = 0; j < m; j++) {
+                    n += (mas[j] & 0xff) << (16 - 8 * j);
                 }
 
-            int n = 0;
-            for (int j = 0; j < 3; j++)
-            {
-                n += mas[j] << (16 - 8 * j);
-            }
+                for (int j = 0; j < m + 1; j++) {
+                    res.append(toBase64[(n >> (18 - 6 * j)) & 0x3f]);
+                }
 
-            for (int j = 3; j > -1; j--)
-            {
-                res.append(toBase64[ (n >> (6 * j)) & 63 ]);
-            }
-            res.setLength(res.length()-add.length());
-            res.append(add);
-            out.print(res.toString());
+                res.append(add);
+                out.print(res);
 
+            }
+            out.close();
+            return fout;
 
         }
-
-        out.close();
-        return fout;
     }
-
 
 
     private static final char[] toBase64 = {
