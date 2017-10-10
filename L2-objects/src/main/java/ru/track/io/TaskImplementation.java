@@ -28,56 +28,46 @@ public final class TaskImplementation implements FileEncoder {
         }
         else fout = new File(foutPath);
 
+        FileInputStream is = new FileInputStream(fin);
 
-        InputStream is = new FileInputStream(fin);
+        try(BufferedInputStream bis = new BufferedInputStream(is);FileWriter fw = new FileWriter( fout )){
+            byte[] arr = new byte [3];
 
+            int count;
 
-        long length = fin.length();
+            while((count = bis.read(arr,0,3)) != -1)
+            {
+                int num = 0;
+                for (int i = 0; i < count; i++) {
 
+                    num |= ((arr[i] & 0xff) << (8 * (2 - i)));
+                }
+                for (int i = 0; i < count + 1; i++) {
+                    fw.write(toBase64[63 & (num >> 6 * (3 - i))]);
+                }
+                if (count == 1) {
+                    fw.write('=');
+                    fw.write('=');
+                }
+                if (count == 2) {
+                    fw.write('=');
+                }
+            }
 
-        byte[] bytes = new byte[(int)length];
-
-
-        int offset = 0;
-
-        int numRead = 0;
-
-        while (offset < bytes.length && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0)
-        {
-            offset += numRead;
         }
-
-        if (offset < bytes.length)
-        {
-            throw new IOException("Could not completely read file "+fin.getName());
-        }
-
-
-        String toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        String encoded = "";
-
-        int paddingCount = (3 - (bytes.length % 3)) % 3;
-
-        byte[] padded = new byte[bytes.length + paddingCount];
-        System.arraycopy(bytes, 0, padded, 0, bytes.length);
-        bytes = padded;
-
-        for (int i = 0; i < bytes.length; i += 3) {
-            int j = ((bytes[i] & 0xff) << 16) + ((bytes[i + 1] & 0xff) << 8) + (bytes[i + 2] & 0xff);
-            encoded = encoded + toBase64.charAt((j >> 18) & 0x3f) + toBase64.charAt((j >> 12) & 0x3f) + toBase64.charAt((j >> 6) & 0x3f) + toBase64.charAt(j & 0x3f);
-        }
-
-        encoded = encoded.substring(0, encoded.length() - paddingCount) + "==".substring(0, paddingCount);
-
-
-
-        PrintWriter pw = new PrintWriter( fout );
-               pw.write(encoded);
-               pw.close();
 
         return fout;
 
         }
+
+
+        private static final char[] toBase64 = {
+                'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+        };
 
 
     public static void main(String[] args) throws IOException {
