@@ -27,23 +27,22 @@ public final class TaskImplementation implements FileEncoder {
         InputStream inputStream = new FileInputStream(fin);
         StringBuilder sb = new StringBuilder();
 
-        while(true){
-            int char_1 = inputStream.read();
-            int char_2 = inputStream.read();
-            int char_3 = inputStream.read();
+        while (true) {
+            int char1 = inputStream.read();
+            int char2 = inputStream.read();
+            int char3 = inputStream.read();
 
-            if (char_1 == -1)
+            if (char1 == -1)
                 break;
 
-            int tempBuff =
-                    ((char_1 & 0xFF) << 16) |
-                    ((Math.max(char_2, 0) & 0xFF) << 8) |
-                    ((Math.max(char_3, 0) & 0xFF));
+            int tempBuff = ((char1 & 0xFF) << 16) |
+                    ((Math.max(char2, 0) & 0xFF) << 8) |
+                    ((Math.max(char3, 0) & 0xFF));
 
             sb.append(toBase64[tempBuff >> 18 & 0x3F]);
             sb.append(toBase64[tempBuff >> 12 & 0x3F]);
-            sb.append(char_2 == -1 ? '=' : toBase64[tempBuff >> 6 & 0x3F]);
-            sb.append(char_3 == -1 ? '=' : toBase64[tempBuff & 0x3F]);
+            sb.append(char2 == -1 ? '=' : toBase64[tempBuff >> 6 & 0x3F]);
+            sb.append(char3 == -1 ? '=' : toBase64[tempBuff & 0x3F]);
         }
 
         File fout;
@@ -54,10 +53,9 @@ public final class TaskImplementation implements FileEncoder {
             fout = new File(foutPath);
         }
 
-        BufferedWriter bwr = new BufferedWriter(new FileWriter(fout));
-        bwr.write(sb.toString());
-        bwr.flush();
-        bwr.close();
+        try (PrintWriter pw = new PrintWriter(fout)) {
+            pw.write(sb.toString());
+        }
 
         return fout;
     }
