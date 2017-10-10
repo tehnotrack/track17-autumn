@@ -30,36 +30,24 @@ public final class TaskImplementation implements FileEncoder {
             fout = new File(foutPath);
         }
 
-        InputStream is = new FileInputStream(fin);
 
-        StringBuilder sb = new StringBuilder();
-        
+        try (InputStream is = new FileInputStream(fin); FileWriter fw = new FileWriter(fout)) {
+            while (true) {
+                int c0 = is.read();
+                if (c0 == -1)
+                    break;
+                int c1 = is.read();
+                int c2 = is.read();
 
+                int block = ((c0 & 0xFF) << 16) | ((Math.max(c1, 0) & 0xFF) << 8) | (Math.max(c2, 0) & 0xFF);
 
-        while (true) {
-            int c0 = is.read();
-            if (c0 == -1)
-                break;
-            int c1 = is.read();
-            int c2 = is.read();
+                fw.write(toBase64[block >> 18 & 63]);
+                fw.write(toBase64[block >> 12 & 63]);
+                fw.write(c1 == -1 ? '=' : toBase64[block >> 6 & 63]);
+                fw.write(c2 == -1 ? '=' : toBase64[block & 63]);
 
-            int block = ((c0 & 0xFF) << 16) | ((Math.max(c1, 0) & 0xFF) << 8) | (Math.max(c2, 0) & 0xFF);
+            }
 
-            sb.append(toBase64[block >> 18 & 63]);
-            sb.append(toBase64[block >> 12 & 63]);
-            sb.append(c1 == -1 ? '=' : toBase64[block >> 6 & 63]);
-            sb.append(c2 == -1 ? '=' : toBase64[block & 63]);
-
-        }
-
-
-        PrintWriter pw = new PrintWriter( fout );
-
-        try {
-            pw.write(sb.toString());
-
-        } finally {
-            pw.close();
         }
 
         return fout;
