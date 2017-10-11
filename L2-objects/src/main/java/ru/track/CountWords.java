@@ -1,6 +1,6 @@
 package ru.track;
 
-import java.io.File;
+import java.io.*;
 
 
 /**
@@ -39,7 +39,32 @@ public class CountWords {
      * @param file - файл с данными
      * @return - целое число - сумма всех чисел из файла
      */
-    public long countNumbers(File file) throws Exception {
+    public long countNumbers(File file) throws Exception
+    {
+        try
+        {
+            FileInputStream fstream = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+            long result = 0;
+            String strLine;
+
+            while ((strLine = br.readLine()) != null)
+            {
+                try
+                {
+                    result += Integer.parseInt(strLine);
+                }
+                catch (NumberFormatException e)
+                { }
+            }
+
+            return result;
+        }
+        catch (IOException e) {
+            System.out.println("Ошибка");
+        }
+
         return 0;
     }
 
@@ -51,7 +76,42 @@ public class CountWords {
      * @param file - файл с данными
      * @return - результирующая строка
      */
-    public String concatWords(File file) throws Exception {
+    public String concatWords(File file) throws Exception
+    {
+        try
+        {
+            FileInputStream fstream = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+            StringBuilder str_builder = new StringBuilder();
+
+            String strLine;
+
+            while ((strLine = br.readLine()) != null)
+            {
+                try
+                {
+                    Integer.parseInt(strLine);
+                }
+                catch (NumberFormatException e)
+                {
+                    // isString
+                    if (!strLine.equals("") && !strLine.equals(this.skipWord))
+                    {
+                        // isGoodString
+                        str_builder.append(strLine);
+                        str_builder.append(" ");
+                    }
+                }
+            }
+
+            return str_builder.toString();
+        }
+        catch (IOException e) {
+            System.out.println("Ошибка");
+        }
+
+
         return null;
     }
 
