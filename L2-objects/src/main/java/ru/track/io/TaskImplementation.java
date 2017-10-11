@@ -35,21 +35,21 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         try (
-                final FileInputStream fis = new FileInputStream(fin);
-                final OutputStream os = new FileOutputStream(fout);
+                final BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
+                final BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(fout));
         )
         {
-            StringBuilder str = new StringBuilder();    // итоговая строка в base64
             byte[] three_bytes = new byte[3];
             int n_bytes_red = fis.read(three_bytes, 0, 3);
 
             while (n_bytes_red > 0)
             {
                 // запишем все три байта в одну переменную
-                int all_bytes = three_bytes[0];
-                for (int i = 1; i < n_bytes_red; i++)
+                int all_bytes = 0;
+                for (int i = 0; i < n_bytes_red; i++)
                 {
-                    all_bytes = (all_bytes << 8) | three_bytes[i];
+                    // !!! ВОПРОС: почему только после добавления "& 0xff" проходит два последних теста?
+                    all_bytes = (all_bytes << 8) | (three_bytes[i] & 0xff);
                 }
                 // добьем до трех байт
                 for (int i = 0; i < 3 - n_bytes_red; i++)
@@ -61,22 +61,22 @@ public final class TaskImplementation implements FileEncoder {
                 // 1 байт -> 2 символа, 2 -> 3, 3 -> 4
                 for (int i = 0; i < n_bytes_red + 1; i++)
                 {
-                    str.append(toBase64[(all_bytes >> (6 * (3 - i))) & 0b111111]);
+                    os.write(toBase64[(all_bytes >> (6 * (3 - i))) & 0b111111]);
                 }
 
                 // добиваем концовку до трех байт
                 if (n_bytes_red <= 2)
                 {
-                    str.append('=');
+                    os.write('=');
                     if (n_bytes_red <= 1)
                     {
-                        str.append('=');
+                        os.write('=');
                     }
                 }
 
                 n_bytes_red = fis.read(three_bytes, 0, 3);
             }
-            os.write(str.toString().getBytes());
+            //os.write(str.toString().getBytes());
             //System.out.println(str.toString());
         }
 
