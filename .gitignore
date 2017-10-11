@@ -1,0 +1,6 @@
+.idea
+/L1-intro
+README.md
+**/*.iml
+**/target/
+.gitignore

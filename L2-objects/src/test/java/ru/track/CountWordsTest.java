@@ -41,5 +41,5 @@ public class CountWordsTest {
         Assert.assertEquals("Integer sum: ", (long) Integer.MAX_VALUE + 1, number);
 
     }
-
 }
+
