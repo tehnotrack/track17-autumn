@@ -6,8 +6,7 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -20,7 +19,52 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+
+        File fileToRead = new File(finPath);
+        File fileToWrite;
+
+        if (foutPath != null) {
+            fileToWrite = new File(foutPath);
+        } else {
+            fileToWrite = File.createTempFile("tmp", ".txt");
+            fileToWrite.deleteOnExit();
+        }
+
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileToRead));
+             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileToWrite))) {
+            byte[] bytes = new byte[3];
+
+            int n = 0;
+            while ((n = in.read(bytes, 0, 3)) > 0) {
+
+                //n - это число байт, которые удалось считать ( их может быть меньше 3)
+
+                int dex = 0;
+                for (int i = 0; i < n; i++) {
+                    //Запись (bytes[i] & 0xff) возвращает нам int(содержащий 32 бита)
+                    //в котором 8 бит это bytes[i] (текущий считанный байт), а остальные нули
+                    //эти 8 бит находятся на определённой позиции, их нужно сдвинуть влево в зависимости
+                    // от текущего номера байта
+                    dex |= ((bytes[i] & 0xff) << (8 * (2 - i)));
+                }
+
+                //Получили в dex int, содержащий все наши байты на своих позициях
+                for (int i = 0; i < n + 1; i++) {
+                    // Находим байт с нужным индексом и наклыдываем на байт маску 111111 = 63
+                    // маска соответствует 6 битам.
+                    // Это нужно, чтобы получить int, соответствующий индексу в массиве символов
+                    out.write(toBase64[0x3f & (dex >> 6 * (3 - i))]);
+                }
+                if (n == 1) {
+                    out.write('=');
+                    out.write('=');
+                }
+                if (n == 2) {
+                    out.write('=');
+                }
+            }
+        }
+        return fileToWrite;
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +76,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
