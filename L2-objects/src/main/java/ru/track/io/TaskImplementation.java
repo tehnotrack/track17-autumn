@@ -31,13 +31,14 @@ public final class TaskImplementation implements FileEncoder {
         try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin)); FileWriter wrighter = new FileWriter(fout)) {
             int b1, b2, b3;
             while (true) {
-                b1 =  reader.read();
-                b2 =  reader.read();
-                b3 =  reader.read();
+                b1 = reader.read();
+                b2 = reader.read();
+                b3 = reader.read();
 
                 if (b1 == -1) {
                     break;
                 }
+
                 int signs;
                 if (b2 == -1) {
                     signs = ((b1 & 0xFF) << 16);
@@ -61,7 +62,6 @@ public final class TaskImplementation implements FileEncoder {
             }
         }
         return fout;
-
     }
 
     private static final char[] toBase64 = {
