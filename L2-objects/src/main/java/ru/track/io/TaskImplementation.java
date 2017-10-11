@@ -32,36 +32,26 @@ public final class TaskImplementation implements FileEncoder {
 
         try (
                 BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
-                PrintWriter out = new PrintWriter(fout.getAbsoluteFile());
+                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fout));
         ) {
-            int[] mas = new int[3];
-            int len, n;
+            byte[] mas = new byte[3];
+            int n, m;
             while (true) {
-                for (int i = 0; i < 3; i++)
-                    mas[i] = reader.read();
-
-                if (mas[0] == -1)
+                m = reader.read(mas, 0, 3);
+                if (m <= 0)
                     break;
 
-                len = 3;
-                for (int j = 1; j < 3; j++)
-                    if (mas[j] == -1) {
-                        len--;
-                        mas[j] = 0;
-                    }
-
                 n = 0;
-                for (int j = 0; j < 3; j++)
-                    n += mas[j] << (16 - 8 * j);
+                for (int j = 0; j < m; j++)
+                    n += (mas[j] & 255) << (16 - 8 * j);
 
 
+                for (int j = 0; j < m + 1; j++)
+                    out.write(toBase64[(n >> (18 - 6 * j)) & 63]);
 
-                for (int j = 0; j < len + 1; j++)
-                    out.print(toBase64[(n >> (18 - 6 * j)) & 63]);
 
-
-                for (int j = 0; j < 3 - len; j++)
-                    out.print('=');
+                for (int j = 0; j < 3 - m; j++)
+                    out.write('=');
 
             }
             out.close();
