@@ -30,47 +30,14 @@ public final class TaskImplementation implements FileEncoder {
         } else {
             fout = new File(foutPath);
         }
-        StringBuilder encoded = new StringBuilder(); // string to put into fout
-        FileInputStream reader = new FileInputStream(fin);
-        PrintWriter pw = new PrintWriter(fout.getAbsoluteFile()); // writer to write fout
-        if (!fout.exists()) { // create the file if it doesn't exist
-            fout.createNewFile();
+        try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(fout))) {
+            StringBuilder encoded = new StringBuilder(); // string to put into fout
+
         }
-        // encoding in while ()
-        while(true) {
-            //checking the end of file
+        while (true) {
             int firstByte = reader.read();
-            if (firstByte == -1) break;
-            //filling buffer
-            BitSet buffer = new BitSet(24);
-            int[] bytes24 = {firstByte, reader.read(), reader.read()};
-            int encodedBytes = 3;
-            for (int i = 0; i < 3; i++) {
-                if (bytes24[i] == -1) {
-                    bytes24[i] = 0;
-                    encodedBytes -= 1;
-                }
-            }
-            for (int i = 0; i < 3; i++) {
-                for (int j = 7; j >= 0; j --) {
-                    int value = (bytes24[i] >> j) % 2;
-                    buffer.set(i * 8 + (7 - j), (value == 1) ? true : false);
-                }
-            }
-            //encoding
-            for (int i = 0; i < 4; i++) {
-                BitSet base = buffer.get(i * 6, (i + 1) * 6);
-                int value = 0;
-                for (int j = 5; j >= 0; j--) value += (base.get(j))? 1 << (5 - j) : 0;
-                encoded.append((encodedBytes - i >= 0)? toBase64[value]: '=');
-            }
         }
-        try { // try-finally block is put for inevitable closure of writer
-            pw.write(encoded.toString());
-        } finally {
-            pw.close();
-        }
-        return fout;
     }
 
 
