@@ -31,8 +31,8 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
 
-        final InputStream ifStream = new FileInputStream(fin);
-        final OutputStream ofStream = new FileOutputStream(fout);
+        final BufferedInputStream ifStream = new BufferedInputStream(new FileInputStream(fin));
+        final BufferedOutputStream ofStream = new BufferedOutputStream(new FileOutputStream(fout));
 
         byte[] data = new byte[3];
 
@@ -61,8 +61,9 @@ public final class TaskImplementation implements FileEncoder {
                 ofStream.write(this.toBase64[((buffer >> 0) & 0x3f)]);
             }
         }
-
+        ofStream.flush();
         ifStream.close();
+        ofStream.close();
         return fout;
     }
 
