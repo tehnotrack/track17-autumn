@@ -12,6 +12,7 @@ import org.junit.Test;
 /**
  *
  */
+@Ignore
 public class CountWordsTest {
 
     static File file;
