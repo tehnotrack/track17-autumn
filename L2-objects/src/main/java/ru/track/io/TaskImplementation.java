@@ -38,13 +38,12 @@ public final class TaskImplementation implements FileEncoder {
 
             byte[] data = new byte[3];
             int counter;
-
+            
             while ((counter = bis.read(data,0,3)) !=-1) {
                 char[] rtn = new char[]{'=', '=', '=', '='};
                 if (counter == 3) {
                     // these three 8-bit (ASCII) characters become one 24-bit number
                     int n = ((data[0]&0xFF) << 16) | ((data[1]&0xFF) << 8) | (data[2]&0xFF);
-
                     // this 24-bit number gets separated into four 6-bit numbers
                     for(int i=0;i<4;i++){
                         rtn[i]=toBase64[(n>>18-6*i)&63];
@@ -59,9 +58,7 @@ public final class TaskImplementation implements FileEncoder {
                     }
                 }
                 fw.write(rtn);
-
             }
-
         }
         return outFile;
     }
@@ -79,5 +76,4 @@ public final class TaskImplementation implements FileEncoder {
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
-
 }
