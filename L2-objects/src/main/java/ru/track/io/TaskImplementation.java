@@ -29,39 +29,39 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin)); FileWriter wrighter = new FileWriter(fout)) {
-            byte b1, b2, b3;
+            int b1, b2, b3;
             while (true) {
-                b1 = (byte) reader.read();
-                b2 = (byte) reader.read();
-                b3 = (byte) reader.read();
+                b1 =  reader.read();
+                b2 =  reader.read();
+                b3 =  reader.read();
 
                 if (b1 == -1) {
                     break;
                 }
                 int signs;
                 if (b2 == -1) {
-                    signs = ((b1 & 0x3F) << 16);
+                    signs = ((b1 & 0xFF) << 16);
                 } else if (b3 == -1) {
-                    signs = ((b1 & 0x3F) << 16) | ((b2 & 0x3F) << 8);
+                    signs = ((b1 & 0xFF) << 16) | ((b2 & 0xFF) << 8);
                 } else {
-                    signs = ((b1 & 0x3F) << 16) | ((b2 & 0x3F) << 8) | (b3 & 0x3F);
+                    signs = ((b1 & 0xFF) << 16) | ((b2 & 0xFF) << 8) | (b3 & 0xFF);
                 }
-                wrighter.write(toBase64[signs >> 18 & 63]);
-                wrighter.write(toBase64[signs >> 12 & 63]);
+                wrighter.write(toBase64[signs >> 18 & 0x3F]);
+                wrighter.write(toBase64[signs >> 12 & 0x3F]);
                 if (b2 == -1 && b3 == -1) {
                     wrighter.write('=');
                     wrighter.write('=');
                 } else if (b2 != -1 && b3 == -1) {
-                    wrighter.write(toBase64[signs >> 6 & 63]);
+                    wrighter.write(toBase64[signs >> 6 & 0x3F]);
                     wrighter.write('=');
                 } else {
-                    wrighter.write(toBase64[signs >> 6 & 63]);
-                    wrighter.write(toBase64[signs & 63]);
+                    wrighter.write(toBase64[signs >> 6 & 0x3F]);
+                    wrighter.write(toBase64[signs & 0x3F]);
                 }
             }
         }
         return fout;
-        
+
     }
 
     private static final char[] toBase64 = {
