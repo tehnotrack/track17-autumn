@@ -33,7 +33,7 @@ public final class TaskImplementation implements FileEncoder {
             }
 
             BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fin));
-            PrintWriter fout1 = new PrintWriter(fout.getAbsoluteFile()); //стрим для записи в файл
+            BufferedOutputStream fout1 = new BufferedOutputStream(new FileOutputStream(fout)); //стрим для записи в файл
 
             int num_of_bytes_read, num;
 
@@ -44,7 +44,7 @@ public final class TaskImplementation implements FileEncoder {
                     num = ((arr[0] & 0xff) << 16) + ((arr[1] & 0xff) << 8) + (arr[2] & 0xff);
 
                     for (int i = 0; i < 4; i++)
-                        fout1.print (toBase64[(num >> 18 - 6*i) & 0b111111]);
+                        fout1.write (toBase64[(num >> 18 - 6*i) & 0b111111]);
                 }
                 else {
                     for (int i = num_of_bytes_read; i < 3; i++)
@@ -53,8 +53,8 @@ public final class TaskImplementation implements FileEncoder {
                     num = ((arr[0] & 0xff) << 16) + ((arr[1] & 0xff) << 8) + (arr[2] & 0xff);
 
                     for (int i = 0; i < 4; i++) {
-                        if (i < num_of_bytes_read + 1) fout1.print(toBase64[(num >> 18 - 6*i) & 0b111111]);
-                        else fout1.print('=');
+                        if (i < num_of_bytes_read + 1) fout1.write(toBase64[(num >> 18 - 6*i) & 0b111111]);
+                        else fout1.write('=');
                     }
                 }
             }
