@@ -60,14 +60,6 @@ public final class TaskImplementation implements FileEncoder {
         else if(count == 1)
             bytesTogether = buf[0] << 16;
 
-        for (int i = 3; i >= zeros; --i) {
-            res.append(toBase64[(value >> (i * 6)) & 0x3f]);
-        }
-        for (int i = 0; i < zeros; ++i) {
-            res.append("=");
-        }
-        (value >> (i * 6)) & 0x3f]
-
         return buf;
     }
 
