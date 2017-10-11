@@ -61,6 +61,7 @@ public final class TaskImplementation implements FileEncoder {
             }
         }
         return fout;
+        
     }
 
     private static final char[] toBase64 = {
