@@ -6,6 +6,7 @@ import java.io.FileReader;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -21,6 +22,7 @@ public class CountWordsTest {
     }
 
     @Test
+    @Ignore
     public void countNumbers() throws Exception {
 
         CountWords cw = new CountWords("vu53f28MvpQ4PclHvxHZ");
