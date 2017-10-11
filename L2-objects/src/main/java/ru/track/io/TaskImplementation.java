@@ -7,6 +7,7 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
+import java.math.*;
 
 
 
@@ -34,9 +35,42 @@ public final class TaskImplementation implements FileEncoder {
             BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fin));
             PrintWriter fout1 = new PrintWriter(fout.getAbsoluteFile()); //стрим для записи в файл
 
+            int num_of_bytes_read, num;
+
+            byte [] arr = new byte[3];
+
+            while ((num_of_bytes_read = bis.read(arr, 0, 3)) != -1) {
+                if (num_of_bytes_read == 3) {
+                    num = ((arr[0] & 0xff) << 16) + ((arr[1] & 0xff) << 8) + (arr[2] & 0xff);
+
+                    for (int i = 0; i < 4; i++)
+                        fout1.print (toBase64[(num >> 18 - 6*i) & 0b111111]);
+                }
+                else {
+                    for (int i = num_of_bytes_read; i < 3; i++)
+                        arr[i] = 0;
+
+                    num = ((arr[0] & 0xff) << 16) + ((arr[1] & 0xff) << 8) + (arr[2] & 0xff);
+
+                    for (int i = 0; i < 4; i++) {
+                        if (i < num_of_bytes_read + 1) fout1.print(toBase64[(num >> 18 - 6*i) & 0b111111]);
+                        else fout1.print('=');
+                    }
+                }
+            }
+            fout1.close();
+            return fout;
+
+            //-----------------------------------------------------------------------------------------------------
+            // -------ниже старая версия кода, рабочая, но там все муторно и построено все на работе со строками
+            //-----------------------------------------------------------------------------------------------------
+
+
+            /*
+
             StringBuilder sb = new StringBuilder();//в sb лежит строка в 24 элемента (24 бита соответственно)
 
-            Integer c;                              //считываю символ сюда
+            Integer c;                  //считываю символ сюда
 
             int [] arr = new int[4];                //массив, в который записываю 4 числа по 6 бит после их обработки
 
@@ -82,16 +116,15 @@ public final class TaskImplementation implements FileEncoder {
                 else {   //случай когда надо обработать то, что записал в sb (если зашел сюда, значит гарантировано в
                          //sb лежит 24 бита
                     for (int j = 0; j < 4; j++) {
-                        arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2); //в arr[j] записываю число разбитое по 6 бит
+                        //arr[j] = Integer.parseInt(sb.substring(6 * j, 6 * (j + 1)), 2); //в arr[j] записываю число разбитое по 6 бит
                                                                                               //в системе счисления - 2
-                        fout1.print(toBase64[arr[j]]);
                     }
                     sb.setLength(0); // очищаю sb
                 }
             }
 
             fout1.close();
-            return fout;
+            return fout;        */
 
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
     }
