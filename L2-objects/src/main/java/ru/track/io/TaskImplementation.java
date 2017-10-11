@@ -20,17 +20,13 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        try
-        {
+        try {
             FileInputStream fis = new FileInputStream(finPath);
             byte[] buffer = new byte[1002];
             final File fout;
-            if(foutPath != null)
-            {
+            if (foutPath != null) {
                 fout = new File(foutPath);
-            }
-            else
-            {
+            } else {
                 fout = File.createTempFile("based_file_", ".txt");
                 fout.deleteOnExit();
             }
@@ -38,26 +34,21 @@ public final class TaskImplementation implements FileEncoder {
 
             StringBuilder sb = new StringBuilder();
             int nRead = -1;
-            while ( (nRead = fis.read(buffer)) != -1)
-            {
+            while ((nRead = fis.read(buffer)) != -1) {
                 int i = 0;
-                while(i < (nRead - nRead % 3))
-                {
+                while (i < (nRead - nRead % 3)) {
                     int threeBytes;
-                    threeBytes = (((int)buffer[i] & 0b11111111) << 16)
-                            + (((int)buffer[i + 1] & 0b11111111) << 8)
-                            + ((int)buffer[i + 2] & 0b11111111);
+                    threeBytes = (((int) buffer[i] & 0b11111111) << 16)
+                            + (((int) buffer[i + 1] & 0b11111111) << 8)
+                            + ((int) buffer[i + 2] & 0b11111111);
 
-                    try
-                    {
+                    try {
 
                         sb.append(toBase64[(threeBytes & 0b111111000000000000000000) >> 18]);
                         sb.append(toBase64[(threeBytes & 0b111111000000000000) >> 12]);
                         sb.append(toBase64[(threeBytes & 0b111111000000) >> 6]);
                         sb.append(toBase64[threeBytes & 0b111111]);
-                    }
-                    catch (ArrayIndexOutOfBoundsException e)
-                    {
+                    } catch (ArrayIndexOutOfBoundsException e) {
                         System.out.println("ERROR: " + e.getMessage());
                         throw e;
                     }
@@ -65,17 +56,14 @@ public final class TaskImplementation implements FileEncoder {
                     i = i + 3;
                 }
 
-                if(nRead % 3 == 1)
-                {
-                    sb.append(toBase64[((int)buffer[nRead - 1] & 0b11111111) >> 2]);
+                if (nRead % 3 == 1) {
+                    sb.append(toBase64[((int) buffer[nRead - 1] & 0b11111111) >> 2]);
                     sb.append(toBase64[(buffer[nRead - 1] & 0b11) << 4]);
                     sb.append("==");
-                }
-                else if(nRead % 3 == 2)
-                {
+                } else if (nRead % 3 == 2) {
                     int twoBytes;
-                    twoBytes =  (((int)buffer[nRead - 2] & 0b11111111) << 8)
-                            + (((int)buffer[nRead - 1] & 0b11111111));
+                    twoBytes = (((int) buffer[nRead - 2] & 0b11111111) << 8)
+                            + (((int) buffer[nRead - 1] & 0b11111111));
                     sb.append(toBase64[(twoBytes & 0b1111110000000000) >> 10]);
                     sb.append(toBase64[(twoBytes & 0b1111110000) >> 4]);
                     sb.append(toBase64[(twoBytes & 0b1111) << 2]);
@@ -84,25 +72,19 @@ public final class TaskImplementation implements FileEncoder {
             }
 
 
-
             //System.out.println(sb.toString());
             FileWriter fw = new FileWriter(fout);
             fw.write(sb.toString());
             fw.close();
             return fout;
-        }
-
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("cannot open file");
-            throw   e;
+            throw e;
         }
-
 
 
         //throw new UnsupportedOperationException(); // TODO: implement
     }
-
 
 
     private static final char[] toBase64 = {
