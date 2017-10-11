@@ -1,5 +1,6 @@
 package ru.track.io;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
@@ -22,9 +23,32 @@ public final class TaskImplementation implements FileEncoder {
 
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
 
+        final File fin = new File(finPath);
+        final File fout;
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".txt");
+            fout.deleteOnExit();
+        }
+        try (
+                final FileInputStream fis = new FileInputStream(fin);
+                final FileOutputStream fos = new FileOutputStream(fout);
+                final BufferedInputStream bis =  new BufferedInputStream(fis);
+                final BufferedOutputStream bos = new BufferedOutputStream(fos);
+        ) {
+            int bytesCopied = IOUtils.copy(fis, bos); // result unused
+            bos.flush();
+        }
+
+        return fout;
+
+
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        Path path = Paths.get(finPath);
-        byte[] content = Files.readAllBytes(path);
+//заменить на bufferedinputstream
+//        Path path = Paths.get(finPath);
+
+/*        byte[] content = Files.readAllBytes(path);
         String encodedStr = encode(content);
 
         byte [] writeValue = encodedStr.getBytes();
@@ -34,8 +58,9 @@ public final class TaskImplementation implements FileEncoder {
         outputstream.write(writeValue);
         outputstream.close();
         File retValue = new File(foutPath);
-        return retValue;
 
+        return retValue;
+*/
     }
 
     private static final char[] toBase64 = {
