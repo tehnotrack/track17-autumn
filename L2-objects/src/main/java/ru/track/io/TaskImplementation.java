@@ -6,8 +6,7 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -19,8 +18,54 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+
+        final File fin = new File(finPath);
+        final File fout;
+
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("Base64EncodedFile", ".txt");
+            fout.deleteOnExit();
+        }
+
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fin));
+             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fout))) {
+
+            byte[] bytes = new byte[3];
+            int numberOfReadedBytes = 0;
+            int pad = 0;
+
+            while ((numberOfReadedBytes = bufferedInputStream.read(bytes, 0, 3)) > 0){
+
+                if (numberOfReadedBytes == 3){
+                    pad = ((bytes[0] & 0xFF) << 16) | ((bytes[1] & 0xFF) << 8) | (bytes[2] & 0xFF);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 18)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 12)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 6)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 0)]);
+                }
+
+                if (numberOfReadedBytes == 2){
+                    pad = ((bytes[0] & 0xFF) << 16) | ((bytes[1] & 0xFF) << 8);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 18)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 12)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 6)]);
+                    bufferedOutputStream.write('=');
+                }
+
+                if (numberOfReadedBytes == 1){
+                    pad = ((bytes[0] & 0xFF) << 16);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 18)]);
+                    bufferedOutputStream.write(toBase64[0x3f & (pad >> 12)]);
+                    bufferedOutputStream.write('=');
+                    bufferedOutputStream.write('=');
+                }
+
+            }
+
+        }
+        return fout;
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +77,8 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
+
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
