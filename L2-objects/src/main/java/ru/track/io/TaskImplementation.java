@@ -7,6 +7,9 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -21,29 +24,13 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
+        int[] inputChars;
+        char[] outputChars;
+
+        inputChars  = new int[3];
+        outputChars = new char[4];
 
         File fin = new File(finPath);
-
-        InputStream inputStream = new FileInputStream(fin);
-        StringBuilder sb = new StringBuilder();
-
-        while (true) {
-            int char1 = inputStream.read();
-            int char2 = inputStream.read();
-            int char3 = inputStream.read();
-
-            if (char1 == -1)
-                break;
-
-            int tempBuff = ((char1 & 0xFF) << 16) |
-                    ((Math.max(char2, 0) & 0xFF) << 8) |
-                    ((Math.max(char3, 0) & 0xFF));
-
-            sb.append(toBase64[tempBuff >> 18 & 0x3F]);
-            sb.append(toBase64[tempBuff >> 12 & 0x3F]);
-            sb.append(char2 == -1 ? '=' : toBase64[tempBuff >> 6 & 0x3F]);
-            sb.append(char3 == -1 ? '=' : toBase64[tempBuff & 0x3F]);
-        }
 
         File fout;
         if (foutPath == null) {
@@ -53,8 +40,30 @@ public final class TaskImplementation implements FileEncoder {
             fout = new File(foutPath);
         }
 
-        try (PrintWriter pw = new PrintWriter(fout)) {
-            pw.write(sb.toString());
+        try(BufferedReader br = new BufferedReader (new FileReader(fin));
+            BufferedWriter bw = new BufferedWriter (new FileWriter(fout)))
+        {
+            while (true) {
+                inputChars[0] = br.read();
+                inputChars[1] = br.read();
+                inputChars[2] = br.read();
+
+                System.out.println(inputChars);
+
+                if (inputChars[0] == -1)
+                    break;
+
+                int tempBuff = ((inputChars[0] & 0xFF) << 16) |
+                        ((Math.max(inputChars[1], 0) & 0xFF) << 8) |
+                        ((Math.max(inputChars[2], 0) & 0xFF));
+
+                outputChars[0] = toBase64[tempBuff >> 18 & 0x3F];
+                outputChars[1] = toBase64[tempBuff >> 12 & 0x3F];
+                outputChars[2] = inputChars[1] == -1 ? '=' : toBase64[tempBuff >> 6 & 0x3F];
+                outputChars[3] = inputChars[2] == -1 ? '=' : toBase64[tempBuff & 0x3F];
+
+                bw.write(outputChars, 0, outputChars.length);
+            }
         }
 
         return fout;
