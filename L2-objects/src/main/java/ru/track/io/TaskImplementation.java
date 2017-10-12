@@ -30,37 +30,52 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         int count;
-        FileInputStream fis = null;
-        FileOutputStream os = null;
+        BufferedInputStream fis = null;
+        BufferedOutputStream os = null;
         try {
-            fis = new FileInputStream(fin);
-            os = new FileOutputStream(fout);
+            fis = new BufferedInputStream(new FileInputStream(fin));
+            os = new BufferedOutputStream(new FileOutputStream(fout));
             byte[] data = new byte[3];
 
             while ((count = fis.read(data)) != -1) {
                 os.write(convert3bytes(data, count));
             }
-
         } finally {
             if (fis != null) {
                    fis.close();
             }
+            if (os != null) {
+                os.close();
+            }
         }
-
-
         return fout;
     }
 
     private static byte[] convert3bytes(byte[] buf, int count) {
         int bytesTogether;
+        byte[] converted = new byte[4];
         if (count == 3)
-            bytesTogether = buf[2] + (buf[1] << 8) + (buf[0] << 16);
+            bytesTogether = (buf[2] & 0xff) + ((buf[1]& 0xff) << 8) + ((buf[0]& 0xff) << 16);
         else if(count == 2)
-            bytesTogether = (buf[1] << 8) + (buf[0] << 16);
-        else if(count == 1)
-            bytesTogether = buf[0] << 16;
+            bytesTogether = ((buf[1]& 0xff) << 8) + ((buf[0]& 0xff) << 16);
+        else
+            bytesTogether = (buf[0]& 0xff) << 16;
 
-        return buf;
+        converted[0] = (byte)toBase64[(bytesTogether >> 18) & 0x3f];
+        converted[1] = (byte)toBase64[(bytesTogether >> 12) & 0x3f];
+
+        if (count == 1) {
+            converted[2] = (byte)'=';
+            converted[3] = (byte)'=';
+        } else if (count == 2) {
+            converted[2] = (byte)toBase64[(bytesTogether >> 6) & 0x3f];
+            converted[3] = (byte)'=';
+        } else if (count == 3) {
+            converted[2] = (byte)toBase64[(bytesTogether >> 6) & 0x3f];
+            converted[3] = (byte)toBase64[bytesTogether & 0x3f];
+        }
+        //System.out.println(converted);
+        return converted;
     }
 
     private static final char[] toBase64 = {
