@@ -1,5 +1,6 @@
 package ru.track.io;
 
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
@@ -10,10 +11,15 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -26,75 +32,77 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        File fileIn = new File(finPath);
+        Path fileLocation = Paths.get(finPath);
         File fileOut;
-        //throw new UnsupportedOperationException(); // TODO: implement
-        BufferedImage bufferedImage = ImageIO.read(fileIn);
-        WritableRaster raster = bufferedImage .getRaster();
-        DataBufferByte data   = (DataBufferByte) raster.getDataBuffer();
-        StringBuilder buffer = new StringBuilder();
-        byte[] imageBytes = data.getData();
-        int pad = 0;
-        String bits="";
-        String result="";
+        byte[] imageBytes = Files.readAllBytes(fileLocation);;
+        if (foutPath == null) {
+            fileOut = File.createTempFile("base64", ".txt");
+            fileOut.deleteOnExit();
+        }
+        else {
+            fileOut = new File(foutPath);
+        }
+        FileWriter writer = new FileWriter(fileOut);
         int a;
         int b=0;
-        int zdvig1=2;
-        int zdvig2=4;
         int count =0;
-        for (int i = 0; i < imageBytes.length; i += 3) {
+        for (int i = 0; i < imageBytes.length; ++i) {
             if(count%3==0){
                 a=imageBytes[i];
+                a=a&0xFF;
                 a>>>=2;
-                result+=toBase64[a+b];
-                b=imageBytes[i]&2;
+                writer.write(toBase64[a+b]);
+                System.out.print(toBase64[a+b]);
+                b=imageBytes[i]&3;
                 b<<=4;
                 count++;
             }else if (count%3==1){
                 a=imageBytes[i];
+                a=a&0xFF;
                 a>>>=4;
-                result+=toBase64[a+b];
+                try {
+                    writer.write(toBase64[a+b]);
+                    //System.out.print(toBase64[a+b]);
+                }catch (Exception e){
+                    System.out.println(e);
+                }
                 b=imageBytes[i]&0x0F;
                 b<<=2;
                 count++;
             }
             else{
                 a=imageBytes[i];
+                a=a&0xFF;
                 a>>>=6;
-                result+=toBase64[a+b];
+                try {
+                    writer.write(toBase64[a+b]);
+                    //System.out.print(toBase64[a+b]);
+                }catch (Exception e){
+                    System.out.println(e);
+                }
                 b=imageBytes[i]&63;
-                result+=toBase64[b];
+                try {
+                    writer.write(toBase64[b]);
+                    //System.out.print(toBase64[b]);
+                }catch (Exception e){
+                    System.out.println(e);
+                }
                 b=0;
                 count++;
             }
         }
-        if(foutPath == null) {
-            fileOut = new File("C:\\Users\\mariia\\track17-autumn\\L2-objects\\result.txt");
-            try(FileWriter writer = new FileWriter("C:\\SomeDir\\notes3.txt", false))
-            {
-                // запись всей строки
-                writer.write(result);
-                // запись по символам
-                writer.flush();
-            }
-            catch(IOException ex){
-
-                System.out.println(ex.getMessage());
-            }
-        } else {
-            fileOut = new File(foutPath);
-            try(FileWriter writer = new FileWriter(foutPath, false))
-            {
-                // запись всей строки
-                writer.write(result);
-                // запись по символам
-                writer.flush();
-            }
-            catch(IOException ex){
-
-                System.out.println(ex.getMessage());
-            }
+        if(imageBytes.length%3!=0){
+            writer.write(toBase64[b]);
+            System.out.print(toBase64[b]);
         }
+        if(imageBytes.length%3==2){
+            writer.write("=");
+        }
+        else if(imageBytes.length%3==1){
+            writer.write("==");
+        }
+        //System.out.println(result);
+        writer.flush();
 
         return fileOut;
     }
@@ -108,10 +116,28 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
+    public static Collection<String> data() {
+        return Arrays.asList(
+                "xxx",
+                "xx",
+                "x",
+                "xxx000",
+                "xxx00",
+                "xxx0"
+        );
+    }
+
+    private static @NotNull
+    File createTempFile() throws IOException {
+        final File f = File.createTempFile("test_tempfile_", ".tmp");
+        f.deleteOnExit();
+        return f;
+    }
+
+
     public static void main(String[] args) throws IOException {
         final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
-
 }
