@@ -22,158 +22,42 @@ public final class TaskImplementation implements FileEncoder {
      * @throws IOException is case of input/output errors
      */
 
-    void encode1Bytes(byte b1, ArrayList<Character> res) {
-        byte temp = 0;
-        byte pow = 1;
-        for (int j = 4; j <= 128; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-
-        }
-        res.add(toBase64[temp]);
-        temp = 0;
-        pow = 16;
-        for (int j = 1; j <= 2; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-        res.add('=');
-        res.add('=');
-    }
-    void encode2Bytes(byte b1, byte b2, ArrayList<Character> res) {
-        byte temp = 0;
-        byte pow = 1;
-        for (int j = 4; j <= 128; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-
-        }
-        res.add(toBase64[temp]);
-
-        temp = 0;
-        pow = 16;
-        for (int j = 1; j <= 2; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        pow = 1;
-        for (int j = 16; j <= 128; j *= 2) {
-            if ((j & b2) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-
-        temp = 0;
-        pow = 4;
-        for (int j = 1; j <= 8; j *= 2) {
-            if ((j & b2) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-        res.add('=');
-    }
-
-    void encode3Bytes(byte b1, byte b2, byte b3, ArrayList<Character> res) {
-        byte temp = 0;
-        byte pow = 1;
-        for (int j = 4; j <= 128; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-
-        }
-        res.add(toBase64[temp]);
-
-        temp = 0;
-        pow = 16;
-        for (int j = 1; j <= 2; j *= 2) {
-            if ((j & b1) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        pow = 1;
-        for (int j = 16; j <= 128; j *= 2) {
-            if ((j & b2) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-
-        temp = 0;
-        pow = 4;
-        for (int j = 1; j <= 8; j *= 2) {
-            if ((j & b2) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        pow = 1;
-        for (int j = 64; j <= 128; j *=2) {
-            if ((j & b3) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-
-        temp = 0;
-        pow = 1;
-        for (int j = 1; j <= 32; j *=2) {
-            if ((j & b3) != 0) {
-                temp += pow;
-            }
-            pow *= 2;
-        }
-        res.add(toBase64[temp]);
-    }
-
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        Path path;
-        try {
-            path = Paths.get(finPath);
-        }
-        catch (InvalidPathException name) {
-            throw new IOException("Having exception " + name);
-        }
-
-        byte[] bytes = Files.readAllBytes(path);
-
-        ArrayList<Character> res = new ArrayList<>();
-        for (int i = 0; i < bytes.length - 2; i += 3) {
-            encode3Bytes(bytes[i], bytes[i + 1], bytes[i + 2], res);
-        }
-        if (bytes.length % 3 == 1) {
-            encode1Bytes(bytes[bytes.length - 1], res);
-        } else if (bytes.length % 3 == 2) {
-            encode2Bytes(bytes[bytes.length - 2], bytes[bytes.length - 1], res);
-        }
+        File fin = new File(finPath);
+        File fout;
         if (foutPath == null) {
-            foutPath = "./res.txt";
+            fout = File.createTempFile("Output", ".txt");
+            fout.deleteOnExit();
+        } else {
+            fout = new File(foutPath);
         }
-        FileOutputStream outputstream = new FileOutputStream(foutPath);
-        for (int i = 0; i < res.size(); i++) {
-            outputstream.write(res.get(i));
+        FileInputStream input = new FileInputStream(fin);
+        try (BufferedInputStream buff = new BufferedInputStream(input);
+             FileWriter writer = new FileWriter(fout)) {
+            while (true) {
+                int byte1 = buff.read();
+                if (byte1 == -1) {
+                    break;
+                }
+                int byte2 = buff.read();
+                int byte3 = buff.read();
+                int unit = ((byte1 & 0xff) << 16) | ((Math.max(byte2, 0) & 0xff) << 8) | (Math.max(byte3, 0) & 0xff);
+                writer.write(toBase64[(unit >> 18) & 63]);
+                writer.write(toBase64[(unit >> 12) & 63]);
+                if (byte2 == -1) {
+                    writer.write('=');
+                } else {
+                    writer.write(toBase64[(unit >> 6) & 63]);
+                }
+                if (byte3 == -1) {
+                    writer.write('=');
+                } else {
+                    writer.write(toBase64[unit & 63]);
+                }
+            }
         }
-        outputstream.close();
-        File file = new File(foutPath);
-        return file;
+        return fout;
     }
 
     private static final char[] toBase64 = {
