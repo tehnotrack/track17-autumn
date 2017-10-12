@@ -6,8 +6,12 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -17,10 +21,43 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
+
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        File fin = new File(finPath);
+        File fout;
+        if (foutPath == null) {
+            fout = File.createTempFile("Output", ".txt");
+            fout.deleteOnExit();
+        } else {
+            fout = new File(foutPath);
+        }
+        FileInputStream input = new FileInputStream(fin);
+        try (BufferedInputStream buff = new BufferedInputStream(input);
+             FileWriter writer = new FileWriter(fout)) {
+            while (true) {
+                int byte1 = buff.read();
+                if (byte1 == -1) {
+                    break;
+                }
+                int byte2 = buff.read();
+                int byte3 = buff.read();
+                int unit = ((byte1 & 0xff) << 16) | ((Math.max(byte2, 0) & 0xff) << 8) | (Math.max(byte3, 0) & 0xff);
+                writer.write(toBase64[(unit >> 18) & 63]);
+                writer.write(toBase64[(unit >> 12) & 63]);
+                if (byte2 == -1) {
+                    writer.write('=');
+                } else {
+                    writer.write(toBase64[(unit >> 6) & 63]);
+                }
+                if (byte3 == -1) {
+                    writer.write('=');
+                } else {
+                    writer.write(toBase64[unit & 63]);
+                }
+            }
+        }
+        return fout;
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +69,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
