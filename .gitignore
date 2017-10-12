@@ -1,4 +1,4 @@
 #for ignoring almost everything
 *
 !*.java
-!*pom.xml
+!./**/pom.xml
