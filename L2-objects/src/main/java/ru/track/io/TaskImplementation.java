@@ -6,7 +6,10 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -33,10 +36,30 @@ public final class TaskImplementation implements FileEncoder {
         try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
              BufferedWriter writer = new BufferedWriter(new FileWriter(fout))) {
             StringBuilder encoded = new StringBuilder(); // string to put into fout
-
-        }
-        while (true) {
-            int firstByte = reader.read();
+            int sixMask = 0x3F, threeBytes, secondByte, thirdByte;
+            while ((threeBytes = reader.read()) != -1) {
+                secondByte = reader.read();
+                thirdByte = reader.read();
+                int bound = 0;
+                if (secondByte == -1) {
+                    secondByte = 0;
+                    thirdByte = 0;
+                    bound = 2;
+                } else if (thirdByte == -1) {
+                    thirdByte = 0;
+                    bound = 1;
+                }
+                threeBytes = (threeBytes << 16) | (secondByte << 8) | (thirdByte);
+                for (int i = 3; i >= bound; i--) encoded.append(toBase64[(threeBytes >> (i * 6)) & sixMask]);
+                for (int i = 0; i < bound; i++) encoded.append('=');
+            }
+            writer.write(encoded.toString());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            return fout;
         }
     }
 
