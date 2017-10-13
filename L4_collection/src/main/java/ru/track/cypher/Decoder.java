@@ -1,7 +1,7 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.io.File;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -21,10 +21,13 @@ public class Decoder {
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-
         cypher = new LinkedHashMap<>();
-
-
+        List<Map.Entry<Character, Integer>> entries = new ArrayList<>(domainHist.entrySet());
+        List<Map.Entry<Character, Integer>> encryptedEntries = new ArrayList<>(encryptedDomainHist.entrySet());
+        Iterator<Map.Entry<Character, Integer>> iter = entries.iterator();
+        for(Map.Entry<Character, Integer> entry : encryptedEntries){
+                cypher.put(entry.getKey(), iter.next().getKey());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,7 +42,18 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder decoded = new StringBuilder();
+        char c;
+        for(int i = 0; i < encoded.length(); i++){
+            c = encoded.charAt(i);
+            if(Character.isLetter(c)) {
+                if (Character.isLowerCase(c))
+                    decoded.append(cypher.get(c));
+                else decoded.append(cypher.get((char)(c - SYMBOL_DIST)));
+            }
+            else decoded.append(c);
+        }
+        return decoded.toString();
     }
 
     /**
@@ -53,7 +67,29 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        text = text.toLowerCase();
+        Map<Character, Integer> hist =  new HashMap<>();
+        char c;
+        for(c = 'a'; c <= 'z'; c++)
+            hist.put(c, 0);
+        for(int i = 0; i < text.length(); i++) {
+            c = text.charAt(i);
+            if (Character.isLetter(c)) {
+                hist.put(c, hist.get(c) + 1);
+            }
+        }
+        List<Map.Entry<Character, Integer>> entries = new ArrayList<>(hist.entrySet());
+        entries.sort(new MyComparator());
+        Map<Character, Integer> sortedHist = new LinkedHashMap<>();
+        for(Map.Entry<Character, Integer> entry : entries)
+              sortedHist.put(entry.getKey(), entry.getValue());
+        return sortedHist;
     }
 
+    static class MyComparator implements Comparator<Map.Entry<Character, Integer>> {
+        @Override
+        public int compare(Map.Entry<Character, Integer> x, Map.Entry<Character, Integer> y) {
+            return y.getValue() - x.getValue();
+        }
+    }
 }
