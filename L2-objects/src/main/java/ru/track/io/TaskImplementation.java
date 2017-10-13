@@ -31,7 +31,7 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         try (
-                BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
+                BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin)); //
                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fout));
         ) {
             byte[] mas = new byte[3];
