@@ -6,13 +6,11 @@ import java.io.FileReader;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  *
  */
-@Ignore
 public class CountWordsTest {
 
     static File file;
