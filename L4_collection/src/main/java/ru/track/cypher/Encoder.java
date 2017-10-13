@@ -21,6 +21,15 @@ public class Encoder {
      * @return зашифрованный текст
      */
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        return null;
+        StringBuilder builder = new StringBuilder();
+        for (char symbol : text.toLowerCase().toCharArray()) {
+            Character cipher = cypherTable.get(symbol);
+            if (cipher != null) {
+                builder.append(cipher);
+            } else {
+                builder.append(symbol);
+            }
+        }
+        return builder.toString();
     }
 }
