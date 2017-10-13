@@ -22,6 +22,7 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
 
+            //upd:13.10.17 надеюсь теперь тесты будут проходить.
             final File fin = new File(finPath);
             final File fout;
 
