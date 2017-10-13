@@ -1,8 +1,9 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Predicate;
 
+import com.sun.org.apache.regexp.internal.CharacterArrayCharacterIterator;
 import org.jetbrains.annotations.NotNull;
 
 public class Decoder {
@@ -24,6 +25,14 @@ public class Decoder {
 
         cypher = new LinkedHashMap<>();
 
+        Iterator<Map.Entry<Character, Integer>> DomainHistIt = domainHist.entrySet().iterator();
+        Iterator<Map.Entry<Character, Integer>> EncryptedDomainHistIt = encryptedDomainHist.entrySet().iterator();
+
+        while (DomainHistIt.hasNext() & EncryptedDomainHistIt.hasNext()) {
+            Map.Entry<Character, Integer> DomainPair = DomainHistIt.next();
+            Map.Entry<Character, Integer> EncryptedDomainPair = EncryptedDomainHistIt.next();
+            cypher.put(EncryptedDomainPair.getKey(), DomainPair.getKey());
+        }
 
     }
 
@@ -39,7 +48,17 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder decoded = new StringBuilder();
+
+        for (int i = 0; i < encoded.length(); i++) {
+            Character c = encoded.charAt(i);
+            if (cypher.containsKey(c))
+                decoded.append(cypher.get(c));
+            else
+                decoded.append(c);
+        }
+
+        return decoded.toString();
     }
 
     /**
@@ -53,7 +72,44 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        text = text.toLowerCase();
+
+        Map<Character, Integer> myMap =new HashMap<>();
+
+        for (int i = 0; i < 26; i++)
+            myMap.put((char) ('a' + i) , 0);
+
+        for (int i = 0; i < text.length(); i++) {
+            Character c = text.charAt(i);
+            if (myMap.containsKey(c)) {
+                if (myMap.get(c) == null) {
+                    myMap.put(c, 1);
+                } else {
+                    myMap.put(c, myMap.get(c) + 1);
+                }
+            }
+        }
+
+        return sortbyValue(myMap);
+    }
+
+    @NotNull
+    Map<Character, Integer> sortbyValue (Map<Character, Integer> mp) {
+        List<Map.Entry<Character, Integer>> list = new LinkedList<Map.Entry<Character, Integer>>(mp.entrySet());
+
+        Collections.sort(list, new Comparator<Map.Entry<Character, Integer>>() {
+            public int compare(Map.Entry<Character, Integer> o1,
+                               Map.Entry<Character, Integer> o2) {
+                return (o2.getValue()).compareTo(o1.getValue());
+            }
+        });
+
+        Map<Character, Integer> SortedMap = new LinkedHashMap<>();
+
+        for (Map.Entry<Character, Integer> entry : list)
+            SortedMap.put(entry.getKey(), entry.getValue());
+
+        return SortedMap;
     }
 
 }
