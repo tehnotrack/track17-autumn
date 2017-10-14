@@ -1,6 +1,5 @@
 package ru.track.io;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
@@ -13,7 +12,6 @@ import java.nio.file.Paths;
 
 public final class TaskImplementation implements FileEncoder {
 
-
     /**
      * @param finPath  where to read binary data from
      * @param foutPath where to write encoded data. if null, please create and use temporary file.
@@ -23,44 +21,25 @@ public final class TaskImplementation implements FileEncoder {
 
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
 
-        final File fin = new File(finPath);
-        final File fout;
-        if (foutPath != null) {
-            fout = new File(foutPath);
-        } else {
-            fout = File.createTempFile("based_file_", ".txt");
-            fout.deleteOnExit();
-        }
-        try (
-                final FileInputStream fis = new FileInputStream(fin);
-                final FileOutputStream fos = new FileOutputStream(fout);
-                final BufferedInputStream bis =  new BufferedInputStream(fis);
-                final BufferedOutputStream bos = new BufferedOutputStream(fos);
-        ) {
-            int bytesCopied = IOUtils.copy(fis, bos); // result unused
-            bos.flush();
-        }
-
-        return fout;
-
-
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-//заменить на bufferedinputstream
-//        Path path = Paths.get(finPath);
 
-/*        byte[] content = Files.readAllBytes(path);
-        String encodedStr = encode(content);
+            final File fin = new File(finPath);
+            final File fout;
 
-        byte [] writeValue = encodedStr.getBytes();
-        if (foutPath == null)
-            foutPath = "./result_pic";
-        FileOutputStream outputstream = new FileOutputStream(foutPath);
-        outputstream.write(writeValue);
-        outputstream.close();
-        File retValue = new File(foutPath);
+            if (foutPath != null) {
+                fout = new File(foutPath);
+            } else {
+                fout = File.createTempFile("based_file_", ".txt");
+                fout.deleteOnExit();
+            }
 
-        return retValue;
-*/
+            try (
+                    final BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
+                    final BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(fout));
+            ) {
+                File retValue = encode(fis, fos, (int)fin.length(), fout.getPath());
+                return retValue;
+            }
     }
 
     private static final char[] toBase64 = {
@@ -71,33 +50,29 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-
-    private String encode(byte[] data)
-    {
-
-        StringBuilder buffer = new StringBuilder();
-        int align = 0;
-        for (int i = 0; i < data.length; i += 3) {
-
+    private File encode(@NotNull BufferedInputStream fis, @NotNull BufferedOutputStream fos, @NotNull int length, @NotNull String foutPath) throws IOException {
+        byte[] arrayOfBytes = new byte[3];
+        for (int i = 0; i < length; i += 3) {
+            StringBuilder buffer = new StringBuilder();
+            int offset = 0;
             int data3bytes = 0;
-            for (int j = i; (j - i) < 3; ++j) {
-                if (j >= data.length) {
-                    ++align;
-                    continue;
-                }
-                data3bytes |= ((data[j] & 0xFF) << (8*(2 - (j - i))));
+            int NumberOfBytesRead = fis.read(arrayOfBytes, 0, 3);
+            if (NumberOfBytesRead != 3 && NumberOfBytesRead != -1)
+                offset = 3 - NumberOfBytesRead;
+            for (int j = 0; j < NumberOfBytesRead; ++j) {
+                data3bytes |= ((arrayOfBytes[j] & 0xFF) << (8 * (2 - j)));
             }
-
-            for (int j = 0; j < 4 - align; j++) { // дозаписать
+            for (int j = 0; j < 4 - offset; j++) { // дозаписать
                 int c = ((data3bytes <<  6*j) & 0xFC0000) >> 18; // FC - старшие 6 единиц
                 buffer.append(toBase64[c]);
             }
+            for (int j = 0; j < offset; j++) {
+                buffer.append("="); // последнии символы, в случае, если ровно по 3 разбить нельзя заполняются "="
+            }
+            fos.write(buffer.toString().getBytes());
         }
-        for (int j = 0; j < align; j++) {
-            buffer.append("="); // последнии символы, в случае, если ровно по 3 разбить нельзя заполняются "="
-        }
-
-        return buffer.toString();
+        fos.flush();
+        return new File(foutPath);
     }
 
 
