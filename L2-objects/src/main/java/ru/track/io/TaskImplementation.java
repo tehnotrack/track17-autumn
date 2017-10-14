@@ -11,31 +11,28 @@ import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
 
-    private int toUnsignedByte(byte value) {
-        return value & 0xFF;
-    }
-
     private void encode(FileInputStream inputStream, BufferedWriter outputWriter) throws IOException {
         byte[] buffer = new byte[3];
 
         int nRead;
         while((nRead = inputStream.read(buffer)) != -1) {
-            int fullBitMask = toUnsignedByte(buffer[0]);
+            int bitwiseRepresentation = 0;
+
+            for (int i = 0; i < 3; i++) {
+                bitwiseRepresentation <<= 8;
+                bitwiseRepresentation += buffer[i] & 0xFF;
+            }
 
             StringBuilder reversedResultBuilder = new StringBuilder();
-
-            for (int i = 1; i < 3; i++) {
-                fullBitMask = fullBitMask * 256 + toUnsignedByte(buffer[i]);
-            }
 
             for (int i = 0; i < 4; i++) {
                 if (nRead < 3 && i == 0 || nRead == 1 && i == 1) {
                     reversedResultBuilder.append("=");
                 } else {
-                    reversedResultBuilder.append(toBase64[fullBitMask % 64]);
+                    reversedResultBuilder.append(toBase64[bitwiseRepresentation % 64]);
                 }
 
-                fullBitMask >>>= 6;
+                bitwiseRepresentation >>>= 6;
             }
 
             outputWriter.write(reversedResultBuilder.reverse().toString());
