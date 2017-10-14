@@ -19,7 +19,7 @@ public class CypherUtil {
      */
     @NotNull
     public static Map<Character, Character> generateCypher() {
-        return null;
+
     }
 
 }
