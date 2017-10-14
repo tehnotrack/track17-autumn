@@ -19,7 +19,7 @@ public class CypherUtil {
      */
     @NotNull
     public static Map<Character, Character> generateCypher() {
-        Map<Character, Character> map = new HashMap<>();
+        Map<Character, Character> cypherTable = new HashMap<>();
         List<Character> cypherSymbols = new ArrayList<>();
         for (int i = 0; i < SYMBOLS.length(); ++i) {
             cypherSymbols.add(SYMBOLS.charAt(i));
@@ -27,11 +27,10 @@ public class CypherUtil {
         Collections.shuffle(cypherSymbols);
         for (int i = 0; i < SYMBOLS.length(); ++i) {
             char symbol = SYMBOLS.charAt(i);
-//            char cipher = SYMBOLS.charAt((i + 1) % SYMBOLS.length());
-            char cipher = cypherSymbols.get(i);
-            map.put(symbol, cipher);
+            char encodedSymbol = cypherSymbols.get(i);
+            cypherTable.put(symbol, encodedSymbol);
         }
-        return map;
+        return cypherTable;
     }
 
 }

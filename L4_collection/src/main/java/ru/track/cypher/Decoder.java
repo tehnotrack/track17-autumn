@@ -21,10 +21,10 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         List<Character> symbolsList = new ArrayList<>(domainHist.keySet());
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-        List<Character> cypherSymbolsList = new ArrayList<>(encryptedDomainHist.keySet());
+        List<Character> encryptedSymbolsList = new ArrayList<>(encryptedDomainHist.keySet());
         cypher = new LinkedHashMap<>();
         for (int i = 0; i < symbolsList.size(); ++i) {
-            cypher.put(cypherSymbolsList.get(i), symbolsList.get(i));
+            cypher.put(encryptedSymbolsList.get(i), symbolsList.get(i));
         }
     }
 
@@ -40,16 +40,16 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        StringBuilder builder = new StringBuilder();
-        for (char cypherSymbol : encoded.toCharArray()) {
-            Character symbol = cypher.get(cypherSymbol);
-            if (symbol != null) {
-                builder.append(symbol);
+        StringBuilder decodedText = new StringBuilder();
+        for (char encodedSymbol : encoded.toCharArray()) {
+            Character decodedSymbol = cypher.get(encodedSymbol);
+            if (decodedSymbol != null) {
+                decodedText.append(decodedSymbol);
             } else {
-                builder.append(cypherSymbol);
+                decodedText.append(encodedSymbol);
             }
         }
-        return builder.toString();
+        return decodedText.toString();
     }
 
     /**
@@ -63,12 +63,12 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Integer> histogram = new HashMap<>();
+        Map<Character, Integer> histogram = new LinkedHashMap<>();
         for (Character symbol : text.toLowerCase().toCharArray()) {
             if (symbol.compareTo('a') >= 0 && symbol.compareTo('z') <= 0) {
-                Integer value = histogram.get(symbol);
-                if (value != null) {
-                    histogram.put(symbol, value + 1);
+                Integer frequency = histogram.get(symbol);
+                if (frequency != null) {
+                    histogram.put(symbol, frequency + 1);
                 } else {
                     histogram.put(symbol, 1);
                 }
@@ -76,12 +76,12 @@ public class Decoder {
         }
         List<Character> symbolsList = new LinkedList<>(histogram.keySet());
         symbolsList.sort(Comparator.comparing(histogram::get));
-        Map<Character, Integer> sortedHistogram = new LinkedHashMap<>();
         for (int i = symbolsList.size() - 1; i >= 0; --i) {
             Character symbol = symbolsList.get(i);
-            sortedHistogram.put(symbol, histogram.get(symbol));
+            Integer frequency = histogram.remove(symbol);
+            histogram.put(symbol, frequency);
         }
-        return sortedHistogram;
+        return histogram;
     }
 
 }
