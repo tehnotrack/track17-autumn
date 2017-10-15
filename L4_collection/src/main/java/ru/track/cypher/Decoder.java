@@ -10,6 +10,7 @@ public class Decoder {
     // Расстояние между A-Z -> a-z
     public static final int SYMBOL_DIST = 32;
 
+    //
     private Map<Character, Character> cypher;
 
     /**
