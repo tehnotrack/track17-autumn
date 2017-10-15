@@ -22,6 +22,12 @@ public final class TaskImplementation implements FileEncoder {
         return unsigned;
     }
 
+    /**
+     * @param finPath  where to read binary data from
+     * @param foutPath where to write encoded data. if null, please create and use temporary file.
+     * @return file to read encoded data from
+     * @throws IOException is case of input/output errors
+     */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         File fout;
