@@ -21,23 +21,23 @@ public final class TaskImplementation implements FileEncoder {
 
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
 
-            final File fin = new File(finPath);
-            final File fout;
+        final File fin = new File(finPath);
+        final File fout;
 
-            if (foutPath != null) {
-                fout = new File(foutPath);
-            } else {
-                fout = File.createTempFile("based_file_", ".txt");
-                fout.deleteOnExit();
-            }
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".txt");
+            fout.deleteOnExit();
+        }
 
-            try (
-                    final BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
-                    final BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(fout));
-            ) {
-                File retValue = encode(fis, fos, (int)fin.length(), fout.getPath());
-                return retValue;
-            }
+        try (
+                final InputStream fis = new BufferedInputStream(new FileInputStream(fin));
+                final OutputStream fos = new BufferedOutputStream(new FileOutputStream(fout));
+        ) {
+            encode(fis, fos);
+            return fout;
+        }
     }
 
     private static final char[] toBase64 = {
@@ -48,26 +48,26 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    private File encode(@NotNull BufferedInputStream fis, @NotNull BufferedOutputStream fos, @NotNull int length, @NotNull String foutPath) throws IOException {
+    private void encode(@NotNull InputStream fis, @NotNull OutputStream fos) throws IOException {
         byte[] arrayOfBytes = new byte[3];
-        for (int i = 0; i < length; i += 3) {
+        int numberOfBytesRead = 0;
+        for (int i = 0; numberOfBytesRead >= 0; i += 3) {
             int offset = 0;
             int data3bytes = 0;
-            int numberOfBytesRead = fis.read(arrayOfBytes, 0, 3);
+            numberOfBytesRead = fis.read(arrayOfBytes, 0, 3);
             if (numberOfBytesRead != 3 && numberOfBytesRead != -1)
                 offset = 3 - numberOfBytesRead;
             for (int j = 0; j < numberOfBytesRead; ++j) {
                 data3bytes |= ((arrayOfBytes[j] & 0xFF) << (8 * (2 - j)));
             }
-            for (int j = 0; j < 4 - offset; j++) { // дозаписать
-                int c = ((data3bytes <<  6*j) & 0xFC0000) >> 18; // FC - старшие 6 единиц
+            for (int j = 0; (numberOfBytesRead != -1) && (j < 4 - offset); j++) { // дозаписать
+                int c = ((data3bytes << 6 * j) & 0xFC0000) >> 18; // FC - старшие 6 единиц
                 fos.write(toBase64[c]);
             }
             for (int j = 0; j < offset; j++) {
                 fos.write('=');
             }
         }
-        return new File(foutPath);
     }
 
 
