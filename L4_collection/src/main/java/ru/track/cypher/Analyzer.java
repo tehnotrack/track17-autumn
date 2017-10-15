@@ -65,7 +65,11 @@ public class Analyzer {
         listToSet();
 
 
-//      Map<Character, Integer> hist = printHist("AaBb BBAAa", Character::isLetter);
+
+
+
+
+//        Map<Character, Integer> hist = printHist("AaBb BBAAa", Character::isLetter);
         Map<Character, Integer> hist = printHist("abbcddddef", Character::isLetter);
 
         Collection<Integer> values = hist.values();
@@ -89,6 +93,7 @@ public class Analyzer {
         List<Integer> listValues = new ArrayList<>(values);
         listValues.sort(new MyComparator());
         //System.out.printf("before:\t%s\nafter:\t%s\n", values, listValues);
+
 
 
         Map<Character, Integer> sortedHist = new LinkedHashMap<>();
