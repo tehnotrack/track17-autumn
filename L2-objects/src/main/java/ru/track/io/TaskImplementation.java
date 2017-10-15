@@ -39,8 +39,8 @@ public final class TaskImplementation implements FileEncoder {
         File fin = new File(finPath);
 
         try (
-                FileInputStream finStream = new FileInputStream(fin);
-                FileOutputStream foutStream = new FileOutputStream(fout)
+                BufferedInputStream finStream   = new BufferedInputStream (new FileInputStream (fin));
+                BufferedOutputStream foutStream = new BufferedOutputStream(new FileOutputStream(fout))
         ) {
             int count, buffer;
             byte[] bytes = new byte[BASE64_ITERATION];
