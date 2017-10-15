@@ -26,7 +26,7 @@ public class Decoder {
 
         Iterator<Map.Entry<Character, Integer>> itdom = domainHist.entrySet().iterator();
         Iterator<Map.Entry<Character, Integer>> itencr = encryptedDomainHist.entrySet().iterator();
-        while (itdom.hasNext() & itencr.hasNext())
+        while (itdom.hasNext() && itencr.hasNext())
         {
             Map.Entry<Character, Integer> pair = itdom.next();
             Map.Entry<Character, Integer> pair2 = itencr.next();
@@ -72,23 +72,22 @@ public class Decoder {
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
         text = text.toLowerCase();
-        Map<Character, Integer> newmp = new HashMap<>();
+        Map<Character, Integer> freqmap = new HashMap<>();
 
-        Predicate<Character> characterPredicate = Character::isLetter;
         for (int i = 0; i < text.length(); i++) {
             char ch = text.charAt(i);
-            if (characterPredicate.test(ch)) {
-                Integer count = newmp.get(ch);
+            if (Character.isLetter(ch)) {
+                Integer count = freqmap.get(ch);
                 if (count == null) {
-                    newmp.put(ch, 1);
+                    freqmap.put(ch, 1);
                 } else {
-                    newmp.put(ch, count + 1);
+                    freqmap.put(ch, count + 1);
                 }
             }
         }
 
         Map<Character, Integer> sortedmap = new LinkedHashMap<>();
-        List<Map.Entry<Character, Integer>> sortedlist = new LinkedList<>(newmp.entrySet());
+        List<Map.Entry<Character, Integer>> sortedlist = new ArrayList<>(freqmap.entrySet());
         Collections.sort(sortedlist, (o1, o2) -> o2.getValue() - o1.getValue());
         for (Map.Entry<Character, Integer> entry: sortedlist)
             sortedmap.put(entry.getKey(), entry.getValue());
