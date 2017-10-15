@@ -21,12 +21,10 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
         cypher = new LinkedHashMap<>();
-        ArrayList<Map.Entry<Character, Integer>> domainList = new ArrayList<>(domainHist.entrySet());
-        ArrayList<Map.Entry<Character, Integer>> encryptedDomainList = new ArrayList<>(encryptedDomainHist.entrySet());
-        domainList.sort(Comparator.comparingInt(Map.Entry::getValue));
-        encryptedDomainList.sort(Comparator.comparingInt(Map.Entry::getValue));
-        for (int i = 0; i < domainList.size(); i++) {
-            cypher.put(encryptedDomainList.get(i).getKey(), domainList.get(i).getKey());
+        Iterator<Character> domainIter = domainHist.keySet().iterator();
+        Iterator<Character> encryptedDomainIter = encryptedDomainHist.keySet().iterator();
+        while(encryptedDomainIter.hasNext()) {
+            cypher.put(encryptedDomainIter.next(), domainIter.next());
         }
     }
 
