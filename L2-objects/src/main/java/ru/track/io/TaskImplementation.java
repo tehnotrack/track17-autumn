@@ -23,19 +23,22 @@ public final class TaskImplementation implements FileEncoder {
                 bitwiseRepresentation += buffer[i] & 0xFF;
             }
 
-            StringBuilder reversedResultBuilder = new StringBuilder();
+            char[] resultSymbols = new char[4];
 
             for (int i = 0; i < 4; i++) {
                 if (nRead < 3 && i == 0 || nRead == 1 && i == 1) {
-                    reversedResultBuilder.append("=");
+                    resultSymbols[3 - i] = '=';
                 } else {
-                    reversedResultBuilder.append(toBase64[bitwiseRepresentation % 64]);
+                    resultSymbols[3 - i] = toBase64[bitwiseRepresentation % 64];
                 }
 
                 bitwiseRepresentation >>>= 6;
             }
 
-            outputWriter.write(reversedResultBuilder.reverse().toString());
+            for (int i = 0; i < 4; i++) {
+                outputWriter.write(resultSymbols[i]);
+            }
+
             Arrays.fill(buffer, (byte)0);
         }
     }
