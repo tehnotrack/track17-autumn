@@ -6,9 +6,7 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -52,14 +50,14 @@ public final class TaskImplementation implements FileEncoder {
 
     private File encode(@NotNull BufferedInputStream fis, @NotNull BufferedOutputStream fos, @NotNull int length, @NotNull String foutPath) throws IOException {
         byte[] arrayOfBytes = new byte[3];
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i += 3) {
-            StringBuilder buffer = new StringBuilder();
             int offset = 0;
             int data3bytes = 0;
-            int NumberOfBytesRead = fis.read(arrayOfBytes, 0, 3);
-            if (NumberOfBytesRead != 3 && NumberOfBytesRead != -1)
-                offset = 3 - NumberOfBytesRead;
-            for (int j = 0; j < NumberOfBytesRead; ++j) {
+            int numberOfBytesRead = fis.read(arrayOfBytes, 0, 3);
+            if (numberOfBytesRead != 3 && numberOfBytesRead != -1)
+                offset = 3 - numberOfBytesRead;
+            for (int j = 0; j < numberOfBytesRead; ++j) {
                 data3bytes |= ((arrayOfBytes[j] & 0xFF) << (8 * (2 - j)));
             }
             for (int j = 0; j < 4 - offset; j++) { // дозаписать
@@ -70,8 +68,8 @@ public final class TaskImplementation implements FileEncoder {
                 buffer.append("="); // последнии символы, в случае, если ровно по 3 разбить нельзя заполняются "="
             }
             fos.write(buffer.toString().getBytes());
+            buffer.delete(0,buffer.length());
         }
-        fos.flush();
         return new File(foutPath);
     }
 
