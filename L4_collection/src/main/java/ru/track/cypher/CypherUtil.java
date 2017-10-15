@@ -7,8 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Вспомогательные методы шифрования/дешифрования
  */
-public class CypherUtil
-{
+public class CypherUtil {
 
     public static final String SYMBOLS = "abcdefghijklmnopqrstuvwxyz";
 
@@ -19,8 +18,7 @@ public class CypherUtil
      * @return таблицу подстановки шифра
      */
     @NotNull
-    public static Map<Character, Character> generateCypher()
-    {
+    public static Map<Character, Character> generateCypher() {
         Map<Character, Character> res = new HashMap<>();
 
         List<Character> shuffled = new ArrayList<Character>();
