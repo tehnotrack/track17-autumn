@@ -27,10 +27,11 @@ public class CypherUtil {
 
         Collections.shuffle(list);
 
-        Map<Character, Character> map = new HashMap<Character, Character>() {{
-            for (int i = 0; SYMBOLS.length() > i; i++)
-                put(alphabet[i], list.get(i));
-        }};
+        Map<Character, Character> map = new HashMap<>();
+
+            for (int i = 0; SYMBOLS.length() > i; i++) {
+                map.put(alphabet[i], list.get(i));
+            }
 
         return map;
     }
