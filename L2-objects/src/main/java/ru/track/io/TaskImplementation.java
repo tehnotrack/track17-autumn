@@ -50,7 +50,6 @@ public final class TaskImplementation implements FileEncoder {
 
     private File encode(@NotNull BufferedInputStream fis, @NotNull BufferedOutputStream fos, @NotNull int length, @NotNull String foutPath) throws IOException {
         byte[] arrayOfBytes = new byte[3];
-        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i += 3) {
             int offset = 0;
             int data3bytes = 0;
@@ -62,13 +61,11 @@ public final class TaskImplementation implements FileEncoder {
             }
             for (int j = 0; j < 4 - offset; j++) { // дозаписать
                 int c = ((data3bytes <<  6*j) & 0xFC0000) >> 18; // FC - старшие 6 единиц
-                buffer.append(toBase64[c]);
+                fos.write(toBase64[c]);
             }
             for (int j = 0; j < offset; j++) {
-                buffer.append("="); // последнии символы, в случае, если ровно по 3 разбить нельзя заполняются "="
+                fos.write('=');
             }
-            fos.write(buffer.toString().getBytes());
-            buffer.delete(0,buffer.length());
         }
         return new File(foutPath);
     }
