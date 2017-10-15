@@ -56,8 +56,6 @@ public final class TaskImplementation implements FileEncoder {
                 s = fis.read(buffer);
                 unsigned = toUnsigned(buffer);
             }
-            fos.flush();
-            fos.close();
         }
         return fout;
     }
