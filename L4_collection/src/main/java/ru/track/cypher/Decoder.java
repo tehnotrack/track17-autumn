@@ -5,6 +5,7 @@ import java.util.function.Predicate;
 
 import com.sun.org.apache.regexp.internal.CharacterArrayCharacterIterator;
 import org.jetbrains.annotations.NotNull;
+import ru.track.cypher.CypherUtil.*;
 
 public class Decoder {
 
@@ -24,14 +25,14 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
-        cypher = new LinkedHashMap<>();
+        cypher = new HashMap<>();
 
-        Iterator<Map.Entry<Character, Integer>> DomainHistIt = domainHist.entrySet().iterator();
-        Iterator<Map.Entry<Character, Integer>> EncryptedDomainHistIt = encryptedDomainHist.entrySet().iterator();
+        Iterator<Map.Entry<Character, Integer>> domainHistIt = domainHist.entrySet().iterator();
+        Iterator<Map.Entry<Character, Integer>> encryptedDomainHistIt = encryptedDomainHist.entrySet().iterator();
 
-        while (DomainHistIt.hasNext() & EncryptedDomainHistIt.hasNext()) {
-            Map.Entry<Character, Integer> DomainPair = DomainHistIt.next();
-            Map.Entry<Character, Integer> EncryptedDomainPair = EncryptedDomainHistIt.next();
+        while (domainHistIt.hasNext() & encryptedDomainHistIt.hasNext()) {
+            Map.Entry<Character, Integer> DomainPair = domainHistIt.next();
+            Map.Entry<Character, Integer> EncryptedDomainPair = encryptedDomainHistIt.next();
             cypher.put(EncryptedDomainPair.getKey(), DomainPair.getKey());
         }
 
@@ -77,12 +78,9 @@ public class Decoder {
 
         Map<Character, Integer> myMap =new HashMap<>();
 
-        for (int i = 0; i < 26; i++)
-            myMap.put((char) ('a' + i) , 0);
-
         for (int i = 0; i < text.length(); i++) {
             Character c = text.charAt(i);
-            if (myMap.containsKey(c)) {
+            if (Character.isLetter(c)) {
                 if (myMap.get(c) == null) {
                     myMap.put(c, 1);
                 } else {
@@ -105,12 +103,12 @@ public class Decoder {
             }
         });
 
-        Map<Character, Integer> SortedMap = new LinkedHashMap<>();
+        Map<Character, Integer> sortedMap = new LinkedHashMap<>();
 
         for (Map.Entry<Character, Integer> entry : list)
-            SortedMap.put(entry.getKey(), entry.getValue());
+            sortedMap.put(entry.getKey(), entry.getValue());
 
-        return SortedMap;
+        return sortedMap;
     }
 
 }
