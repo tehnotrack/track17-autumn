@@ -1,0 +1,34 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'ru.track'
+version = '1.0-SNAPSHOT'
+
+description = """L5"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+
+repositories {
+        
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+dependencies {
+    compile group: 'org.jetbrains', name: 'annotations', version:'13.0'
+    compile group: 'org.openjdk.jol', name: 'jol-core', version:'0.9'
+    compile group: 'commons-io', name: 'commons-io', version:'2.5'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'9.4.6.v20170531'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.4.6.v20170531'
+    compile group: 'com.github.spullara.mustache.java', name: 'compiler', version:'0.9.5'
+    compile group: 'com.google.code.gson', name: 'gson', version:'2.8.2'
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    testCompile group: 'junit-addons', name: 'junit-addons', version:'1.4'
+}
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}

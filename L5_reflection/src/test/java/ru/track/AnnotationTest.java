@@ -22,7 +22,7 @@ public class AnnotationTest {
         String expected = gson.toJson(tx);
         String actual = JsonWriter.toJson(tx);
         System.out.println(actual);
-        Assert.assertEquals(expected, "");
+        Assert.assertEquals(expected, actual);
     }
 
     @Test
