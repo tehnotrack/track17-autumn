@@ -6,9 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class Decoder {
 
-    // Расстояние между A-Z -> a-z
-    public static final int SYMBOL_DIST = 32;
-
     private Map<Character, Character> cypher;
 
     /**
@@ -62,10 +59,11 @@ public class Decoder {
      * Мапа отсортирована по частоте. При итерировании на первой позиции наиболее частая буква
      */
     @NotNull
-    Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Integer> histogram = new LinkedHashMap<>();
-        for (Character symbol : text.toLowerCase().toCharArray()) {
-            if (symbol.compareTo('a') >= 0 && symbol.compareTo('z') <= 0) {
+    LinkedHashMap<Character, Integer> createHist(@NotNull String text) {
+        Map<Character, Integer> histogram = new HashMap<>();
+        for (int i = 0; i < text.length(); ++i) {
+            Character symbol = Character.toLowerCase(text.charAt(i));
+            if (Character.isLetter(symbol)) {
                 Integer frequency = histogram.get(symbol);
                 if (frequency != null) {
                     histogram.put(symbol, frequency + 1);
@@ -76,12 +74,12 @@ public class Decoder {
         }
         List<Character> symbolsList = new LinkedList<>(histogram.keySet());
         symbolsList.sort(Comparator.comparing(histogram::get));
+        LinkedHashMap<Character, Integer> sortedHistogram = new LinkedHashMap<>();
         for (int i = symbolsList.size() - 1; i >= 0; --i) {
             Character symbol = symbolsList.get(i);
-            Integer frequency = histogram.remove(symbol);
-            histogram.put(symbol, frequency);
+            sortedHistogram.put(symbol, histogram.get(symbol));
         }
-        return histogram;
+        return sortedHistogram;
     }
 
 }
