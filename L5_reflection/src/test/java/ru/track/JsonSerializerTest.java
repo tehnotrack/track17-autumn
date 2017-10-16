@@ -22,7 +22,7 @@ import ru.track.json.JsonWriter;
  *
  */
 @RunWith(Parameterized.class)
-public class JsonSerializer {
+public class JsonSerializerTest {
 
     static class Sample {
         @Nullable
@@ -43,7 +43,7 @@ public class JsonSerializer {
 
     private static final Gson gson = new Gson();
 
-    public JsonSerializer(@NotNull Sample sample) {
+    public JsonSerializerTest(@NotNull Sample sample) {
         this.sample = sample;
     }
 
