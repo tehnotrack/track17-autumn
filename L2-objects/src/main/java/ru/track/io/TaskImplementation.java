@@ -5,25 +5,31 @@ import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-
-
+import java.io.*;
 
 
 public final class TaskImplementation implements FileEncoder {
 
-    private StringBuilder sb = new StringBuilder();
 
-    private void encodeTriplet(byte b1, byte b2, byte b3) {
-        int x = (int) b3 | ((int) b2 << 8) | ((int) b1 << 16);
-        int cb4 = x << 26 >>> 26;
-        int cb3 = x << 20 >>> 26;
-        int cb2 = x << 14 >>> 26;
-        int cb1 = x << 8 >>> 26;
-        sb.append(toBase64[cb1]).append(toBase64[cb2]).append(toBase64[cb3]).append(toBase64[cb4]);
+    private byte[] encodeTriplet(byte[] t, int count) {
+        int triplet;
+        byte[] res = new byte[4];
+        if (count == 3)
+            triplet = (t[2] & 0xff) + ((t[1]& 0xff) << 8) + ((t[0]& 0xff) << 16);
+        else if(count == 2)
+            triplet = ((t[1]& 0xff) << 8) + ((t[0]& 0xff) << 16);
+        else
+            triplet = (t[0]& 0xff) << 16;
+
+        for (int i = 0; i < 4; i++) {
+            res[i] = (byte) toBase64[(triplet >>> (6 * (3 - i))) & 0x3f];
+        }
+        if (count == 1) {
+            res[2] = res[3] = (byte)'=';
+        } else if (count == 2) {
+            res[3] = (byte)'=';
+        }
+        return res;
     }
 
     /**
@@ -40,29 +46,18 @@ public final class TaskImplementation implements FileEncoder {
         if (foutPath == null) {
             fout = File.createTempFile("Base64", ".tmp");
             fout.deleteOnExit();
-        }
-        else fout = new File(foutPath);
+        } else fout = new File(foutPath);
 
-        byte[] fileArray = Files.readAllBytes(fin.toPath());
-        int len = fileArray.length;
-        sb.ensureCapacity(len);
-        int remainder = len % 3;
-        for (int i = 0; i < len - remainder; i += 3) {
-            encodeTriplet(fileArray[i], fileArray[i+1], fileArray[i+2]);
-        }
-        if (remainder == 2) {
-            encodeTriplet(fileArray[len - 2], fileArray[len - 1], (byte) 0);
-            sb.setCharAt(sb.length() - 1, '=');
-        } else if (remainder == 1) {
-            encodeTriplet(fileArray[len - 1], (byte) 0, (byte) 0);
-            sb.replace(sb.length() - 2, sb.length(), "==");
-        }
+        try (InputStream bis = new BufferedInputStream(new FileInputStream(fin));
+             OutputStream bos = new BufferedOutputStream(new FileOutputStream(fout))) {
 
-        PrintWriter pw = new PrintWriter( fout );
-        pw.write(sb.toString());
-        pw.close();
-
-        return fout;
+            byte[] triplet = new byte[3];
+            int count;
+            while ((count = bis.read(triplet)) != -1) {
+                bos.write(encodeTriplet(triplet, count));
+            }
+            return fout;
+        }
 
     }
 
