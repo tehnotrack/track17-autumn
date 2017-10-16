@@ -78,7 +78,6 @@ public class JsonSerializer {
     @Test
     public void toJson() throws Exception {
         final String expected = gson.toJson(sample.getObj());
-        System.out.println(expected);
         final String actual = JsonWriter.toJson(sample.getObj());
         Assert.assertEquals(expected, actual);
     }
