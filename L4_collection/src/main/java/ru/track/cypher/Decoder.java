@@ -73,7 +73,7 @@ public class Decoder {
 
         // building hist
         for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
+            char ch = Character.toLowerCase(text.charAt(i));
             if (Character.isLetter(ch)) {
                 Integer count = hist.get(ch);
                 if (count == null) {
@@ -87,7 +87,11 @@ public class Decoder {
 
         // sort by frequency
         List<Map.Entry<Character, Integer>> list = new LinkedList<>(hist.entrySet());
-        Collections.sort(list, Comparator.comparing(o -> (o.getValue())));
+        list.sort((Map.Entry<Character, Integer> o1, Map.Entry<Character, Integer> o2) -> {
+            if (o1.getValue() < o2.getValue()) return 1;
+            else if (o1.getValue() > o2.getValue()) return -1;
+            else return 0;
+        });
 
         Map<Character, Integer> result = new LinkedHashMap<>();
         for (Map.Entry<Character, Integer> entry : list) {
@@ -96,5 +100,4 @@ public class Decoder {
         
         return result;
     }
-
 }
