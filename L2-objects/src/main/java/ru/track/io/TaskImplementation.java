@@ -1,13 +1,14 @@
 package ru.track.io;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.Arrays;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -20,7 +21,47 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        final File fin = new File(finPath);
+        final File fout;
+
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".txt");
+            fout.deleteOnExit();
+        }
+
+        try(
+                final BufferedInputStream ifStream = new BufferedInputStream(new FileInputStream(fin));
+                final BufferedOutputStream ofStream = new BufferedOutputStream(new FileOutputStream(fout))
+        ) {
+
+
+            byte[] data = new byte[3];
+
+            int dataRead = 0;
+
+            while (ifStream.available() > 0) {
+                Arrays.fill(data, (byte) 0);
+
+                dataRead = ifStream.read(data, 0, 3);
+
+                int buffer = ((data[0] & 0xff) << 16) + ((data[1] & 0xff) << 8) + ((data[2] & 0xff));
+                ofStream.write(this.toBase64[((buffer >> 18) & 0x3f)]);
+                ofStream.write(this.toBase64[((buffer >> 12) & 0x3f)]);
+                if (dataRead % 3 == 1) {
+                    ofStream.write((byte) '=');
+                } else {
+                    ofStream.write(this.toBase64[((buffer >> 6) & 0x3f)]);
+                }
+                if (dataRead % 3 == 1 || dataRead % 3 == 2) {
+                    ofStream.write((byte) '=');
+                } else {
+                    ofStream.write(this.toBase64[((buffer >> 0) & 0x3f)]);
+                }
+            }
+        }
+        return fout;
     }
 
     private static final char[] toBase64 = {
@@ -32,7 +73,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
