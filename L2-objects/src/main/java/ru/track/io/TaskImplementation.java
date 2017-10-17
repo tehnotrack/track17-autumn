@@ -31,39 +31,36 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
 
-        final BufferedInputStream ifStream = new BufferedInputStream(new FileInputStream(fin));
-        final BufferedOutputStream ofStream = new BufferedOutputStream(new FileOutputStream(fout));
+        try(
+                final BufferedInputStream ifStream = new BufferedInputStream(new FileInputStream(fin));
+                final BufferedOutputStream ofStream = new BufferedOutputStream(new FileOutputStream(fout))
+        ) {
 
-        byte[] data = new byte[3];
 
-        int dataRead = 0;
+            byte[] data = new byte[3];
 
-        while (ifStream.available() > 0) {
-            Arrays.fill(data, (byte) 0);
-            if (ifStream.available() > 2) {
-                ifStream.read(data, 0, 3);
-                dataRead += 3;
-            } else {
-                dataRead += ifStream.available();
-                ifStream.read(data, 0, ifStream.available());
-            }
-            int buffer = ((data[0] & 0xff) << 16) + ((data[1] & 0xff) << 8) + ((data[2] & 0xff));
-            ofStream.write(this.toBase64[((buffer >> 18) & 0x3f)]);
-            ofStream.write(this.toBase64[((buffer >> 12) & 0x3f)]);
-            if (dataRead % 3 == 1) {
-                ofStream.write((byte) '=');
-            } else {
-                ofStream.write(this.toBase64[((buffer >> 6) & 0x3f)]);
-            }
-            if (dataRead % 3 == 1 || dataRead % 3 == 2) {
-                ofStream.write((byte) '=');
-            } else {
-                ofStream.write(this.toBase64[((buffer >> 0) & 0x3f)]);
+            int dataRead = 0;
+
+            while (ifStream.available() > 0) {
+                Arrays.fill(data, (byte) 0);
+
+                dataRead = ifStream.read(data, 0, 3);
+
+                int buffer = ((data[0] & 0xff) << 16) + ((data[1] & 0xff) << 8) + ((data[2] & 0xff));
+                ofStream.write(this.toBase64[((buffer >> 18) & 0x3f)]);
+                ofStream.write(this.toBase64[((buffer >> 12) & 0x3f)]);
+                if (dataRead % 3 == 1) {
+                    ofStream.write((byte) '=');
+                } else {
+                    ofStream.write(this.toBase64[((buffer >> 6) & 0x3f)]);
+                }
+                if (dataRead % 3 == 1 || dataRead % 3 == 2) {
+                    ofStream.write((byte) '=');
+                } else {
+                    ofStream.write(this.toBase64[((buffer >> 0) & 0x3f)]);
+                }
             }
         }
-        ofStream.flush();
-        ifStream.close();
-        ofStream.close();
         return fout;
     }
 
