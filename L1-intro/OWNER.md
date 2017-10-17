@@ -1,1 +1,0 @@
-Ivakhnenko Maxim Dmitrievich
