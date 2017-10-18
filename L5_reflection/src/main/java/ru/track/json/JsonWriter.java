@@ -1,16 +1,14 @@
 package ru.track.json;
 
-import java.awt.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-
-import javax.swing.text.html.HTMLDocument;
 
 /**
  * сериализатор в json
