@@ -49,9 +49,8 @@ public final class TaskImplementation implements FileEncoder {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            return fout;
         }
+        return fout;
     }
 
     private static final char[] toBase64 = {
