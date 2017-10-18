@@ -166,7 +166,7 @@ public class JsonWriter {
             }
 
             try {
-                if (fields[i].getAnnotation(JsonNullable.class) != null && fields[i].get(object) == null) {
+                if (object.getClass().getAnnotation(JsonNullable.class) != null && fields[i].get(object) == null) {
                     value = "null";
                 }
             } catch (IllegalAccessException e) {
