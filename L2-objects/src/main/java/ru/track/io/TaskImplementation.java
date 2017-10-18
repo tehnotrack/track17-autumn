@@ -28,7 +28,6 @@ public final class TaskImplementation implements FileEncoder {
         }
         try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(fin));
              BufferedWriter writer = new BufferedWriter(new FileWriter(fout))) {
-            StringBuilder encoded = new StringBuilder(); // string to put into fout
             int sixMask = 0x3F, threeBytes, secondByte, thirdByte;
             while ((threeBytes = reader.read()) != -1) {
                 secondByte = reader.read();
@@ -43,10 +42,9 @@ public final class TaskImplementation implements FileEncoder {
                     bound = 1;
                 }
                 threeBytes = (threeBytes << 16) | (secondByte << 8) | (thirdByte);
-                for (int i = 3; i >= bound; i--) encoded.append(toBase64[(threeBytes >> (i * 6)) & sixMask]);
-                for (int i = 0; i < bound; i++) encoded.append('=');
+                for (int i = 3; i >= bound; i--) writer.write(toBase64[(threeBytes >> (i * 6)) & sixMask]);
+                for (int i = 0; i < bound; i++) writer.write('=');
             }
-            writer.write(encoded.toString());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
