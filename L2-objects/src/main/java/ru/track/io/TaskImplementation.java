@@ -6,7 +6,7 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -42,43 +42,49 @@ public final class TaskImplementation implements FileEncoder {
     }
 
     private static void encodeToBase64(File fin, File fout) throws IOException{
-        int bufferIn;
-        int bufferSize = 3;
+        int bufferIn, bufferOut;
+        int sizeBuffers = 100;
+        int inBufferSize = sizeBuffers * 3;
+        int outBufferSize = sizeBuffers * 4;
         byte[] bytes;
-        bytes = new byte[bufferSize];
+        bytes = new byte[inBufferSize];
+        char[] outputBuffer;
+        outputBuffer = new char[outBufferSize];
 
         try(FileInputStream fis = new FileInputStream(fin);
-            FileOutputStream fous = new FileOutputStream(fout)) {
+            FileWriter fous = new FileWriter(fout)) {
             do {
                 Arrays.fill(bytes, (byte) 0);
                 bufferIn = fis.read(bytes);
-                int buffer = ((bytes[0] & 0xff) << 16) + ((bytes[1] & 0xff) << 8) + ((bytes[2] & 0xff));
-                writeBufferData(buffer, bufferIn, fous);
+                bufferOut = convertAndWriteInBuffer(bytes, bufferIn, outputBuffer);
+                fous.write(outputBuffer, 0, bufferOut);
             } while (bufferIn != -1);
         }
     }
 
-    private static void writeBufferData(int buffer, int bufferIn, FileOutputStream fous) throws IOException{
-        if (bufferIn == 3) {
-            convertAndWrite(buffer, 18, fous);
-            convertAndWrite(buffer, 12, fous);
-            convertAndWrite(buffer, 6, fous);
-            convertAndWrite(buffer, 0, fous);
-        } else if (bufferIn == 2) {
-            convertAndWrite(buffer, 18, fous);
-            convertAndWrite(buffer, 12, fous);
-            convertAndWrite(buffer, 6, fous);
-            fous.write('=');
-        } else if (bufferIn == 1) {
-            convertAndWrite(buffer, 18, fous);
-            convertAndWrite(buffer, 12, fous);
-            fous.write('=');
-            fous.write('=');
-        }
-    }
+    private static int convertAndWriteInBuffer(byte[] bytes, int bufferIn, char[] outputBuffer) {
+        int j = 0;
+        for (int i=0; i < bufferIn; i+=3, j+=4) {
+            int buffer = ((bytes[i] & 0xff) << 16) + ((bytes[i+1] & 0xff) << 8) + ((bytes[i+2] & 0xff));
 
-    private static void convertAndWrite(int buffer, int shift, FileOutputStream fous) throws IOException{
-        fous.write(toBase64[((buffer >> shift) & 0x3f)]);
+            outputBuffer[j] = toBase64[((buffer >> 18) & 0x3f)];
+            outputBuffer[j+1] = toBase64[((buffer >> 12) & 0x3f)];
+
+            int numEqualsChracters = i + 3 - bufferIn;
+            if (numEqualsChracters == 2) {
+                outputBuffer[j+2] = '=';
+                outputBuffer[j+3] = '=';
+            }
+            else if (numEqualsChracters == 1) {
+                outputBuffer[j+2] = toBase64[((buffer >> 6) & 0x3f)];
+                outputBuffer[j+3] = '=';
+            }
+            else{
+                outputBuffer[j+2] = toBase64[((buffer >> 6) & 0x3f)];
+                outputBuffer[j+3] = toBase64[(buffer & 0x3f)];
+            }
+        }
+        return j;
     }
 
     private static final char[] toBase64 = {
