@@ -3,6 +3,7 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -72,15 +73,8 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonCollection(@NotNull Object object) {
-        //не заметил что уже сделано...
         Collection collection = (Collection) object;
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        Iterator it = collection.iterator();
-        while (it.hasNext()) sb.append(toJson(it.next()) + ",");
-        sb.deleteCharAt(sb.length() - 1);
-        sb.append("]");
-        return sb.toString();
+        return toJsonArray(collection.toArray());
     }
 
     /**
