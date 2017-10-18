@@ -22,7 +22,7 @@ public class CypherUtil {
     public static Map<Character, Character> generateCypher() {
         List<Character> alph = SYMBOLS.chars().mapToObj((i) -> Character.valueOf((char)i)).collect(Collectors.toList());
         Collections.shuffle(alph);
-        HashMap<Character, Character> cypher = new HashMap<>();
+        Map<Character, Character> cypher = new HashMap<>();
         for (int i = 0; i < alph.size(); i++) {
             cypher.put(SYMBOLS.charAt(i), alph.get(i));
         }

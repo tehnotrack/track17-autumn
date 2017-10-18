@@ -23,11 +23,8 @@ public class Encoder {
         StringBuilder res = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
             Character symbol = text.charAt(i);
-            if ((symbol >= 'a' && symbol <= 'z') || (symbol >= 'A' && symbol <= 'Z')) {
-                if (Character.isUpperCase(symbol)) {
-                    int code = (int) symbol;
-                    symbol = (char) (code + 32);
-                }
+            if (Character.isLetter(symbol)) {
+                symbol = Character.toLowerCase(symbol);
                 res.append(cypherTable.get(symbol));
             } else {
                 res.append(symbol);
