@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +21,15 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
+        List<Map.Entry<Character, Integer>> domains = new ArrayList(domainHist.entrySet());
+        domains.sort(Comparator.comparingInt(Map.Entry::getValue));
+        List<Map.Entry<Character, Integer>> encrypts = new ArrayList(domainHist.entrySet());
+        encrypts.sort(Comparator.comparingInt(Map.Entry::getValue));
+
         cypher = new LinkedHashMap<>();
+        for(int i = 0; i < domains.size(); ++i){
+            cypher.put(encrypts.get(i).getKey(), domains.get(i).getKey());
+        }
 
 
     }
@@ -53,6 +60,7 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
+        Map<Character, Character> ret = new LinkedHashMap<Character, Character>();
         return null;
     }
 
