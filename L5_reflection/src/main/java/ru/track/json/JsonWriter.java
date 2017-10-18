@@ -2,8 +2,8 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +60,20 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
-
-        return null;
+        StringBuilder builder = new StringBuilder();
+        builder.append("[");
+        for(int i = 0; i < length; i++) {
+            Object obj = Array.get(object, i);
+            if(i == length - 1) {
+                builder.append(toJson(obj));
+            }
+            else {
+                builder.append(toJson(obj));
+                builder.append(",");
+            }
+        }
+        builder.append("]");
+        return builder.toString();
     }
 
     /**
@@ -82,9 +93,22 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
+        Map<Object, Object> map = (Map<Object, Object>) object;
+        int index = 0;
+        int length = map.size();
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+        for(Map.Entry<Object, Object> entry : map.entrySet()) {
+            if(index == length - 1) {
+                builder.append(toJson(entry.getKey().toString()) + ":" + toJson(entry.getValue()));
+            }
+            else {
+                builder.append(toJson(entry.getKey().toString()) + ":" + toJson(entry.getValue()) + ",");
+            }
+            index++;
+        }
+        builder.append("}");
+        return builder.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -107,11 +131,26 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
+
         Class clazz = object.getClass();
-        // TODO: implement!
+        Field[] fields = clazz.getDeclaredFields();
+        StringBuilder builder = new StringBuilder("{");
+        for(Field field : fields) {
+            field.setAccessible(true);
+            try {
+                if(toJson(field.get(object)) == "null") {
+                    continue;
+                }
+                builder.append(toJson(field.getName()) + ":" + toJson(field.get(object)) + ",");
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-
-        return null;
+        builder.deleteCharAt(builder.toString().length() - 1);
+        builder.append("}");
+        return builder.toString();
     }
 
     /**
