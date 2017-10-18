@@ -2,8 +2,7 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 public class JsonWriter {
 
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
-    public static String toJson(@Nullable Object object) {
+    public static String toJson(@Nullable Object object) throws IllegalAccessException {
         if (object == null) {
             return "null";
         }
@@ -58,18 +57,26 @@ public class JsonWriter {
      * @return строковое представление массива: [item1, item2, ...]
      */
     @NotNull
-    private static String toJsonArray(@NotNull Object object) {
+    private static String toJsonArray(@NotNull Object object) throws IllegalAccessException {
         int length = Array.getLength(object);
         // TODO: implement!
+        StringBuilder jsonArray = new StringBuilder();
+        jsonArray.append('[');
+        for (int i = 0; i < length - 1; i++) {
+            jsonArray.append(toJson(Array.get(object, i)));
+            jsonArray.append(',');
+        }
 
-        return null;
+        if (length != 0) jsonArray.append(toJson(Array.get(object, length -  1)));
+        jsonArray.append(']');
+        return jsonArray.toString();
     }
 
     /**
      * В 1 шаг приводится к Collection
      */
     @NotNull
-    private static String toJsonCollection(@NotNull Object object) {
+    private static String toJsonCollection(@NotNull Object object) throws IllegalAccessException {
         Collection collection = (Collection) object;
         return toJsonArray(collection.toArray());
     }
@@ -81,10 +88,33 @@ public class JsonWriter {
      * На входе мы проверили, что это Map, можно просто кастовать Map map = (Map) object;
      */
     @NotNull
-    private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
+    private static String toJsonMap(@NotNull Object object) throws IllegalAccessException {
+        StringBuilder jsonMap = new StringBuilder();
+        Map<Object, Object> map = (Map) object;
+        jsonMap.append('{');
+        Iterator<Map.Entry<Object, Object>> iter = map.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry e = iter.next();
+            Class clazz = e.getKey().getClass();
+            if (clazz.equals(String.class)
+                    || clazz.equals(Character.class)
+                    || clazz.isEnum()
+                    ) {
+                System.out.println();
+                jsonMap.append(toJson(e.getKey()));
+            } else {
+                jsonMap.append('"');
+                jsonMap.append(toJson(e.getKey()));
+                jsonMap.append('"');
+            }
+            jsonMap.append(':');
+            jsonMap.append(toJson(e.getValue()));
+            if (iter.hasNext()) {
+                jsonMap.append(',');
+            }
+        }
+        jsonMap.append('}');
+        return jsonMap.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -106,12 +136,15 @@ public class JsonWriter {
      * и воспользоваться методом {@link #formatObject(Map)}
      */
     @NotNull
-    private static String toJsonObject(@NotNull Object object) {
+    private static String toJsonObject(@NotNull Object object) throws IllegalAccessException {
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Field[] fields = clazz.getDeclaredFields();
+        Map<String, String> objfiels = new LinkedHashMap<>();
+        for (Field field: fields) {
+            field.setAccessible(true);
+            if (field.get(object) != null) objfiels.put(field.getName(), toJson(field.get(object)));
+        }
+        return formatObject(objfiels);
     }
 
     /**
