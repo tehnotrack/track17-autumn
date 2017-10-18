@@ -3,6 +3,8 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,9 +62,21 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
+        StringBuilder str = new StringBuilder();
+        str.append('[');
+        for (int i = 0; i < length; i++)
+        {
+            str.append(toJson(Array.get(object, i)));
+            if (i != (length -1) ){
+                str.append(",");}
+            else
+            {
+                str.append("]");
+            }
+        }
         // TODO: implement!
 
-        return null;
+        return str.toString();
     }
 
     /**
@@ -83,10 +97,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
-
-        return null;
+        Map<Object, Object> map = (Map) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        for(Map.Entry<Object, Object> entry : map.entrySet())
+        {
+            if (entry.getKey().getClass() != String.class)
+                stringMap.put(toJson(entry.getKey()), toJson(entry.getValue()));
+            else
+                stringMap.put((String)entry.getKey(), toJson(entry.getValue()));
+        }
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +129,24 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields, true);
+        Map<String, String> mp = new LinkedHashMap<>();
+        for(Field field: fields)
+        {
+            field.setAccessible(true);
+            try {
+                if (field.get(object) != null)
+                try {
+                    mp.put(field.getName(), toJson(field.get(object)));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return formatObject(mp);
     }
 
     /**
