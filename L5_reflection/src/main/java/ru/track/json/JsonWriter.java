@@ -142,13 +142,17 @@ public class JsonWriter
         Class clazz = object.getClass();
         Field[] fields=clazz.getDeclaredFields();
         Map<String, String > map = new LinkedHashMap<>();
+        boolean jsonNullable=clazz.getAnnotation(JsonNullable.class)!=null;
         for(Field f: fields)
         {
             f.setAccessible(true);
-
             try
             {
-                map.put(f.getName(), toJson(f.get(object)));
+                String jsonName=f.getName();
+                boolean isJsonNameChanged=f.getAnnotation(SerializedTo.class)!=null;
+                if(isJsonNameChanged) jsonName=f.getAnnotation(SerializedTo.class).value();
+                if(jsonNullable || f.get(object)!=null)
+                    map.put(jsonName, toJson(f.get(object)));
             }
             catch (IllegalAccessException e)
             {
