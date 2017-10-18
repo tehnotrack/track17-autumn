@@ -2,8 +2,7 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -59,10 +58,18 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
-        int length = Array.getLength(object);
-        // TODO: implement!
 
-        return null;
+        int length = Array.getLength(object);
+
+        StringBuilder ret = new StringBuilder("[");
+
+        for(int i = 0; i < length; i++) {
+            ret.append(toJson(Array.get(object, i)) + ",");
+
+        }
+        ret.deleteCharAt(ret.toString().length() - 1);
+        ret.append("]");
+        return ret.toString();
     }
 
     /**
@@ -82,11 +89,17 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map map = (Map) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        Iterator<Map.Entry<Object, Object>> entries = map.entrySet().iterator();
+
+        while (entries.hasNext()) {
+            Map.Entry<Object, Object> entry = entries.next();
+            stringMap.put(entry.getKey().toString(), toJson(entry.getValue()));
+        }
+
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +121,35 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+
+        Field[] fields = clazz.getDeclaredFields();
+        List<String> encodedFields = new ArrayList<>();
+        List<String> encodedValues = new ArrayList<>();
+        for(Field field : fields) {
+            encodedFields.add(toJson(field.getName()));
+            field.setAccessible(true);
+            Object value = null;
+            try {
+                value = field.get(object);
+            } catch (IllegalAccessException e) {
+
+            }
+            encodedValues.add(toJson(value));
+        }
+
+        StringBuilder ret = new StringBuilder("{");
+
+        for(int i = 0; i < encodedFields.size(); i++) {
+            if(encodedValues.get(i) == "null"){
+                continue;
+            }
+            ret.append(encodedFields.get(i) + ":" + encodedValues.get(i) + ",");
+        }
+        ret.deleteCharAt(ret.toString().length() - 1);
+        ret.append("}");
 
 
-        return null;
+        return ret.toString();
     }
 
     /**
