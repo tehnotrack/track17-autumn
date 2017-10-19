@@ -2,7 +2,9 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,9 +62,12 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
-
-        return null;
+        StringBuilder result = new StringBuilder("[");
+        for (int i = 0; i < length - 1; ++ i) {
+            result.append(toJson(Array.get(object, i)) + ",");
+        }
+        result.append(toJson(Array.get(object, length - 1)) + "]");
+        return result.toString();
     }
 
     /**
@@ -82,11 +87,14 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        Map<Object, Object> map = (Map<Object, Object>) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        for (Map.Entry<Object, Object> entry : map.entrySet()) {
+            String key = toJson(entry.getKey().toString());
+            String value = toJson(entry.getValue());
+            stringMap.put(key, value);
+        }
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +116,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Field[] fields = clazz.getDeclaredFields();
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Field field : fields) {
+            try {
+                field.setAccessible(true);
+                map.put(field.getName(), field.get(object));
+            } catch (Exception e) {
+                // do nothing
+            }
+        }
+        return toJson(map);
     }
 
     /**
@@ -123,7 +138,7 @@ public class JsonWriter {
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
 
