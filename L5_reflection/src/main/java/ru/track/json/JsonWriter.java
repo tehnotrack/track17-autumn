@@ -130,10 +130,14 @@ public class JsonWriter {
         Map<String, String> map = new LinkedHashMap<>();
         for (Field fld : flds) {
             fld.setAccessible(true);
+            String name = fld.getName();
+            if (fld.getAnnotation(SerializedTo.class) != null) {
+                name = fld.getAnnotation(SerializedTo.class).value();
+            }
             try {
                 Object obj = fld.get(object);
-                if (obj != null) {
-                    map.put(fld.getName(), JsonWriter.toJson(obj));
+                if ((obj != null) || clazz.isAnnotationPresent(JsonNullable.class)) {
+                    map.put(name, JsonWriter.toJson(obj));
                 }
             } catch (IllegalAccessException ex) {
                 continue;
