@@ -147,7 +147,12 @@ public class JsonWriter {
                     stringMap.put(annotation.value(), toJson(val));
                 }
                 else {
-                    stringMap.put(field.getName(), toJson(val));
+                    if (object.getClass().isAnnotationPresent(JsonNullable.class)) {
+                        stringMap.put(field.getName(), toJson(val));
+                    }
+                    if(val!= null) {
+                        stringMap.put(field.getName(), toJson(val));
+                    }
                 }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
