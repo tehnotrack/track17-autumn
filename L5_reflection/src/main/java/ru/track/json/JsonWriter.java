@@ -141,28 +141,6 @@ public class JsonWriter {
      * @param map
      * @return "{key:value, key:value,..}"
      */
-
-//private static String toJsonObject(@NotNull Object object) {
-//          Class clazz = object.getClass();
-//          // TODO: implement!
-// -
-// -
-// -        return null;
-// +        StringBuilder str = new StringBuilder();
-// +
-// +        Field[] fields = clazz.getDeclaredFields();
-// +        Field.setAccessible(fields, true);
-// +        Map<String, String> map = new LinkedHashMap<>();
-// +        for (Field f : fields)
-// +            try {
-// +                if (f.get(object) != null)
-// +                    map.put(f.getName(), toJson(f.get(object)));
-// +            } catch (IllegalAccessException e) {
-// +                e.printStackTrace();
-// +            }
-// +
-// +        return formatObject(map);
-//      }
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
