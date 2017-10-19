@@ -141,6 +141,7 @@ public class JsonWriter {
         Map<String, String> map = new LinkedHashMap<>();
         Class clazz = object.getClass();
         Field[] declaredFields = clazz.getDeclaredFields();
+        final boolean isNullable = clazz.getAnnotation(JsonNullable.class) != null;
 
         for (Field f : declaredFields) {
             String name = f.getName();
@@ -148,12 +149,20 @@ public class JsonWriter {
             Object val;
             try {
                 val = f.get(object);
-                if (val != null){
-                    map.put(name, JsonWriter.toJson(val));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
+            if (val == null && !isNullable){
+                continue;
+            }
+
+            SerializedTo serializedTo = f.getAnnotation(SerializedTo.class);
+            if (serializedTo != null) {
+                map.put(serializedTo.value(), JsonWriter.toJson(val));
+            } else {
+                map.put(name, JsonWriter.toJson(val));
+            }
+
         }
         return formatObject(map);
     }
