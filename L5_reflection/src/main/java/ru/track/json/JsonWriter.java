@@ -15,8 +15,8 @@ import static jdk.nashorn.internal.runtime.regexp.joni.Syntax.Java;
 /**
  * сериализатор в json
  */
-public class JsonWriter {
 
+public class JsonWriter {
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
     public static String toJson(@Nullable Object object) {
         if (object == null) {
@@ -50,6 +50,7 @@ public class JsonWriter {
 
         return toJsonObject(object);
     }
+
 
     /**
      * Используется вспомогательный класс {@link Array}, чтобы работать с object instanceof Array
@@ -100,7 +101,7 @@ public class JsonWriter {
         while (iter.hasNext()) {
             Map.Entry<?, ?> curr = iter.next();
             str.append("\"");
-            str.append(toJson(curr.getKey()));
+            str.append(curr.getKey().toString());
             str.append("\"");
             str.append(":");
             str.append(toJson(curr.getValue()));
@@ -134,12 +135,14 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
         // TODO: implement!
-        Map<String, String> map = new TreeMap<>();
+        Map<String, String> map = new LinkedHashMap<>();
         Field[] fields = clazz.getDeclaredFields();
         for (Field field: fields) {
             field.setAccessible(true);
             try {
-                map.put(toJson(field.getName()), toJson(field.get(object)));
+                if (field.get(object) != null) {
+                    map.put(toJson(field.getName()), toJson(field.get(object)));
+                }
             }
             catch (IllegalAccessException ex) {
                 System.out.println(ex.getMessage() + "in method toJsonObjexct()");
@@ -164,5 +167,4 @@ public class JsonWriter {
 
         return String.format("{%s}", r);
     }
-
 }
