@@ -2,10 +2,10 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +52,8 @@ public class JsonWriter {
     /**
      * Используется вспомогательный класс {@link Array}, чтобы работать с object instanceof Array
      * <p>
-     * То есть чтобы получить i-й элемент массива, нужно вызвать {@link Array#get(Object, int)}, где i - это число от 0 до {@link Array#getLength(Object)}
+     * То есть чтобы получить i-й элемент массива, нужно вызвать {@link Array#get(Object, int)},
+     * где i - это число от 0 до {@link Array#getLength(Object)}
      *
      * @param object - который Class.isArray()
      * @return строковое представление массива: [item1, item2, ...]
@@ -61,8 +62,17 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         // TODO: implement!
-
-        return null;
+        StringBuilder res = new StringBuilder();
+        res.append("[");
+        for (int i = 0; i < length; i++) {
+            Object val = Array.get(object, i);
+            res.append(JsonWriter.toJson(val));
+            if (i < length - 1) {
+                res.append(",");
+            }
+        }
+        res.append("]");
+        return res.toString();
     }
 
     /**
@@ -83,10 +93,30 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
+        Map map = (Map) object;
+        StringBuilder res = new StringBuilder();
+        res.append("{");
+        final boolean[] isFirst = {true};
+        map.forEach((k,v) -> {
+            if (!isFirst[0]) {
+                res.append(",");
+            }
+            isFirst[0] = false;
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+            // some problems with String and "key"-form
+            Class clazz = k.getClass();
+            if (clazz.equals(String.class)
+                    || clazz.equals(Character.class)
+                    || clazz.isEnum()
+                    ) {
+                res.append(String.format("\"%s\":", k));
+            } else {
+                res.append("\"" + JsonWriter.toJson(k) + "\"" + ":");
+            }
+            res.append( JsonWriter.toJson(v));
+        });
+        res.append("}");
+        return res.toString();
     }
 
     /**
@@ -107,11 +137,25 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
-        Class clazz = object.getClass();
         // TODO: implement!
+        Map<String, String> map = new LinkedHashMap<>();
+        Class clazz = object.getClass();
+        Field[] declaredFields = clazz.getDeclaredFields();
 
-
-        return null;
+        for (Field f : declaredFields) {
+            String name = f.getName();
+            f.setAccessible(true);
+            Object val;
+            try {
+                val = f.get(object);
+                if (val != null){
+                    map.put(name, JsonWriter.toJson(val));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return formatObject(map);
     }
 
     /**
@@ -126,7 +170,6 @@ public class JsonWriter {
                 .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
-
         return String.format("{%s}", r);
     }
 
