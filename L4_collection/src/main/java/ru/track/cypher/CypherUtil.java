@@ -1,6 +1,6 @@
 package ru.track.cypher;
 
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +19,22 @@ public class CypherUtil {
      */
     @NotNull
     public static Map<Character, Character> generateCypher() {
-        return null;
+        Map<Character, Character> res =  new HashMap<>();
+        Character c;
+
+        Stack<Character> pool  = new Stack<>(); // might want to optimise
+        for (int i=0;i < SYMBOLS.length();i++) {
+            pool.push(SYMBOLS.charAt(i));
+        }
+
+        Collections.shuffle(pool);
+
+        for(int i=0;i<SYMBOLS.length();i++) {
+            c = SYMBOLS.charAt(i);
+            res.put(c, pool.pop());
+        }
+
+        return res;
     }
 
 }
