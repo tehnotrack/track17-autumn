@@ -2,7 +2,6 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -116,14 +115,24 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Boolean isJsonNullable = clazz.getAnnotation(JsonNullable.class) != null;
         Field[] fields = clazz.getDeclaredFields();
         Map<String, Object> map = new LinkedHashMap<>();
         for (Field field : fields) {
             try {
                 field.setAccessible(true);
-                map.put(field.getName(), field.get(object));
+                String fieldName = field.getName();
+                Object fieldValue = field.get(object);
+                Boolean isSerializedTo = field.getAnnotation(SerializedTo.class) != null;
+                if (isSerializedTo) {
+                    fieldName = field.getAnnotation(SerializedTo.class).value();
+                }
+                if (fieldValue != null || isJsonNullable) {
+                    map.put(fieldName, fieldValue);
+                }
             } catch (Exception e) {
-                // do nothing
+                // do nothing.
+                // IllegalAccessException will not occur, because .setAccessible(True)
             }
         }
         return toJson(map);
@@ -141,7 +150,6 @@ public class JsonWriter {
                 .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
-
         return String.format("{%s}", r);
     }
 
