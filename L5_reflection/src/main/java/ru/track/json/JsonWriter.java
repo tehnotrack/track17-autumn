@@ -141,6 +141,8 @@ public class JsonWriter {
      * @param map
      * @return "{key:value, key:value,..}"
      */
+
+
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
