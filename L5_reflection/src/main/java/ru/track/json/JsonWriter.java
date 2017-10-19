@@ -3,7 +3,9 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +62,22 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
+        String tmp = "[";
+      //  if (object instanceof Array){
+            for (int i = 0; i < Array.getLength(object)-1; i++){
+                //if (Array.get(object,i) instanceof Integer) {
+                    tmp = tmp + toJson(Array.get(object, i)) + ",";
+
+              //  }else {
+               //     tmp = tmp + "\"" + Array.get(object, i) + "\"" + ",";
+             //   }
+            }
+            //if()
+            tmp = tmp + toJson(Array.get(object,Array.getLength(object)-1)) + "]";
+       // }
         // TODO: implement!
 
-        return null;
+        return tmp;
     }
 
     /**
@@ -82,9 +97,15 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
+        StringBuilder s = new StringBuilder("{");
+        Map<String, String> map = (Map) object;
+        for (Map.Entry<String,String> m : map.entrySet())
+        {
+            s.append("\"" + toJson(m.getKey()) + "\":" + toJson(m.getValue()) + ",");
+        }
+        s.deleteCharAt(s.length()-1);
+        s.append("}");
+        return s.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -120,6 +141,28 @@ public class JsonWriter {
      * @param map
      * @return "{key:value, key:value,..}"
      */
+
+//private static String toJsonObject(@NotNull Object object) {
+//          Class clazz = object.getClass();
+//          // TODO: implement!
+// -
+// -
+// -        return null;
+// +        StringBuilder str = new StringBuilder();
+// +
+// +        Field[] fields = clazz.getDeclaredFields();
+// +        Field.setAccessible(fields, true);
+// +        Map<String, String> map = new LinkedHashMap<>();
+// +        for (Field f : fields)
+// +            try {
+// +                if (f.get(object) != null)
+// +                    map.put(f.getName(), toJson(f.get(object)));
+// +            } catch (IllegalAccessException e) {
+// +                e.printStackTrace();
+// +            }
+// +
+// +        return formatObject(map);
+//      }
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
