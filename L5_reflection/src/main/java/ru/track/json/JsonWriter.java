@@ -3,6 +3,8 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,9 +62,23 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
+        Object item;
 
-        return null;
+        StringBuilder result = new StringBuilder();
+        result.append('[');
+
+        for (int i = 0; i < length; ++i) {
+            item = Array.get(object, i);
+
+            result.append(toJson(item));
+            if (i < length - 1) {
+                result.append(",");
+            }
+        }
+
+        result.append(']');
+
+        return result.toString();
     }
 
     /**
@@ -71,6 +87,7 @@ public class JsonWriter {
     @NotNull
     private static String toJsonCollection(@NotNull Object object) {
         Collection collection = (Collection) object;
+
         return toJsonArray(collection.toArray());
     }
 
@@ -82,10 +99,17 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        Map<Object, Object> map = (Map) object;
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
+        for (Map.Entry<Object, Object> entry : map.entrySet()) {
+            Object key = entry.getKey();
+            stringMap.put(String.valueOf(key), toJson(entry.getValue()));
+        }
+
+        return formatObject(stringMap);
+
+//        Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
 
@@ -107,11 +131,30 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
+        Map<String, String> map = new LinkedHashMap<>();
         Class clazz = object.getClass();
-        // TODO: implement!
 
+        Field[] fields = clazz.getDeclaredFields();
+        Object obj;
 
-        return null;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            field.setAccessible(true);
+
+            try {
+                obj = field.get(object);
+            } catch (IllegalAccessException e) {
+                continue;
+            }
+
+            if (obj == null) {
+                continue;
+            }
+
+            map.put(fieldName, toJson(obj));
+        }
+
+        return formatObject(map);
     }
 
     /**
