@@ -44,7 +44,7 @@ public class Decoder {
     @NotNull
     public String decode(@NotNull String encoded)
     {
-        StringBuffer decodedText = new StringBuffer();
+        StringBuilder decodedText = new StringBuilder();
 
         for (int i = 0; i < encoded.length(); i++) {
             if (Character.isLetter(encoded.charAt(i))) {
@@ -86,7 +86,7 @@ public class Decoder {
         }
 
         // sort by frequency
-        List<Map.Entry<Character, Integer>> list = new LinkedList<>(hist.entrySet());
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(hist.entrySet());
         list.sort((Map.Entry<Character, Integer> o1, Map.Entry<Character, Integer> o2) -> {
             if (o1.getValue() < o2.getValue()) return 1;
             else if (o1.getValue() > o2.getValue()) return -1;
