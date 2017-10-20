@@ -127,9 +127,11 @@ public class JsonWriter {
         for (Field f : fields) {
             try {
                 f.setAccessible(true);
-                if(f.get(object) != null)
-                {
-                    strmap.put(f.getName(), JsonWriter.toJson(f.get(object)));
+                if (f.get(object) != null || clazz.getAnnotation(JsonNullable.class) != null) {
+                    if (f.getAnnotation(SerializedTo.class) == null)
+                        strmap.put(f.getName(), JsonWriter.toJson(f.get(object)));
+                    else
+                        strmap.put(f.getAnnotation(SerializedTo.class).value(), JsonWriter.toJson(f.get(object)));
                 }
             } catch (IllegalAccessException e) {
                 System.out.println("wrong field");
