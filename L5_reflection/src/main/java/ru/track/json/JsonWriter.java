@@ -133,24 +133,32 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
 
         Class clazz = object.getClass();
+        final boolean isNullable = clazz.getAnnotation(JsonNullable.class) != null;
         Field[] fields = clazz.getDeclaredFields();
-        StringBuilder builder = new StringBuilder("{");
+        Map<String, String> map = new LinkedHashMap<>();
         for(Field field : fields) {
             field.setAccessible(true);
+            Object value = null;
             try {
-                if(toJson(field.get(object)) == "null") {
-                    continue;
-                }
-                builder.append(toJson(field.getName()) + ":" + toJson(field.get(object)) + ",");
-            }
-            catch(Exception e) {
+                value = field.get(object);
+            } catch(Exception e) {
                 e.printStackTrace();
+            }
+
+            if(value == null && !isNullable) {
+                continue;
+            }
+
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+            if(serializedTo != null) {
+                map.put(serializedTo.value(), toJson(value));
+            }
+            else {
+                map.put(field.getName(), toJson(value));
             }
         }
 
-        builder.deleteCharAt(builder.toString().length() - 1);
-        builder.append("}");
-        return builder.toString();
+        return formatObject(map);
     }
 
     /**
