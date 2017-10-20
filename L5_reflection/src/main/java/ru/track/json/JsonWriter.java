@@ -1,5 +1,6 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -127,9 +128,14 @@ public class JsonWriter {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
         Map<String, String> objfiels = new LinkedHashMap<>();
+        JsonNullable nullable = (JsonNullable) clazz.getAnnotation(JsonNullable.class);
         for (Field field: fields) {
             field.setAccessible(true);
-            if (field.get(object) != null) objfiels.put(toJson(field.getName()), toJson(field.get(object)));
+            SerializedTo st = field.getAnnotation(SerializedTo.class);
+            if (nullable == null && field.get(object) == null) continue;
+            String key = (st == null)? toJson(field.getName()): toJson(st.value());
+            String value = toJson(field.get(object));
+            objfiels.put(key, value);
         }
         return formatObject(objfiels);
     }
