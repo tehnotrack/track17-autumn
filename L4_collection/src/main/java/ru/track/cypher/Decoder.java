@@ -60,7 +60,7 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Character> ret = new LinkedHashMap<Character, Character>();
+        Map<Character, Integer> ret = new LinkedHashMap<Character, Integer>();
         return null;
     }
 
