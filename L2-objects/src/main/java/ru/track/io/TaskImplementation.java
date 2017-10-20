@@ -24,12 +24,6 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        int[] inputChars;
-        char[] outputChars;
-
-        inputChars  = new int[3];
-        outputChars = new char[4];
-
         File fin = new File(finPath);
 
         File fout;
@@ -40,29 +34,29 @@ public final class TaskImplementation implements FileEncoder {
             fout = new File(foutPath);
         }
 
-        try(BufferedReader br = new BufferedReader (new FileReader(fin));
-            BufferedWriter bw = new BufferedWriter (new FileWriter(fout)))
+        try(BufferedInputStream  bis = new BufferedInputStream  (new FileInputStream(fin));
+            BufferedOutputStream bos = new BufferedOutputStream (new FileOutputStream(fout)))
         {
+            byte[] inputBytes  = new byte[3];
+            byte[] outputBytes = new byte[4];
+            int n, m;
+
             while (true) {
-                inputChars[0] = br.read();
-                inputChars[1] = br.read();
-                inputChars[2] = br.read();
+                java.util.Arrays.fill(inputBytes, (byte)0);
 
-                System.out.println(inputChars);
-
-                if (inputChars[0] == -1)
+                if ((m = bis.read(inputBytes, 0, 3)) <= 0)
                     break;
 
-                int tempBuff = ((inputChars[0] & 0xFF) << 16) |
-                        ((Math.max(inputChars[1], 0) & 0xFF) << 8) |
-                        ((Math.max(inputChars[2], 0) & 0xFF));
+                n = ((inputBytes[0] & 0xFF) << 16) |
+                        ((inputBytes[1] & 0xFF) << 8) |
+                        ((inputBytes[2] & 0xFF));
 
-                outputChars[0] = toBase64[tempBuff >> 18 & 0x3F];
-                outputChars[1] = toBase64[tempBuff >> 12 & 0x3F];
-                outputChars[2] = inputChars[1] == -1 ? '=' : toBase64[tempBuff >> 6 & 0x3F];
-                outputChars[3] = inputChars[2] == -1 ? '=' : toBase64[tempBuff & 0x3F];
+                outputBytes[0] = (byte) toBase64[n >> 18 & 0x3F];
+                outputBytes[1] = (byte) toBase64[n >> 12 & 0x3F];
+                outputBytes[2] = (byte) (m < 2 ? '=' : toBase64[n >> 6 & 0x3F]);
+                outputBytes[3] = (byte) (m < 3 ? '=' : toBase64[n & 0x3F]);
 
-                bw.write(outputChars, 0, outputChars.length);
+                bos.write(outputBytes, 0, outputBytes.length);
             }
         }
 
