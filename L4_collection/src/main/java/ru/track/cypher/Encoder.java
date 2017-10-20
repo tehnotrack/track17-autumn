@@ -23,7 +23,6 @@ public class Encoder {
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
         StringBuilder sb = new StringBuilder();
         String temp = text.toLowerCase();
-        sb.equals(null);
         for (int i = 0; i < text.length(); i++) {
             if (cypherTable.containsKey(temp.charAt(i))) {
 
