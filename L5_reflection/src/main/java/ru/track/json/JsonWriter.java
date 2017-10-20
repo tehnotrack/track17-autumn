@@ -66,7 +66,6 @@ public class JsonWriter {
             jsonArray.append(toJson(Array.get(object, i)));
             jsonArray.append(',');
         }
-
         if (length != 0) jsonArray.append(toJson(Array.get(object, length -  1)));
         jsonArray.append(']');
         return jsonArray.toString();
@@ -91,30 +90,18 @@ public class JsonWriter {
     private static String toJsonMap(@NotNull Object object) throws IllegalAccessException {
         StringBuilder jsonMap = new StringBuilder();
         Map<Object, Object> map = (Map) object;
-        jsonMap.append('{');
-        Iterator<Map.Entry<Object, Object>> iter = map.entrySet().iterator();
-        while(iter.hasNext()) {
-            Map.Entry e = iter.next();
-            Class clazz = e.getKey().getClass();
-            if (clazz.equals(String.class)
-                    || clazz.equals(Character.class)
-                    || clazz.isEnum()
+        Map<String,String> convmap = new LinkedHashMap<>();
+        for (Map.Entry e: map.entrySet()) {
+            if (e.getKey().getClass().equals(String.class)
+                    || e.getKey().getClass().equals(Character.class)
+                    || e.getKey().getClass().isEnum()
                     ) {
-                System.out.println();
-                jsonMap.append(toJson(e.getKey()));
+                convmap.put(toJson(e.getKey()), toJson(e.getValue()));
             } else {
-                jsonMap.append('"');
-                jsonMap.append(toJson(e.getKey()));
-                jsonMap.append('"');
-            }
-            jsonMap.append(':');
-            jsonMap.append(toJson(e.getValue()));
-            if (iter.hasNext()) {
-                jsonMap.append(',');
+                convmap.put(String.format("\"%s\"", toJson(e.getKey())), toJson(e.getValue()));
             }
         }
-        jsonMap.append('}');
-        return jsonMap.toString();
+        return formatObject(convmap);
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -142,7 +129,7 @@ public class JsonWriter {
         Map<String, String> objfiels = new LinkedHashMap<>();
         for (Field field: fields) {
             field.setAccessible(true);
-            if (field.get(object) != null) objfiels.put(field.getName(), toJson(field.get(object)));
+            if (field.get(object) != null) objfiels.put(toJson(field.getName()), toJson(field.get(object)));
         }
         return formatObject(objfiels);
     }
@@ -156,7 +143,7 @@ public class JsonWriter {
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
 
