@@ -18,8 +18,8 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        File fin = new File(finPath); // file with binary data
-        File fout; // file with encoded data to be returned
+        File fin = new File(finPath);
+        File fout;
         if (foutPath == null) {
             fout = File.createTempFile("my_temp_output", ".txt");
             fout.deleteOnExit();
@@ -45,10 +45,6 @@ public final class TaskImplementation implements FileEncoder {
                 for (int i = 3; i >= bound; i--) writer.write(toBase64[(threeBytes >> (i * 6)) & sixMask]);
                 for (int i = 0; i < bound; i++) writer.write('=');
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return fout;
     }
