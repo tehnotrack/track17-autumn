@@ -94,21 +94,11 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         Map<Object, Object> map = (Map<Object, Object>) object;
-        int index = 0;
-        int length = map.size();
-        StringBuilder builder = new StringBuilder();
-        builder.append("{");
+        Map<String, String> map2 = new LinkedHashMap<>();
         for(Map.Entry<Object, Object> entry : map.entrySet()) {
-            if(index == length - 1) {
-                builder.append(toJson(entry.getKey().toString()) + ":" + toJson(entry.getValue()));
-            }
-            else {
-                builder.append(toJson(entry.getKey().toString()) + ":" + toJson(entry.getValue()) + ",");
-            }
-            index++;
+            map2.put(entry.getKey().toString(), toJson(entry.getValue()));
         }
-        builder.append("}");
-        return builder.toString();
+        return formatObject(map2);
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
