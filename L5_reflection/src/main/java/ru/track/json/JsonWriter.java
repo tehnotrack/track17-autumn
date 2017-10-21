@@ -90,19 +90,11 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         Map map = (Map) object;
-        //return JsonWriter.formatObject(map);
-        int length = map.size();
         Set keys = map.keySet();
         Map<String, String> newMap = new LinkedHashMap<>();
-        if (length == 0)
-            return "{}";
         for (Object key : keys) {
             newMap.put(key.toString(), toJson(map.get(key)));
         }
-//        str.replace(str.length() - 1, str.length(), "");
-//        str.append("}");
-//
-//        return str.toString();
 //         Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
         return formatObject(newMap);
     }
@@ -128,19 +120,19 @@ public class JsonWriter {
         Class clazz = object.getClass();
         Field flds[] = clazz.getDeclaredFields();
         Map<String, String> map = new LinkedHashMap<>();
+        boolean isNullable = clazz.isAnnotationPresent(JsonNullable.class);
         for (Field fld : flds) {
             fld.setAccessible(true);
             String name = fld.getName();
-            if (fld.getAnnotation(SerializedTo.class) != null) {
+            if (fld.isAnnotationPresent(SerializedTo.class)) {
                 name = fld.getAnnotation(SerializedTo.class).value();
             }
             try {
                 Object obj = fld.get(object);
-                if ((obj != null) || clazz.isAnnotationPresent(JsonNullable.class)) {
+                if ((obj != null) || isNullable) {
                     map.put(name, JsonWriter.toJson(obj));
                 }
-            } catch (IllegalAccessException ex) {
-                continue;
+            } catch (IllegalAccessException ignored) {
             }
         }
 
