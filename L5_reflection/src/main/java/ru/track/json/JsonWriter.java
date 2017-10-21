@@ -2,8 +2,7 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +59,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
+        if (length == 0)
+            return "[]";
+        StringBuilder str = new StringBuilder("[");
+        for (int i = 0; i < length - 1; ++i) {
+            str.append(JsonWriter.toJson(Array.get(object, i)));
+            str.append(",");
+        }
+        str.append(JsonWriter.toJson(Array.get(object, length - 1)));
+        str.append("]");
 
-        return null;
+        return str.toString();
     }
 
     /**
@@ -82,11 +89,14 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        Map map = (Map) object;
+        Set keys = map.keySet();
+        Map<String, String> newMap = new LinkedHashMap<>();
+        for (Object key : keys) {
+            newMap.put(key.toString(), toJson(map.get(key)));
+        }
+//         Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
+        return formatObject(newMap);
     }
 
     /**
@@ -108,10 +118,25 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        Field flds[] = clazz.getDeclaredFields();
+        Map<String, String> map = new LinkedHashMap<>();
+        boolean isNullable = clazz.isAnnotationPresent(JsonNullable.class);
+        for (Field fld : flds) {
+            fld.setAccessible(true);
+            String name = fld.getName();
+            if (fld.isAnnotationPresent(SerializedTo.class)) {
+                name = fld.getAnnotation(SerializedTo.class).value();
+            }
+            try {
+                Object obj = fld.get(object);
+                if ((obj != null) || isNullable) {
+                    map.put(name, JsonWriter.toJson(obj));
+                }
+            } catch (IllegalAccessException ignored) {
+            }
+        }
 
-
-        return null;
+        return formatObject(map);
     }
 
     /**
