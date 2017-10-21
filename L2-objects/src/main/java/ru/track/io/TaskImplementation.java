@@ -7,21 +7,9 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.File;
-
-import java.io.*;
+import java.io.IOException;
 
 public final class TaskImplementation implements FileEncoder {
-
-    private StringBuilder convertThreeBytes(int value, int zeros) {
-        StringBuilder res = new StringBuilder();
-        for (int i = 3; i >= zeros; --i) {
-            res.append(toBase64[(value >> (i * 6)) & 0x3f]);
-        }
-        for (int i = 0; i < zeros; ++i) {
-            res.append("=");
-        }
-        return res;
-    }
 
     /**
      * @param finPath  where to read binary data from
@@ -32,32 +20,7 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        InputStream in = new FileInputStream(finPath);
-
-        File fout;
-        if (foutPath == null) {
-            fout = File.createTempFile(finPath, "x64");
-            fout.deleteOnExit();
-        } else {
-            fout = new File(foutPath);
-        }
-        StringBuilder result = new StringBuilder();
-        byte[] buf = new byte[3];
-        int readBytes = in.read(buf);
-        while (readBytes > 0) {
-            int threeBytes = 0;
-            for (int i = 0; i < readBytes; ++i) {
-                int c = buf[i] & 0xFF;
-                threeBytes += (c << (16 - 8 * i));
-            }
-            result.append(convertThreeBytes(threeBytes, 3 - readBytes));
-            readBytes = in.read(buf);
-        }
-        in.close();
-        OutputStream out = new FileOutputStream(fout);
-        out.write(result.toString().getBytes());
-        out.close();
-        return fout;
+        throw new UnsupportedOperationException(); // TODO: implement
     }
 
     private static final char[] toBase64 = {
@@ -69,7 +32,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new TaskImplementation();
+        final FileEncoder encoder = new ReferenceTaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
