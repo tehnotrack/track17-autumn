@@ -21,14 +21,11 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
-        List<Map.Entry<Character, Integer>> domains = new ArrayList(domainHist.entrySet());
-        domains.sort(Comparator.comparingInt(Map.Entry::getValue));
-        List<Map.Entry<Character, Integer>> encrypts = new ArrayList(domainHist.entrySet());
-        encrypts.sort(Comparator.comparingInt(Map.Entry::getValue));
-
+        List<Character> encrypts = new ArrayList<>(encryptedDomainHist.keySet());
+        List<Character> domains = new ArrayList<>(domainHist.keySet());
         cypher = new LinkedHashMap<>();
-        for(int i = 0; i < domains.size(); ++i){
-            cypher.put(encrypts.get(i).getKey(), domains.get(i).getKey());
+        for (int i = 0; i < domainHist.size(); ++i) {
+            cypher.put(encrypts.get(i), domains.get(i));
         }
 
 
@@ -46,13 +43,17 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < encoded.length(); ++i) {
+            Character c = Character.toLowerCase(encoded.charAt(i));
+            str.append(cypher.getOrDefault(c, c));
+        }
+        return str.toString();
     }
 
     /**
      * Считывает входной текст посимвольно, буквы сохраняет в мапу.
      * Большие буквы приводит к маленьким
-     *
      *
      * @param text - входной текст
      * @return - мапа с частотой вхождения каждой буквы (Ключ - буква в нижнем регистре)
@@ -60,8 +61,19 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Integer> ret = new LinkedHashMap<Character, Integer>();
-        return null;
+        Map<Character, Integer> ret = new LinkedHashMap<>();
+        for (int i = 0; i < text.length(); ++i) {
+            char c = Character.toLowerCase(text.charAt(i));
+            if (Character.isAlphabetic(c)) {
+                ret.put(c, ret.getOrDefault(c, 1) + 1);
+            }
+        }
+        List<Map.Entry<Character, Integer>> lst = new ArrayList<>(ret.entrySet());
+        lst.sort((t1, t2) -> t2.getValue() - t1.getValue());
+        LinkedHashMap<Character, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : lst) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
     }
-
 }
