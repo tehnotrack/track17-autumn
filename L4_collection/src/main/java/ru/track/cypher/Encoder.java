@@ -21,6 +21,10 @@ public class Encoder {
      * @return зашифрованный текст
      */
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        return null;
+        char[] textToEncode = text.toLowerCase().toCharArray();
+        for (int i = 0; i < text.length(); i++) {
+            textToEncode[i] = cypherTable.getOrDefault(textToEncode[i], textToEncode[i]);
+        }
+        return new String(textToEncode);
     }
 }
