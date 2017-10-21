@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +23,12 @@ public class Decoder {
 
         cypher = new LinkedHashMap<>();
 
+        Iterator<Character> domainOrderedLetters = domainHist.keySet().iterator();
+        Iterator<Character> encryptedOrderedLetters = encryptedDomainHist.keySet().iterator();
 
+        while (domainOrderedLetters.hasNext() && encryptedOrderedLetters.hasNext()) {
+            cypher.put(encryptedOrderedLetters.next(), domainOrderedLetters.next());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,7 +43,11 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        char[] text = encoded.toCharArray();
+        for (int i = 0; i < encoded.length(); i++) {
+            text[i] = cypher.getOrDefault(text[i], text[i]);
+        }
+        return new String(text);
     }
 
     /**
@@ -53,7 +61,26 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> counter = new HashMap<>();
+        char[] textArray = text.toLowerCase().toCharArray();
+
+        for (char letter : textArray) {
+            if (Character.isLetter(letter)) {
+                counter.put(letter, counter.getOrDefault(letter, 0) + 1);
+            }
+        }
+
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(counter.entrySet());
+        list.sort((Map.Entry<Character, Integer> left, Map.Entry<Character, Integer> right) -> {
+            return (right.getValue().compareTo(left.getValue()));
+        });
+
+        Map<Character, Integer> histMap = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : list) {
+            histMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return histMap;
     }
 
 }
