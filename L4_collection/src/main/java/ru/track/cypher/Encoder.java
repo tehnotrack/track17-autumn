@@ -12,15 +12,28 @@ public class Encoder {
     /**
      * Метод шифрует символы текста в соответствие с таблицей
      * NOTE: Текст преводится в lower case!
-     *
+     * <p>
      * Если таблица: {a -> x, b -> y}
      * то текст aB -> xy, AB -> xy, ab -> xy
      *
      * @param cypherTable - таблица подстановки
-     * @param text - исходный текст
+     * @param text        - исходный текст
      * @return зашифрованный текст
      */
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        String temp = text.toLowerCase();
+        for (int i = 0; i < text.length(); i++) {
+            if (cypherTable.containsKey(temp.charAt(i))) {
+
+                sb.append(cypherTable.get(temp.charAt(i)));
+            }
+            else
+            {
+                sb.append(text.charAt(i));
+            }
+        }
+
+        return sb.toString();
     }
 }
