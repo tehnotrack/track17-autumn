@@ -120,8 +120,8 @@ public class JsonWriter {
             f.setAccessible(true);
             try {
                 String jsonName = f.getName();
-                boolean isJsonNameChanged = f.getAnnotation(SerializedTo.class) != null;
-                if (isJsonNameChanged) jsonName = f.getAnnotation(SerializedTo.class).value();
+                SerializedTo serializedToName = f.getAnnotation(SerializedTo.class);
+                jsonName = serializedToName != null ? serializedToName.value() : f.getName();
                 if (jsonNullable || f.get(object) != null)
                     map.put(jsonName, toJson(f.get(object)));
             } catch (IllegalAccessException e) {
