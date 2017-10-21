@@ -8,7 +8,7 @@ public class Decoder {
 
     // Расстояние между A-Z -> a-z
     public static final int SYMBOL_DIST = 32;
-    public static final int alphabetSize = 26;
+    public static final int ALPHABET_SIZE = 26;
 
     private Map<Character, Character> cypher;
 
@@ -66,7 +66,7 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Integer> map = new LinkedHashMap<>(alphabetSize);
+        Map<Character, Integer> map = new LinkedHashMap<>(ALPHABET_SIZE);
         for (char i = 'a'; (int) i <= (int) 'z'; i++) {
             map.put(i, 0);
         }
