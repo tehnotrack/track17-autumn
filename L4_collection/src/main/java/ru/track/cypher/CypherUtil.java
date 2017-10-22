@@ -1,8 +1,8 @@
 package ru.track.cypher;
 
-import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
 
 /**
  * Вспомогательные методы шифрования/дешифрования
@@ -19,7 +19,18 @@ public class CypherUtil {
      */
     @NotNull
     public static Map<Character, Character> generateCypher() {
-        return null;
-    }
+        Map<Character, Character> cypher = new HashMap<>();
+        List<Character> symbols = new ArrayList<>();
+        for (int i = 0; i < SYMBOLS.length(); i++) {
+            symbols.add(SYMBOLS.charAt(i));
+        }
 
+        Collections.shuffle(symbols);
+
+        for(int i = 0; i < SYMBOLS.length(); i++) {
+            cypher.put(SYMBOLS.charAt(i), symbols.get(i));
+        }
+
+        return cypher;
+    }
 }
