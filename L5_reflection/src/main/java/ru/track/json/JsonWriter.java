@@ -66,17 +66,9 @@ public class JsonWriter {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < length; i++) {
-            if(Array.get(object, i) instanceof String) {
-                sb.append("\"");
-                sb.append(Array.get(object, i));
-                sb.append("\"");
-                sb.append(",");
+            sb.append(toJson(Array.get(object, i)));
+            sb.append(",");
             }
-            else {
-                sb.append(Array.get(object, i));
-                sb.append(",");
-            }
-        }
         sb.deleteCharAt(sb.toString().length() - 1);
         sb.append("]");
         return sb.toString();
@@ -132,13 +124,11 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-        }
-
 
         Map<String, String> stringMap = new LinkedHashMap<>();
+        final boolean isAnnotationPresent = object.getClass().isAnnotationPresent(JsonNullable.class);
         for (Field field : fields) {
+            field.setAccessible(true);
             Object val = null;
             try {
                 val = field.get(object);
@@ -147,7 +137,7 @@ public class JsonWriter {
                     stringMap.put(annotation.value(), toJson(val));
                 }
                 else {
-                    if (object.getClass().isAnnotationPresent(JsonNullable.class)) {
+                    if (isAnnotationPresent) {
                         stringMap.put(field.getName(), toJson(val));
                     }
                     if(val!= null) {
