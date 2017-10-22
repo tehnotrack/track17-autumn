@@ -1,8 +1,11 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,9 +63,15 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
-
-        return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < length; i++) {
+            sb.append(toJson(Array.get(object, i)));
+            sb.append(",");
+            }
+        sb.deleteCharAt(sb.toString().length() - 1);
+        sb.append("]");
+        return sb.toString();
     }
 
     /**
@@ -83,10 +92,16 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
+        Map<String, Object> objectMap = (Map) object;
 
-        return null;
+        Map <String, String> stringMap = new LinkedHashMap<>();
+
+        for(Map.Entry entry : objectMap.entrySet()) {
+            stringMap.put(String.valueOf(entry.getKey()), toJson(entry.getValue()));
+        }
+
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +123,34 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        final boolean isAnnotationPresent = object.getClass().isAnnotationPresent(JsonNullable.class);
+        for (Field field : fields) {
+            field.setAccessible(true);
+            Object val = null;
+            try {
+                val = field.get(object);
+                SerializedTo annotation = field.getAnnotation(SerializedTo.class);
+                if(annotation != null) {
+                    stringMap.put(annotation.value(), toJson(val));
+                }
+                else {
+                    if (isAnnotationPresent) {
+                        stringMap.put(field.getName(), toJson(val));
+                    }
+                    if(val!= null) {
+                        stringMap.put(field.getName(), toJson(val));
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
         // TODO: implement!
 
-
-        return null;
+        return formatObject(stringMap);
     }
 
     /**
@@ -123,7 +162,8 @@ public class JsonWriter {
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                .map(e ->
+                        String.format("\"%s\":%s", e.getKey(),e.getValue()))
                 .collect(Collectors.toList())
         );
 
