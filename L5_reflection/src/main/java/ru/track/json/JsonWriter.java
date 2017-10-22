@@ -1,13 +1,20 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import com.google.gson.internal.LinkedTreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import ru.track.json.JsonNullable;
+import ru.track.json.SerializedTo;
 
 
 /**
@@ -60,9 +67,18 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
+        StringBuilder builder = new StringBuilder();
 
-        return null;
+        builder.append("[");
+
+        for(int i=0;i<length;i++) {
+            builder.append(toJson(Array.get(object, i)));
+            if (i != length - 1) builder.append(",");
+        }
+
+        builder.append("]");
+
+        return builder.toString();
     }
 
     /**
@@ -82,9 +98,33 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map map = (Map) object;
+        StringBuilder builder = new StringBuilder();
 
-        return null;
+        builder.append("{");
+
+        Map.Entry entry;
+        String prefix = "";
+
+        for(Object i : map.entrySet()) {
+            entry = (Map.Entry) i;
+            Object key = entry.getKey(),
+                    value = entry.getValue();
+
+            if (key instanceof Number || key instanceof Integer) {
+                key = key.toString();
+            }
+
+            builder.append(prefix)
+                    .append(toJson(key))
+                    .append(":")
+                    .append(toJson(value));
+            prefix = ",";
+        }
+
+        builder.append("}");
+
+        return builder.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -108,10 +148,46 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        Field[] fields = clazz.getDeclaredFields();
+        Map<String, String> map = new LinkedTreeMap<>();
+        String key, value;
+        boolean nullable = object.getClass().getAnnotation(JsonNullable.class) != null;
+
+        for(int i=0;i<fields.length;i++) {
+            fields[i].setAccessible(true);
+
+            key = String.format("%s", fields[i].getName());
+            value = null;
+
+            try {
+                if (fields[i].get(object) != null) {
+                    value = toJson(fields[i].get(object));
+                }
+            } catch(IllegalAccessException e) {
+                System.out.println("wtf, I made sure it's accessible");
+            }
+
+            try {
+                if (nullable && fields[i].get(object) == null) {
+                    value = "null";
+                }
+            } catch (IllegalAccessException e) {
+                System.out.println("wtf, I made sure it's accessible");
+            }
+
+            SerializedTo serializedTo = fields[i].getAnnotation(SerializedTo.class);
+
+            if (serializedTo != null) {
+                key = serializedTo.value();
+            }
+
+            if (value != null) {
+                map.put(key, value);
+            }
+        }
 
 
-        return null;
+        return formatObject(map);
     }
 
     /**
