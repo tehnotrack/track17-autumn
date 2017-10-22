@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import sun.plugin2.message.JavaScriptBaseMessage;
 
 
 /**
@@ -124,14 +125,14 @@ public class JsonWriter {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
         Map<String, String> strmap = new LinkedHashMap<>();
+        boolean jsonNullableFlag = clazz.getAnnotation(JsonNullable.class) == null;
         for (Field f : fields) {
             try {
                 f.setAccessible(true);
-                if (f.get(object) != null || clazz.getAnnotation(JsonNullable.class) != null) {
-                    if (f.getAnnotation(SerializedTo.class) == null)
-                        strmap.put(f.getName(), JsonWriter.toJson(f.get(object)));
-                    else
-                        strmap.put(f.getAnnotation(SerializedTo.class).value(), JsonWriter.toJson(f.get(object)));
+                if (f.get(object) != null || !jsonNullableFlag) {
+                    SerializedTo serializedTo = f.getAnnotation(SerializedTo.class);
+                    strmap.put(serializedTo == null ? f.getName()
+                            : serializedTo.value(), JsonWriter.toJson(f.get(object)));
                 }
             } catch (IllegalAccessException e) {
                 System.out.println("wrong field");
