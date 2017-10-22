@@ -21,7 +21,7 @@ public class Decoder {
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-        cypher = new LinkedHashMap<>();
+        cypher = new HashMap<>();
         List<Map.Entry<Character, Integer>> entries = new ArrayList<>(domainHist.entrySet());
         List<Map.Entry<Character, Integer>> encryptedEntries = new ArrayList<>(encryptedDomainHist.entrySet());
         Iterator<Map.Entry<Character, Integer>> iter = entries.iterator();
@@ -45,12 +45,9 @@ public class Decoder {
         StringBuilder decoded = new StringBuilder();
         char c;
         for(int i = 0; i < encoded.length(); i++){
-            c = encoded.charAt(i);
-            if(Character.isLetter(c)) {
-                if (Character.isLowerCase(c))
-                    decoded.append(cypher.get(c));
-                else decoded.append(cypher.get((char)(c - SYMBOL_DIST)));
-            }
+            c = Character.toLowerCase(encoded.charAt(i));
+            if(cypher.containsKey(c))
+                decoded.append(cypher.get(c));
             else decoded.append(c);
         }
         return decoded.toString();
@@ -70,12 +67,12 @@ public class Decoder {
         text = text.toLowerCase();
         Map<Character, Integer> hist =  new HashMap<>();
         char c;
-        for(c = 'a'; c <= 'z'; c++)
-            hist.put(c, 0);
         for(int i = 0; i < text.length(); i++) {
             c = text.charAt(i);
             if (Character.isLetter(c)) {
-                hist.put(c, hist.get(c) + 1);
+                if(hist.containsKey(c))
+                    hist.put(c, hist.get(c) + 1);
+                else hist.put(c, 1);
             }
         }
         List<Map.Entry<Character, Integer>> entries = new ArrayList<>(hist.entrySet());
