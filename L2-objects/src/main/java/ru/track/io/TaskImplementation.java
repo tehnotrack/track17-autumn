@@ -6,6 +6,8 @@ import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 import java.io.FileInputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +53,8 @@ public final class TaskImplementation implements FileEncoder {
         char[] outputBuffer;
         outputBuffer = new char[outBufferSize];
 
-        try(FileInputStream fis = new FileInputStream(fin);
-            FileWriter fous = new FileWriter(fout)) {
+        try(BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fin));
+            BufferedWriter fous = new BufferedWriter(new FileWriter(fout))) {
             do {
                 Arrays.fill(bytes, (byte) 0);
                 bufferIn = fis.read(bytes);
