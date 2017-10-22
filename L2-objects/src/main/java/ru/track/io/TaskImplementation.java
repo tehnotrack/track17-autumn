@@ -30,53 +30,47 @@ public final class TaskImplementation implements FileEncoder {
         }
         fout.deleteOnExit();
 
-        InputStream inputStream = new FileInputStream(finPath);
-        OutputStream outputStream = new FileOutputStream(fout);
+        try ( InputStream inputStream = new BufferedInputStream(new FileInputStream(finPath));
+              OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(fout))) {
 
-        final int MAX_K = (int) Math.pow(64, 3);
-        int chunkValue;
-        int k;
+            int chunkValue;
 
-        while(inputStream.available() > 2) {
-            chunkValue =inputStream.read() * 65536 +
-                    inputStream.read() * 256 +
-                    inputStream.read();
-            k = MAX_K;
-            for (int quadrupletNumber =  0; quadrupletNumber < 4; quadrupletNumber++) {
-                outputStream.write(toBase64[chunkValue / k]);
-                chunkValue %= k;
-                k /= 64;
-            }
-        } // no more than 3 bytes are unprocessed now
+            while (inputStream.available() > 2) {
+                chunkValue = 0;
+                for (int i=0;i<3;i++) {
+                    chunkValue <<= 8;
+                    chunkValue += inputStream.read();
+                }
 
-        chunkValue = 0;
-        k = 65536;
-        int strayBytes = 0;
-        for (int i=0; i < 3; i++) {
-            if (inputStream.available() > 0) {
-                chunkValue += k * inputStream.read();
-                k /= 256;
+                for (int i=3;i>=0;i--) {
+                    outputStream.write(toBase64[chunkValue >> (6 * i)]);
+                    chunkValue %= (1 << (6 * i));
+                }
+            } // no more than 2 bytes are unprocessed now
+
+            chunkValue = 0;
+            int strayBytes = 0;
+
+            while (inputStream.available() > 0) {
+                chunkValue <<= 8;
+                chunkValue += inputStream.read();
                 strayBytes++;
-            }
-        } // now the remaining bytes are saved into chunkValue
+            } // now the remaining bytes are saved into chunkValue
 
-        k = MAX_K;
-        if (strayBytes != 0) {
-            for (int j = 0; j < strayBytes + 1; j++) {
-                outputStream.write(toBase64[chunkValue / k]);
-                chunkValue %= k;
-                k /= 64;
+            if (strayBytes != 0) {
+                chunkValue <<= 8 * (3 - strayBytes);
+
+                for (int j = 0; j < strayBytes + 1; j++) {
+                    outputStream.write(toBase64[chunkValue / (1 << (6 * (3 - j)))]);
+                    chunkValue %= (1 << (6 * (3 - j)));
+                }
+
+                for (int j = 0; j < 3 - strayBytes; j++) {
+                    outputStream.write('=');
+                }
             }
 
-            for (int j = 0; j < 3 - strayBytes; j++) {
-                outputStream.write('=');
-            }
         }
-
-
-        inputStream.close();
-        outputStream.close();
-
 
         return fout;
     }
