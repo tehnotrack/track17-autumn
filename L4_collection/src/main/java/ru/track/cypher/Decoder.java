@@ -1,9 +1,8 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
 
 public class Decoder {
 
@@ -24,7 +23,12 @@ public class Decoder {
 
         cypher = new LinkedHashMap<>();
 
+        Iterator<Character> domainIterator = domainHist.keySet().iterator();
+        Iterator<Character> encryptedIterator = encryptedDomainHist.keySet().iterator();
 
+        while (domainIterator.hasNext() && encryptedIterator.hasNext()) {
+            cypher.put(encryptedIterator.next(), domainIterator.next());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,13 +43,21 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        char[] characters = encoded.toLowerCase().toCharArray();
+        for (int i = 0; i < encoded.length(); ++i) {
+            if (cypher.keySet().contains(characters[i])) {
+                characters[i] = cypher.get(characters[i]);
+            }
+            sb.append(characters[i]);
+        }
+
+        return sb.toString();
     }
 
     /**
      * Считывает входной текст посимвольно, буквы сохраняет в мапу.
      * Большие буквы приводит к маленьким
-     *
      *
      * @param text - входной текст
      * @return - мапа с частотой вхождения каждой буквы (Ключ - буква в нижнем регистре)
@@ -53,7 +65,25 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> priorityMap = new HashMap<>();
+
+        text = text.toLowerCase();
+        char[] characters = text.toCharArray();
+        for (int i = 0; i < CypherUtil.SYMBOLS.length(); i++) {
+            priorityMap.put(CypherUtil.SYMBOLS.charAt(i), 0);
+        }
+
+        for (int i = 0; i < text.length(); i++) {
+            if (CypherUtil.SYMBOLS.contains(String.valueOf(characters[i]))) {
+                priorityMap.put(characters[i], priorityMap.get(characters[i]) + 1);
+            }
+        }
+
+        Comparator<Character> comparator = (obj1, obj2) -> priorityMap.get(obj2) - priorityMap.get(obj1);
+        Map<Character, Integer> sortedMap = new TreeMap<>(comparator);
+        sortedMap.putAll(priorityMap);
+
+        return sortedMap;
     }
 
 }
