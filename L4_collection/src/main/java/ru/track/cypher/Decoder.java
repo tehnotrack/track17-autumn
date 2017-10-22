@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -16,13 +15,20 @@ public class Decoder {
      * Конструктор строит гистограммы открытого домена и зашифрованного домена
      * Сортирует буквы в соответствие с их частотой и создает обратный шифр Map<Character, Character>
      *
-     * @param domain - текст по кторому строим гистограмму языка
+     * @param domain - текст по которому строим гистограмму языка
      */
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
+        Iterator<Character> iterDictionary = domainHist.keySet().iterator();
+        Iterator<Character> iterEncrypted = encryptedDomainHist.keySet().iterator();
 
         cypher = new LinkedHashMap<>();
+        for (int i = 0; iterDictionary.hasNext() && iterEncrypted.hasNext(); ++i) {
+            cypher.put(iterEncrypted.next(), iterDictionary.next());
+        }
+
+        decode(encryptedDomain);
 
 
     }
@@ -39,7 +45,13 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder decoded = new StringBuilder();
+        for (int i = 0; i < encoded.length(); ++i) {
+            if (Character.isLetter(encoded.charAt(i)))
+                decoded.append(cypher.get(encoded.charAt(i)));
+            else decoded.append(encoded.charAt(i));
+        }
+        return decoded.toString();
     }
 
     /**
@@ -53,7 +65,27 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
-    }
+        Map<Character, Integer> hist = new LinkedHashMap<>();
+        text = text.toLowerCase();
 
+        for (int i = 0; i < CypherUtil.SYMBOLS.length(); ++i ) {
+            hist.put(CypherUtil.SYMBOLS.charAt(i), 0);
+        }
+
+        for (int i = 0; i < text.length(); ++i) {
+            if (Character.isLetter(text.charAt(i))) {
+                if (hist.keySet().contains(text.charAt(i))) {
+                    hist.put(text.charAt(i), hist.get(text.charAt(i)) + 1);
+                }
+            }
+        }
+
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(hist.entrySet());
+        list.sort((o1, o2) -> o2.getValue() - o1.getValue());
+        Map<Character, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : list) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
 }
