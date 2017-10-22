@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.plugin2.message.JavaScriptBaseMessage;
+//import sun.plugin2.message.JavaScriptBaseMessage;
 
 
 /**
