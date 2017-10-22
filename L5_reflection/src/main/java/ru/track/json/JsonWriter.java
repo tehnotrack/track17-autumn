@@ -66,13 +66,12 @@ public class JsonWriter {
         StringBuilder str = new StringBuilder();
 
         str.append('[');
-        for (int i = 0; i < length; i++)
-        {
+        for (int i = 0; i < length; i++) {
             str.append(toJson(Array.get(object, i)));
 
-            if (i != (length -1) ){
-                str.append(",");}
-            else{
+            if (i != (length - 1)) {
+                str.append(",");
+            } else {
                 str.append("]");
             }
         }
@@ -102,12 +101,11 @@ public class JsonWriter {
         Map<Object, Object> map = (Map) object;
         Map<String, String> stringMap = new LinkedHashMap<>();
 
-        for(Map.Entry<Object, Object> entry : map.entrySet())
-        {
+        for (Map.Entry<Object, Object> entry : map.entrySet()) {
             if (entry.getKey().getClass() != String.class)
                 stringMap.put(toJson(entry.getKey()), toJson(entry.getValue()));
             else
-                stringMap.put((String)entry.getKey(), toJson(entry.getValue()));
+                stringMap.put((String) entry.getKey(), toJson(entry.getValue()));
         }
 
         return formatObject(stringMap);
@@ -132,30 +130,29 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        JsonNullable js = (JsonNullable) clazz.getAnnotation(JsonNullable.class);
+        JsonNullable isjsonnuulable = (JsonNullable) clazz.getAnnotation(JsonNullable.class);
         Field[] fields = clazz.getDeclaredFields();
         Field.setAccessible(fields, true);
         Map<String, String> mp = new LinkedHashMap<>();
 
-        for(Field field: fields)
-        {
+        for (Field field : fields) {
             field.setAccessible(true);
             SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
-            if (serializedTo != null)
+
+            if (serializedTo != null) {
                 try {
-                if (js != null)
-                    mp.put(serializedTo.value(), toJson(field.get(object)));
-                else if (field.get(object) != null)
-                    mp.put(serializedTo.value(), toJson(field.get(object)));
+                    if ((isjsonnuulable != null) || (field.get(object) != null)) {
+                        mp.put(serializedTo.value(), toJson(field.get(object)));
+                    }
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
+            }
             else
                 try {
-                    if (js != null)
+                    if ((isjsonnuulable != null) || (field.get(object) != null)) {
                         mp.put(field.getName(), toJson(field.get(object)));
-                    else if (field.get(object) != null)
-                        mp.put(field.getName(), toJson(field.get(object)));
+                    }
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
