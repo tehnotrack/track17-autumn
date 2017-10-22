@@ -25,8 +25,9 @@ public class Encoder {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
+            Character ch = cypherTable.get(c);
             //если встретили символ, равный ключу мапы, то записываем его зашифрованным
-            if (cypherTable.keySet().contains(c)) {
+            if (ch != null) {
                 sb.append(cypherTable.get(c));
             } else {
                 //иначе просто записываем не содержащийся в ключах мапы символ
