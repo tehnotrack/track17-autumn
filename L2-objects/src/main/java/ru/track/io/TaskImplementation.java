@@ -4,12 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
+
+    private static int convertToUnsigned(byte k) {
+        return k & 0xff;
+    }
 
     /**
      * @param finPath  where to read binary data from
@@ -19,8 +21,64 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        final File fout;
+
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".base64");
+        }
+        fout.deleteOnExit();
+
+        InputStream inputStream = new FileInputStream(finPath);
+        OutputStream outputStream = new FileOutputStream(fout);
+
+        final int MAX_K = (int) Math.pow(64, 3);
+        int chunkValue;
+        int k;
+
+        while(inputStream.available() > 2) {
+            chunkValue =inputStream.read() * 65536 +
+                    inputStream.read() * 256 +
+                    inputStream.read();
+            k = MAX_K;
+            for (int quadrupletNumber =  0; quadrupletNumber < 4; quadrupletNumber++) {
+                outputStream.write(toBase64[chunkValue / k]);
+                chunkValue %= k;
+                k /= 64;
+            }
+        } // no more than 3 bytes are unprocessed now
+
+        chunkValue = 0;
+        k = 65536;
+        int strayBytes = 0;
+        for (int i=0; i < 3; i++) {
+            if (inputStream.available() > 0) {
+                chunkValue += k * inputStream.read();
+                k /= 256;
+                strayBytes++;
+            }
+        } // now the remaining bytes are saved into chunkValue
+
+        k = MAX_K;
+        if (strayBytes != 0) {
+            for (int j = 0; j < strayBytes + 1; j++) {
+                outputStream.write(toBase64[chunkValue / k]);
+                chunkValue %= k;
+                k /= 64;
+            }
+
+            for (int j = 0; j < 3 - strayBytes; j++) {
+                outputStream.write('=');
+            }
+        }
+
+
+        inputStream.close();
+        outputStream.close();
+
+
+        return fout;
     }
 
     private static final char[] toBase64 = {
@@ -32,8 +90,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
-        // NOTE: open http://localhost:9000/ in your web browser
+        final FileEncoder encoder = new TaskImplementation();
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
 
