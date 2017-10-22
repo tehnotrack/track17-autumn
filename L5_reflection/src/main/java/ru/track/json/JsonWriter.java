@@ -1,5 +1,6 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -150,6 +151,7 @@ public class JsonWriter {
         Field[] fields = clazz.getDeclaredFields();
         Map<String, String> map = new LinkedTreeMap<>();
         String key, value;
+        boolean nullable = object.getClass().getAnnotation(JsonNullable.class) != null;
 
         for(int i=0;i<fields.length;i++) {
             fields[i].setAccessible(true);
@@ -166,15 +168,17 @@ public class JsonWriter {
             }
 
             try {
-                if (object.getClass().getAnnotation(JsonNullable.class) != null && fields[i].get(object) == null) {
+                if (nullable && fields[i].get(object) == null) {
                     value = "null";
                 }
             } catch (IllegalAccessException e) {
                 System.out.println("wtf, I made sure it's accessible");
             }
 
-            if (fields[i].getAnnotation(SerializedTo.class) != null) {
-                key = fields[i].getAnnotation(SerializedTo.class).value();
+            SerializedTo serializedTo = fields[i].getAnnotation(SerializedTo.class);
+
+            if (serializedTo != null) {
+                key = serializedTo.value();
             }
 
             if (value != null) {
