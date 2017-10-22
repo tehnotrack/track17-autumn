@@ -2,12 +2,13 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
+import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+//import sun.plugin2.message.JavaScriptBaseMessage;
 
 
 /**
@@ -60,9 +61,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < length - 1; i++) {
+            sb.append(JsonWriter.toJson(Array.get(object, i)));
+            sb.append(",");
+        }
+
+        sb.append(JsonWriter.toJson(Array.get(object, length - 1)));
+        sb.append("]");
         // TODO: implement!
 
-        return null;
+        return sb.toString();
     }
 
     /**
@@ -83,8 +92,14 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
+        Map map = (Map) object;
+        Map<String, String> strmap = new LinkedHashMap<>();
+        List list = new ArrayList<Object>(map.keySet());
+        for (Object o : list) {
+            strmap.put(o.toString(), JsonWriter.toJson(map.get(o)));
+        }
 
-        return null;
+        return formatObject(strmap);
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -108,10 +123,27 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+        Map<String, String> strmap = new LinkedHashMap<>();
+        boolean jsonNullableFlag = clazz.getAnnotation(JsonNullable.class) == null;
+        for (Field f : fields) {
+            try {
+                f.setAccessible(true);
+                if (f.get(object) != null || !jsonNullableFlag) {
+                    SerializedTo serializedTo = f.getAnnotation(SerializedTo.class);
+                    strmap.put(serializedTo == null ? f.getName()
+                            : serializedTo.value(), JsonWriter.toJson(f.get(object)));
+                }
+            } catch (IllegalAccessException e) {
+                System.out.println("wrong field");
+            }
+        }
+
+
         // TODO: implement!
 
 
-        return null;
+        return formatObject(strmap);
     }
 
     /**
