@@ -59,4 +59,5 @@ public class DecoderTest {
         String result = decoder.decode(testEncoded);
         Assert.assertEquals("e to a ih s!", result);
     }
+
 }
