@@ -83,5 +83,4 @@ public class Decoder {
                         (oldValue, newValue) -> oldValue,
                         LinkedHashMap::new));
     }
-
 }
