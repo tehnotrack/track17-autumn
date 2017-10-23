@@ -56,7 +56,7 @@ public final class TaskImplementation implements FileEncoder {
                 //0x3f=0d63=0b111111
                 int shift = 6 * (3 - counter);
                 result[counter] = toBase64[clipOfThreeBytes >> shift & 0x3f];
-               // out.write(result[counter]);
+                // out.write(result[counter]);
             }
 
             out.write(new String(result).getBytes());
