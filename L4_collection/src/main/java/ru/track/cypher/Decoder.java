@@ -3,6 +3,7 @@ package ru.track.cypher;
 import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import static ru.track.cypher.CypherUtil.SYMBOLS;
 
@@ -22,21 +23,16 @@ public class Decoder {
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
+
         cypher = new LinkedHashMap<>();
-//        Iterator keys = domainHist.entrySet().iterator();
-//        Iterator values = encryptedDomainHist.entrySet().iterator();
-//        while (keys.hasNext() && values.hasNext()){
-//            Map.Entry key = keys.next();
-//            cypher.put(key.getKey(), value);
-//
-//        }
-
-//        Set<Character> keys = domainHist.keySet();
-//        Set<Character> values = domainHist.keySet();
-//        for () {
-//            cypher.put(domainHist)
-//        }
-
+        Iterator<Character> keys = domainHist.keySet().iterator();
+        Iterator<Character> values = encryptedDomainHist.keySet().iterator();
+        while (keys.hasNext()) {
+            Character key = keys.next();
+            Character val = keys.next();
+            cypher.put(key, val);
+        }
+        decode(encryptedDomain);
     }
 
     public Map<Character, Character> getCypher() {
@@ -51,8 +47,20 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-
-
+        StringBuilder res = new StringBuilder();
+        Map<Character, Character> c = getCypher();
+        for (int i = 0; i < encoded.length(); i++) {
+            if (Character.isLetter(encoded.charAt(i))) {
+//                System.out.print(encoded.charAt(i));
+//                System.out.print(" ");
+//                System.out.println(c.get(Character.toLowerCase(encoded.charAt(i))));
+                res.append(c.get(Character.toLowerCase(encoded.charAt(i))));
+            } else {
+                res.append(encoded.charAt(i));
+            }
+        }
+        System.out.println(res);
+        return res.toString();
     }
 
     /**
@@ -79,7 +87,7 @@ public class Decoder {
 
     @NotNull
     static Map<Character, Integer> createHist(@NotNull String text) {
-        Map<Character, Integer> hist = new HashMap<>();
+        Map<Character, Integer> hist = new LinkedHashMap<>();
         for (int i = 0; i < CypherUtil.SYMBOLS.length(); i++) {
             hist.put(CypherUtil.SYMBOLS.charAt(i), 0);
         }
@@ -91,26 +99,18 @@ public class Decoder {
                 hist.put(symbol, value + 1);
             }
         }
-
-//        Set<Character> set = hist.keySet();
-//        System.out.println(set.toString());
-//        for (Character c : set) {
-//            System.out.print(hist.get(c));
-//            System.out.print(" ");
-//        }
-
         hist = sortByValue(hist);
-
-//        set = hist.keySet();
-//        System.out.println(set.toString());
-//        for (Character c : set) {
-//            System.out.print(hist.get(c));
-//            System.out.print(" ");
-//        }
         return hist;
     }
+}
+
+class Main {
     public static void main(String[] args) {
-        String text = "aabbbcb";
-        Map<Character, Integer> map = createHist(text);
+        String text = "aabbbcbagas;k;lkpwoierqwrpoipoivcbpqwrq m m zdsnhsdnenglkwn";
+        Decoder decoder = new Decoder("aabbbcbagas;k;lkpwoierqwrpoipoivcbpqwrq m m zdsnhsdnenglkwn",
+                "aoybboiagas;k;lkcdoierqwrpoipkivcbpabrq k m zdsnhslnenglkwn");
+
+        String decrypted =decoder.decode(text);
+        System.out.print(decrypted);
     }
 }
