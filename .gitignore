@@ -41,9 +41,5 @@ hs_err_pid*
 **/.idea/
 **/target/
 *.DS_Store
-/L1-intro/
-*/L1-intro/
-**/L1-intro/
-/L3-oop/
-*/L3-oop/
-**/L3-oop/
+*.iml
+/*.iml
