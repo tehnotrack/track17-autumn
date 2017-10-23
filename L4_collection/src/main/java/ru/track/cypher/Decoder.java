@@ -19,7 +19,7 @@ public class Decoder {
      * @param domain - текст по которому строим гистограмму языка
      */
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
-        
+
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
