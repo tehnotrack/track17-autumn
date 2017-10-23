@@ -1,6 +1,7 @@
 package ru.track.cypher;
 
 import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,7 +20,7 @@ public class Encoder {
      * @param text - исходный текст
      * @return зашифрованный текст
      */
-    public static String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
+    public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
         StringBuilder res = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
             Character symbol = text.charAt(i);
