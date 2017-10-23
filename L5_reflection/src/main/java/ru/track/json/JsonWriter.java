@@ -3,6 +3,7 @@ package ru.track.json;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -121,20 +122,26 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Annotation jsonNullable = clazz.getAnnotation(JsonNullable.class);
         Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields, true);
         Map<String, String> map = new LinkedHashMap<>();
         for (Field field : fields) {
-            if (!field.isAccessible()) {
-                field.setAccessible(true);
-            }
+            SerializedTo serTo = field.getAnnotation(SerializedTo.class);
+            String fieldName = (serTo != null) ? serTo.value() : field.getName();
+            String fieldValue = null;
             try {
-                map.put(field.getName(), toJson(field.get(object)));
+                fieldValue = toJson(field.get(object));
+                if (jsonNullable == null && fieldValue.equals("null")) {
+                    continue;
+                }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
+
             }
+            map.put(fieldName, fieldValue);
         }
         return formatObject(map);
-
     }
 
     /**
@@ -152,5 +159,6 @@ public class JsonWriter {
 
         return String.format("{%s}", r);
     }
+
 
 }
