@@ -95,9 +95,10 @@ public class JsonWriter {
         StringBuilder res = new StringBuilder();
         res.append ("{");
         map.forEach((key, value) -> {
-            res.append("\"" + key.toString() + "\":" + "\"" + value.toString() + "\",");
+            res.append("\"" + key.toString() + "\":" + toJson(value) + ",");
         });
-        res.setLength(res.length()-1); res.append("}");
+        res.setLength(res.length()-1);
+        res.append("}");
         return res.toString();
 
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
@@ -124,19 +125,28 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
         // TODO: implement!
-        StringBuilder str = new StringBuilder();
+        final boolean isNullable = clazz.getAnnotation(JsonNullable.class) != null;
 
         Field[] fields = clazz.getDeclaredFields();
         Field.setAccessible(fields, true);
         Map<String, String> map = new LinkedHashMap<>();
-        for (Field f : fields)
-            try {
-                if (f.get(object) != null)
-                    map.put(f.getName(), toJson(f.get(object)));
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
+        for (Field f : fields) {
+            SerializedTo serializedTo = f.getAnnotation(SerializedTo.class);
+            if (serializedTo != null)
+                try {
+                    if (f.get(object) != null || isNullable)
+                        map.put(serializedTo.value(), toJson(f.get(object)));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            else
+                try {
+                    if (f.get(object) != null || isNullable)
+                        map.put(f.getName(), toJson(f.get(object)));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+        }
         return formatObject(map);
     }
 
@@ -155,5 +165,4 @@ public class JsonWriter {
 
         return String.format("{%s}", r);
     }
-
 }
