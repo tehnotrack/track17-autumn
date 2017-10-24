@@ -1,5 +1,6 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -121,33 +122,35 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Annotation nullable = clazz.getAnnotation(JsonNullable.class);
 
         Field[] fields = clazz.getDeclaredFields();
-        List<String> encodedFields = new ArrayList<>();
-        List<String> encodedValues = new ArrayList<>();
+
+        StringBuilder ret = new StringBuilder("{");
         for(Field field : fields) {
-            encodedFields.add(toJson(field.getName()));
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+
             field.setAccessible(true);
             Object value = null;
+
             try {
                 value = field.get(object);
             } catch (IllegalAccessException e) {
 
             }
-            encodedValues.add(toJson(value));
-        }
 
-        StringBuilder ret = new StringBuilder("{");
-
-        for(int i = 0; i < encodedFields.size(); i++) {
-            if(encodedValues.get(i) == "null"){
-                continue;
+            if(value != null || nullable != null) {
+                if(serializedTo != null) {
+                    ret.append(toJson(serializedTo.value()) + ":" + toJson(value) + ",");
+                } else {
+                    ret.append(toJson(field.getName()) + ":" + toJson(value) + ",");
+                }
             }
-            ret.append(encodedFields.get(i) + ":" + encodedValues.get(i) + ",");
+
         }
+
         ret.deleteCharAt(ret.toString().length() - 1);
         ret.append("}");
-
 
         return ret.toString();
     }
