@@ -26,10 +26,10 @@ public class SignatureServer {
     @Nullable
     private final InetAddress bindAddr;
 
-    @NotNull
+    @Nullable
     private final ExecutorService pool;
 
-    public SignatureServer(int port, int backlog, @Nullable InetAddress bindAddr, @NotNull ExecutorService pool) {
+    public SignatureServer(int port, int backlog, @Nullable InetAddress bindAddr, @Nullable ExecutorService pool) {
         this.port = port;
         this.backlog = backlog;
         this.bindAddr = bindAddr;
@@ -70,7 +70,7 @@ public class SignatureServer {
             ssock = ssockFinal;
             //noinspection InfiniteLoopStatement
             while (true) {
-                pool.execute(() -> handle(ssockFinal));
+                handle(ssockFinal);
             }
         } finally {
             IOUtils.closeQuietly(ssock);
@@ -78,8 +78,7 @@ public class SignatureServer {
     }
 
     public static void main(String[] args) throws Exception {
-        final ExecutorService pool = Executors.newFixedThreadPool(10);
-        final SignatureServer server = new SignatureServer(8100, 10, null, pool);
+        final SignatureServer server = new SignatureServer(8100, 10, null, null);
         server.serve();
     }
 
