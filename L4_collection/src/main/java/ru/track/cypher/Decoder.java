@@ -1,9 +1,9 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Decoder {
 
@@ -16,14 +16,19 @@ public class Decoder {
      * Конструктор строит гистограммы открытого домена и зашифрованного домена
      * Сортирует буквы в соответствие с их частотой и создает обратный шифр Map<Character, Character>
      *
-     * @param domain - текст по кторому строим гистограмму языка
+     * @param domain - текст по которому строим гистограмму языка
      */
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-
+        Map.Entry<Character, Character>[] enc = new Map.Entry[encryptedDomainHist.size()];
+        encryptedDomainHist.entrySet().toArray(enc);
+        Map.Entry<Character, Character>[] dom = new Map.Entry[domainHist.size()];
+        domainHist.entrySet().toArray(dom);
         cypher = new LinkedHashMap<>();
-
+        for (int i = 0; i < domainHist.size(); i++) {
+            cypher.put(enc[i].getKey(), dom[i].getKey());
+        }
 
     }
 
@@ -39,13 +44,21 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        Map<Character, Character> cypher = this.getCypher();
+        StringBuilder decoded = new StringBuilder(encoded);
+        for (int i = 0; i < encoded.length(); i++) {
+            char curChar = decoded.charAt(i);
+            if (!Character.isLetter(curChar)) {
+                continue;
+            }
+            decoded.setCharAt(i, cypher.get(curChar));
+        }
+        return decoded.toString();
     }
 
     /**
      * Считывает входной текст посимвольно, буквы сохраняет в мапу.
      * Большие буквы приводит к маленьким
-     *
      *
      * @param text - входной текст
      * @return - мапа с частотой вхождения каждой буквы (Ключ - буква в нижнем регистре)
@@ -53,7 +66,21 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
-    }
+        Map<Character, Integer> hist = new HashMap<>(26);
+        text = text.toLowerCase();
+        for (int i = 0; i < text.length(); i++) {
+            char curChar = text.charAt(i);
+            if (Character.isLetter(curChar)) {
+                int curVal = hist.getOrDefault(curChar, 0);
+                hist.put(curChar, ++curVal);
+            }
+        }
 
+        return hist.entrySet().stream()
+                .sorted(Map.Entry.<Character, Integer>comparingByValue().reversed())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new));
+    }
 }
