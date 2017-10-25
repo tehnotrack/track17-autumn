@@ -1,5 +1,7 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -8,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.google.gson.JsonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -134,12 +137,22 @@ public class JsonWriter {
         Map<String, String> map = new LinkedHashMap<>();
         Class clazz = object.getClass();
 
+        boolean nullableObject = false;
+        Annotation jsonNullable = clazz.getAnnotation(JsonNullable.class);
+        if (jsonNullable != null && jsonNullable.annotationType().getSimpleName().equals("JsonNullable")) {
+            nullableObject = true;
+        }
+
         Field[] fields = clazz.getDeclaredFields();
         Object obj;
 
         for (Field field : fields) {
             String fieldName = field.getName();
             field.setAccessible(true);
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+            if (serializedTo != null) {
+                fieldName = serializedTo.value();
+            }
 
             try {
                 obj = field.get(object);
@@ -147,7 +160,7 @@ public class JsonWriter {
                 continue;
             }
 
-            if (obj == null) {
+            if (obj == null && !nullableObject) {
                 continue;
             }
 
