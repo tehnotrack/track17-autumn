@@ -93,18 +93,9 @@ public class JsonWriter {
         Map<Object, Object> map = (Map) object;
         Map<String,String> convmap = new LinkedHashMap<>();
         for (Map.Entry e: map.entrySet()) {
-            if (e.getKey().getClass().equals(String.class)
-                    || e.getKey().getClass().equals(Character.class)
-                    || e.getKey().getClass().isEnum()
-                    ) {
-                convmap.put(toJson(e.getKey()), toJson(e.getValue()));
-            } else {
-                convmap.put(String.format("\"%s\"", toJson(e.getKey())), toJson(e.getValue()));
-            }
+            convmap.put(toJson(e.getKey()), toJson(e.getValue()));
         }
         return formatObject(convmap);
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
     }
 
     /**
@@ -128,11 +119,11 @@ public class JsonWriter {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
         Map<String, String> objfiels = new LinkedHashMap<>();
-        JsonNullable nullable = (JsonNullable) clazz.getAnnotation(JsonNullable.class);
+        boolean isNullable = (clazz.getAnnotation(JsonNullable.class) != null);
         for (Field field: fields) {
             field.setAccessible(true);
             SerializedTo st = field.getAnnotation(SerializedTo.class);
-            if (nullable == null && field.get(object) == null) continue;
+            if (!isNullable && field.get(object) == null) continue;
             String key = (st == null)? toJson(field.getName()): toJson(st.value());
             String value = toJson(field.get(object));
             objfiels.put(key, value);
