@@ -147,11 +147,13 @@ public class JsonWriter {
         Object obj;
 
         for (Field field : fields) {
-            String fieldName = field.getName();
+            String fieldName;
             field.setAccessible(true);
             SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
             if (serializedTo != null) {
                 fieldName = serializedTo.value();
+            } else {
+                fieldName = field.getName();
             }
 
             try {
