@@ -3,11 +3,14 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
 
 
 /**
@@ -60,9 +63,23 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
+        StringBuilder buffer = new StringBuilder("[");
+        boolean isChar = false;
+        for (int i = 0; i < length; ++i) {
+            Class clazz = Array.get(object, i).getClass();
+            isChar = (clazz.equals(String.class) || clazz.equals(Character.class) || clazz.isEnum());
+            if (isChar)
+                buffer.append('\"');
+            buffer.append(Array.get(object, i));
+            if (isChar)
+                buffer.append('\"');
+            if (i < length - 1)
+                buffer.append(",");
+        }
+        buffer.append(']');
+        return buffer.toString();
 
-        return null;
+        //return null;
     }
 
     /**
@@ -83,8 +100,21 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
+        Map map = (Map) object;
+        Map stringMap = new LinkedHashMap();
+        Set<Integer> keyset = map.keySet();
+        String key = keyset.toString();
 
-        return null;
+//        map.
+
+        for (Integer i = 0; i < keyset.size(); ++i) {
+            for (int j = 0; j < key.length(); ++j) {
+                keyset.
+            }
+//            stringMap.put(new String(map.get(keyset.)));
+        }
+ //       stringMap.put(map.get(map.))
+        return formatObject((stringMap));
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -108,8 +138,19 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        Field[] declaratedFields = clazz.getDeclaredFields();
+        for (Field f : declaratedFields){
+            String name = f.getName();
+            f.setAccessible(true);
+            Object val = null;
+            try {
+                val = f.get(object);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println(String.format("%s : %s\n", name, val));
+        }
         // TODO: implement!
-
 
         return null;
     }
