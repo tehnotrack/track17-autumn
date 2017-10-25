@@ -1,9 +1,9 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -59,10 +59,18 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
-        int length = Array.getLength(object);
-        // TODO: implement!
 
-        return null;
+        int length = Array.getLength(object);
+
+        StringBuilder ret = new StringBuilder("[");
+
+        for(int i = 0; i < length; i++) {
+            ret.append(toJson(Array.get(object, i)) + ",");
+
+        }
+        ret.deleteCharAt(ret.toString().length() - 1);
+        ret.append("]");
+        return ret.toString();
     }
 
     /**
@@ -82,11 +90,17 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map map = (Map) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        Iterator<Map.Entry<Object, Object>> entries = map.entrySet().iterator();
+
+        while (entries.hasNext()) {
+            Map.Entry<Object, Object> entry = entries.next();
+            stringMap.put(entry.getKey().toString(), toJson(entry.getValue()));
+        }
+
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +122,37 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        Annotation nullable = clazz.getAnnotation(JsonNullable.class);
 
+        Field[] fields = clazz.getDeclaredFields();
 
-        return null;
+        StringBuilder ret = new StringBuilder("{");
+        for(Field field : fields) {
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+
+            field.setAccessible(true);
+            Object value = null;
+
+            try {
+                value = field.get(object);
+            } catch (IllegalAccessException e) {
+
+            }
+
+            if(value != null || nullable != null) {
+                if(serializedTo != null) {
+                    ret.append(toJson(serializedTo.value()) + ":" + toJson(value) + ",");
+                } else {
+                    ret.append(toJson(field.getName()) + ":" + toJson(value) + ",");
+                }
+            }
+
+        }
+
+        ret.deleteCharAt(ret.toString().length() - 1);
+        ret.append("}");
+
+        return ret.toString();
     }
 
     /**
