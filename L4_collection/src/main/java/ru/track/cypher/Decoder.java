@@ -1,6 +1,8 @@
 package ru.track.cypher;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,8 +24,13 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
+        List<Character> encrypts = new ArrayList<>(encryptedDomainHist.keySet());
+        List<Character> domains = new ArrayList<>(domainHist.keySet());
+
         cypher = new LinkedHashMap<>();
 
+        for (int i = 0; i < domainHist.size(); ++i)
+            cypher.put(encrypts.get(i), domains.get(i));
 
     }
 
@@ -39,7 +46,14 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < encoded.length(); i++) {
+            Character c = Character.toLowerCase(encoded.charAt(i));
+            sb.append(cypher.getOrDefault(c, c));
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -53,7 +67,22 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> ret = new LinkedHashMap<>();
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = Character.toLowerCase(text.charAt(i));
+            if (Character.isAlphabetic(c))
+                ret.put(c, ret.getOrDefault(c, 1) + 1);
+        }
+
+        List<Map.Entry<Character, Integer>> lst = new ArrayList<>(ret.entrySet());
+        lst.sort((t1, t2) -> t2.getValue() - t1.getValue());
+
+        LinkedHashMap<Character, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : lst)
+            sortedMap.put(entry.getKey(), entry.getValue());
+
+        return sortedMap;
     }
 
 }
