@@ -66,7 +66,7 @@ public class JsonWriter {
         res.append("[");
         for (int i = 0; i < length; i++) {
             Object val = Array.get(object, i);
-            res.append(JsonWriter.toJson(val));
+            res.append(toJson(val));
             if (i < length - 1) {
                 res.append(",");
             }
@@ -93,28 +93,30 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
-        Map map = (Map) object;
+        Map<?, ?> map = (Map) object;
         StringBuilder res = new StringBuilder();
         res.append("{");
-        final boolean[] isFirst = {true};
-        map.forEach((k,v) -> {
-            if (!isFirst[0]) {
-                res.append(",");
-            }
-            isFirst[0] = false;
 
+        boolean isFirst = true;
+        for (Map.Entry ent : map.entrySet()) {
+            if (!isFirst) {
+                res.append(",");
+            } else {
+                isFirst = false;
+            }
             // some problems with String and "key"-form
-            Class clazz = k.getClass();
+            Class clazz = ent.getKey().getClass();
             if (clazz.equals(String.class)
                     || clazz.equals(Character.class)
                     || clazz.isEnum()
                     ) {
-                res.append(String.format("\"%s\":", k));
+                res.append(String.format("\"%s\":", ent.getKey()));
             } else {
-                res.append("\"" + JsonWriter.toJson(k) + "\"" + ":");
+                res.append("\"" + toJson(ent.getKey()) + "\"" + ":");
             }
-            res.append( JsonWriter.toJson(v));
-        });
+            res.append(toJson(ent.getValue()));
+        }
+
         res.append("}");
         return res.toString();
     }
@@ -158,9 +160,9 @@ public class JsonWriter {
 
             SerializedTo serializedTo = f.getAnnotation(SerializedTo.class);
             if (serializedTo != null) {
-                map.put(serializedTo.value(), JsonWriter.toJson(val));
+                map.put(serializedTo.value(), toJson(val));
             } else {
-                map.put(name, JsonWriter.toJson(val));
+                map.put(name, toJson(val));
             }
 
         }
