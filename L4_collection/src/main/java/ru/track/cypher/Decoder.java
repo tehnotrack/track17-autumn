@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -21,10 +20,12 @@ public class Decoder {
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-
         cypher = new LinkedHashMap<>();
-
-
+        Iterator<Character> keys = domainHist.keySet().iterator();
+        Iterator<Character> vals = encryptedDomainHist.keySet().iterator();
+        while (keys.hasNext()) {
+            cypher.put(vals.next(), keys.next());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,7 +40,15 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder res = new StringBuilder();
+        for (int i = 0; i < encoded.length(); i++) {
+            if (Character.isLetter(encoded.charAt(i))) {
+                res.append(cypher.get(Character.toLowerCase(encoded.charAt(i))));
+            } else {
+                res.append(encoded.charAt(i));
+            }
+        }
+        return res.toString();
     }
 
     /**
@@ -51,9 +60,33 @@ public class Decoder {
      * @return - мапа с частотой вхождения каждой буквы (Ключ - буква в нижнем регистре)
      * Мапа отсортирована по частоте. При итерировании на первой позиции наиболее частая буква
      */
+
+    private Map<Character, Integer> sortByValue(Map<Character, Integer> unsortedMap) {
+        List<Map.Entry<Character, Integer>> list =
+                new LinkedList<>(unsortedMap.entrySet());
+        Collections.sort(list, (Map.Entry<Character, Integer> o1,
+                                Map.Entry<Character, Integer> o2) -> (o2.getValue()).compareTo(o1.getValue()));
+        Map<Character, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : list) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
+
     @NotNull
-    Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+    public Map<Character, Integer> createHist(@NotNull String text) {
+        Map<Character, Integer> hist = new LinkedHashMap<>();
+        for (int i = 0; i < CypherUtil.SYMBOLS.length(); i++) {
+            hist.put(CypherUtil.SYMBOLS.charAt(i), 0);
+        }
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isLetter(text.charAt(i))) {
+                Character symbol = Character.toLowerCase(text.charAt(i));
+                hist.put(symbol, hist.get(symbol) + 1);
+            }
+        }
+        hist = sortByValue(hist);
+        return hist;
     }
 
 }
