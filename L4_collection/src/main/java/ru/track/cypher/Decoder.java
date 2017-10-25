@@ -9,6 +9,9 @@ public class Decoder {
     // Расстояние между A-Z -> a-z
     public static final int SYMBOL_DIST = 32;
 
+    private static final int LOW = 97;
+    private static final int HIGH = 122;
+
     private Map<Character, Character> cypher;
 
     /**
@@ -86,7 +89,7 @@ public class Decoder {
         for(int i = 0; i < text.length(); i++) {
             Character c = text.charAt(i);
             c = Character.toLowerCase(c);
-            if((int)c >= 97 && (int)c <= 122) {
+            if((int)c >= LOW && (int)c <= HIGH) {
                 if (map.get(c) != null) {
                     int count = map.get(c);
                     map.put(c, count + 1);
