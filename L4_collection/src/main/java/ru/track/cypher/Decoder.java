@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +23,12 @@ public class Decoder {
 
         cypher = new LinkedHashMap<>();
 
+        List<Character> domainHistKeys = new LinkedList<>(domainHist.keySet());
+        List<Character> encryptedDomainHistKeys= new LinkedList<>(encryptedDomainHist.keySet());
+
+        for(int i=0; i<encryptedDomainHistKeys.size(); ++i){
+            cypher.put(encryptedDomainHistKeys.get(i),domainHistKeys.get(i));
+        }
 
     }
 
@@ -39,7 +44,25 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+
+        Map<Character, Character> cypher = getCypher();
+
+        if (encoded.length() == 0)
+            return encoded;
+
+        Character ch;
+
+        StringBuilder decoded = new StringBuilder();
+
+        for (int i = 0; i < encoded.length(); i++) {
+            ch = cypher.get(Character.toLowerCase(encoded.charAt(i)));
+            if (ch == null)
+                decoded.append(encoded.charAt(i));
+            else
+                decoded.append(ch.charValue());
+        }
+
+        return decoded.toString();
     }
 
     /**
@@ -53,7 +76,35 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> hist = new HashMap<>();
+        Map<Character, Integer> sortedHist = new LinkedHashMap<>();
+
+        for (int i = 0; i < text.length(); i++) {
+            char ch = Character.toLowerCase(text.charAt(i));
+
+            if (Character.isLetter(ch)) {
+                Integer count = hist.get(ch);
+                if (count == null) {
+                    hist.put(ch, 1);
+                } else {
+                    hist.put(ch, count + 1);
+                }
+            }
+        }
+
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(hist.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Character, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Character, Integer> a, Map.Entry<Character, Integer> b) {
+                return b.getValue() - a.getValue();
+            }
+        });
+
+        for (Map.Entry<Character, Integer> entry : list) {
+            sortedHist.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedHist;
     }
 
 }
