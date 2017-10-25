@@ -93,7 +93,7 @@ public class JsonWriter {
         Map<Object, Object> map = (Map) object;
         Map<String,String> convmap = new LinkedHashMap<>();
         for (Map.Entry e: map.entrySet()) {
-            convmap.put(toJson(e.getKey()), toJson(e.getValue()));
+            convmap.put(toJson(e.getKey().toString()), toJson(e.getValue()));
         }
         return formatObject(convmap);
     }
