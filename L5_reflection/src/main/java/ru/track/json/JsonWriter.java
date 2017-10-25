@@ -1,13 +1,15 @@
 package ru.track.json;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -60,9 +62,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
-
-        return null;
+        Object[] arr = new Object[length];
+        Class clazz = Array.get(object, 0).getClass();
+        for (int i = 0; i < length; i++) {
+            arr[i] = Array.get(object, i);
+        }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < length - 1; i++) {
+            sb.append(toJson(arr[i])).append(',');
+        }
+        sb.append(toJson(arr[length - 1])).append(']');
+        return sb.toString();
     }
 
     /**
@@ -82,11 +92,15 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
+        Map<?, ?> map = (Map) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        for (Map.Entry entry : map.entrySet()) {
+            if (entry.getKey() instanceof String)
+                stringMap.put((String) entry.getKey(), toJson(entry.getValue()));
+            else stringMap.put(toJson(entry.getKey()), toJson(entry.getValue()));
+        }
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +122,26 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        Annotation jsonNullable = clazz.getAnnotation(JsonNullable.class);
+        Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields, true);
+        Map<String, String> map = new LinkedHashMap<>();
+        for (Field field : fields) {
+            SerializedTo serTo = field.getAnnotation(SerializedTo.class);
+            String fieldName = (serTo != null) ? serTo.value() : field.getName();
+            String fieldValue = null;
+            try {
+                fieldValue = toJson(field.get(object));
+                if (jsonNullable == null && fieldValue.equals("null")) {
+                    continue;
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
 
-
-        return null;
+            }
+            map.put(fieldName, fieldValue);
+        }
+        return formatObject(map);
     }
 
     /**
@@ -129,5 +159,6 @@ public class JsonWriter {
 
         return String.format("{%s}", r);
     }
+
 
 }
