@@ -18,7 +18,7 @@ public class Decoder {
      *
      * @param domain - текст по кторому строим гистограмму языка
      */
-    public Decoder(@NotNull String domain, @NotNull String encryptedDomain)  {
+    public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
@@ -27,7 +27,7 @@ public class Decoder {
         Iterator<Character> domainIter = domainHist.keySet().iterator();
         Iterator<Character> encryptedIter = encryptedDomainHist.keySet().iterator();
 
-        while (domainIter.hasNext()&&encryptedIter.hasNext()) {
+        while (domainIter.hasNext() && encryptedIter.hasNext()) {
             cypher.put(encryptedIter.next(), domainIter.next());
         }
     }
@@ -66,16 +66,18 @@ public class Decoder {
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
         Map<Character, Integer> tmp = new HashMap<>();
+
         text = text.toLowerCase();
 
-        for (Character i : text.toCharArray()) {
-            if (tmp.containsKey(i)) {
-                Integer num = new Integer(tmp.get(i) + 1);
-                tmp.put(i, num);
-            } else
-                tmp.put(i, 1);
+        for (int i = 0; i < 26; i++) {
+            tmp.put((char) (Character.valueOf('a') + i), 0);
         }
 
+        for (Character i : text.toCharArray()) {
+            if ((i >= 'a') && (i <= 'z')) {
+                tmp.put(i, tmp.get(i) + 1);
+            }
+        }
         List<Map.Entry<Character, Integer>> list = new LinkedList<>(tmp.entrySet());
         Collections.sort(list, (o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
 
