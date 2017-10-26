@@ -1,9 +1,9 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class JsonWriter {
 
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
-    public static String toJson(@Nullable Object object) {
+    public static String toJson(@Nullable Object object) throws IllegalAccessException {
         if (object == null) {
             return "null";
         }
@@ -58,18 +58,25 @@ public class JsonWriter {
      * @return строковое представление массива: [item1, item2, ...]
      */
     @NotNull
-    private static String toJsonArray(@NotNull Object object) {
+    private static String toJsonArray(@NotNull Object object) throws IllegalAccessException {
         int length = Array.getLength(object);
         // TODO: implement!
-
-        return null;
+        StringBuilder jsonArray = new StringBuilder();
+        jsonArray.append('[');
+        for (int i = 0; i < length - 1; i++) {
+            jsonArray.append(toJson(Array.get(object, i)));
+            jsonArray.append(',');
+        }
+        if (length != 0) jsonArray.append(toJson(Array.get(object, length -  1)));
+        jsonArray.append(']');
+        return jsonArray.toString();
     }
 
     /**
      * В 1 шаг приводится к Collection
      */
     @NotNull
-    private static String toJsonCollection(@NotNull Object object) {
+    private static String toJsonCollection(@NotNull Object object) throws IllegalAccessException {
         Collection collection = (Collection) object;
         return toJsonArray(collection.toArray());
     }
@@ -81,12 +88,14 @@ public class JsonWriter {
      * На входе мы проверили, что это Map, можно просто кастовать Map map = (Map) object;
      */
     @NotNull
-    private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+    private static String toJsonMap(@NotNull Object object) throws IllegalAccessException {
+        StringBuilder jsonMap = new StringBuilder();
+        Map<Object, Object> map = (Map) object;
+        Map<String,String> convmap = new LinkedHashMap<>();
+        for (Map.Entry e: map.entrySet()) {
+            convmap.put(toJson(e.getKey().toString()), toJson(e.getValue()));
+        }
+        return formatObject(convmap);
     }
 
     /**
@@ -106,12 +115,20 @@ public class JsonWriter {
      * и воспользоваться методом {@link #formatObject(Map)}
      */
     @NotNull
-    private static String toJsonObject(@NotNull Object object) {
+    private static String toJsonObject(@NotNull Object object) throws IllegalAccessException {
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Field[] fields = clazz.getDeclaredFields();
+        Map<String, String> objfiels = new LinkedHashMap<>();
+        boolean isNullable = (clazz.getAnnotation(JsonNullable.class) != null);
+        for (Field field: fields) {
+            field.setAccessible(true);
+            SerializedTo st = field.getAnnotation(SerializedTo.class);
+            if (!isNullable && field.get(object) == null) continue;
+            String key = (st == null)? toJson(field.getName()): toJson(st.value());
+            String value = toJson(field.get(object));
+            objfiels.put(key, value);
+        }
+        return formatObject(objfiels);
     }
 
     /**
@@ -123,7 +140,7 @@ public class JsonWriter {
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
 
