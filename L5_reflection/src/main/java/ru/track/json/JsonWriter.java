@@ -1,12 +1,14 @@
 package ru.track.json;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -59,17 +61,16 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
 
         StringBuilder result = new StringBuilder();
         result.append("[");
 
-        for (int i = 0; i < length-1; i++) {
+        for (int i = 0; i < length - 1; i++) {
             result.append(JsonWriter.toJson(Array.get(object, i)));
             result.append(",");
         }
 
-        result.append(JsonWriter.toJson(Array.get(object, length-1)));
+        result.append(JsonWriter.toJson(Array.get(object, length - 1)));
         result.append("]");
 
         return result.toString();
@@ -92,32 +93,14 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
         Map<?, ?> map = (Map) object;
-        Map <String, String> stringMap = new LinkedHashMap<>();
+        Map<String, String> stringMap = new LinkedHashMap<>();
 
-        for(Map.Entry entry : map.entrySet()) {
-            stringMap.put(JsonWriter.toJson(entry.getKey()), JsonWriter.toJson(entry.getValue()));
+        for (Map.Entry entry : map.entrySet()) {
+            stringMap.put(entry.getKey().toString(), JsonWriter.toJson(entry.getValue()));
         }
 
-//        Set<Map.Entry> set = map.entrySet();
-//
-//        StringBuilder result = new StringBuilder();
-//        result.append("{");
-//
-//        for (int i = 0; i < set.size() i++) {
-//            result.append(JsonWriter.toJson(set.));
-//            result.append(":");
-//        }
-//
-//
-//        result.append(JsonWriter.toJson());
-//        result.append("}");
-
         return formatObject(stringMap);
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
     }
 
     /**
@@ -139,10 +122,24 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        boolean isNullableClass = clazz.isAnnotationPresent(JsonNullable.class);
 
+        Map<String, String> fields = new LinkedHashMap<>();
+        for (Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                boolean isSerializedToPresent = field.isAnnotationPresent(SerializedTo.class);
+                boolean isFieldNotNull = field.get(object) != null;
+                if (isNullableClass || isFieldNotNull) {
+                    fields.put(isSerializedToPresent ? field.getAnnotation(SerializedTo.class).value() :
+                            field.getName(), toJson(field.get(object)));
+                }
+            } catch (IllegalAccessException iae) {
+                iae.printStackTrace();
+            }
+        }
 
-        return null;
+        return formatObject(fields);
     }
 
     /**
