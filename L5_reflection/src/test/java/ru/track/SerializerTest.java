@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.gson.Gson;
@@ -19,6 +20,7 @@ import ru.track.beans.Engine;
 /**
  *
  */
+@Ignore
 public class SerializerTest {
 
     private static Car car;
