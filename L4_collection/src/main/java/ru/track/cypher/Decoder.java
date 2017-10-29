@@ -23,16 +23,15 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
-        Map.Entry<Character, Character>[] encodedData = new Map.Entry[encryptedDomainHist.size()];
-        encryptedDomainHist.entrySet().toArray(encodedData);
-        Map.Entry<Character, Character>[] domainData = new Map.Entry[domainHist.size()];
-        domainHist.entrySet().toArray(domainData);
+        Iterator<Map.Entry<Character, Integer>> value = domainHist.entrySet().iterator();
+        Iterator<Map.Entry<Character, Integer>> key = encryptedDomainHist.entrySet().iterator();
 
         cypher = new LinkedHashMap<>();
 
-        for (int counter = 0; counter < domainHist.size(); counter++) {
-            cypher.put(encodedData[counter].getKey(), domainData[counter].getKey());
+        while(key.hasNext() && value.hasNext()) {
+            cypher.put(key.next().getKey(), value.next().getKey());
         }
+
 
     }
 
