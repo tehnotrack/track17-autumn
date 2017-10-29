@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class DecoderTest {
@@ -33,6 +34,7 @@ public class DecoderTest {
 
 
     @Test
+    @Ignore
     public void createHist() throws Exception {
 
         Map<Character, Integer> hist = decoder.createHist(domain);
@@ -45,6 +47,7 @@ public class DecoderTest {
     }
 
     @Test
+    @Ignore
     public void simple() throws Exception {
         final Map<Character, Character> cypher = CypherUtil.generateCypher();
         System.out.println("Cypher: " + cypher);

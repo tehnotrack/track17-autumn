@@ -23,6 +23,7 @@ public class CountWordsTest {
     }
 
     @Test
+    @Ignore
     public void countNumbers() throws Exception {
 
         CountWords cw = new CountWords("vu53f28MvpQ4PclHvxHZ");

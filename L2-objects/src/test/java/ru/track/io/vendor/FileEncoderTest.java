@@ -5,6 +5,7 @@ import junitx.framework.FileAssert;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -58,6 +59,7 @@ public class FileEncoderTest extends TestCase {
     }
 
     @Test
+    @Ignore
     public void testEncoderImplementation() throws Exception {
         final Path p = Files.write(
                 createTempFile().toPath(),
