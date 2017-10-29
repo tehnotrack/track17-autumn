@@ -166,9 +166,10 @@ public class JsonWriter {
                 name = (String)serialized.value();
             try {
                 Object objInner = f.get(object);
-                if (objInner != null || nullable != null) {
+                if (objInner != null || nullable != null)
                     value = toJson(objInner);
-                }
+                else continue;
+
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
