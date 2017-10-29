@@ -9,6 +9,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,6 +23,7 @@ import ru.track.json.JsonWriter;
  *
  */
 @RunWith(Parameterized.class)
+@Ignore
 public class JsonSerializerTest {
 
     static class Sample {
