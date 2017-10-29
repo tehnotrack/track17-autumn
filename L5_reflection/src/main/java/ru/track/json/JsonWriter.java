@@ -1,11 +1,9 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -101,22 +99,38 @@ public class JsonWriter {
     private static String toJsonMap(@NotNull Object object) {
         // TODO: implement!
         Map map = (Map) object;
-        Map stringMap = new LinkedHashMap();
-        Set<Integer> keyset = map.keySet();
-        String key = keyset.toString();
-
-//        map.
-
-        for (Integer i = 0; i < keyset.size(); ++i) {
-            for (int j = 0; j < key.length(); ++j) {
-                keyset.
-            }
-//            stringMap.put(new String(map.get(keyset.)));
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        Set<Map.Entry> entryset = map.entrySet();
+        Iterator<Map.Entry> iter = entryset.iterator();
+        while (iter.hasNext()) {
+            Map.Entry current = iter.next();
+            //stringMap.put(toJson(current.getKey()), toJson(current.getValue()));
+            if(current.getKey() instanceof String)
+                stringMap.put((String)current.getKey(), toJson(current.getValue()));
+            else stringMap.put(toJson(current.getKey()), toJson(current.getValue()));
         }
- //       stringMap.put(map.get(map.))
-        return formatObject((stringMap));
+        return formatObject(stringMap);
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
+    }
+
+    /**
+     * вынесен функционал обертки простых объектов/примитивов в строку.
+     */
+    private static String dealWithObject(Object obj) {
+        String retValue = new String();
+        Class keyClazz = obj.getClass();
+        if (keyClazz.equals(String.class)
+                || keyClazz.equals(Character.class)
+                || keyClazz.isEnum()
+                ) {
+            retValue = String.format("\"%s\"", obj);
+        }
+
+        if (obj instanceof Boolean || obj instanceof Number) {
+            retValue = obj.toString();
+        }
+        return retValue;
     }
 
     /**
@@ -137,38 +151,49 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
+        Map<String, String> resultMap = new LinkedHashMap<>();
         Class clazz = object.getClass();
-        Field[] declaratedFields = clazz.getDeclaredFields();
-        for (Field f : declaratedFields){
+        Annotation nullable = clazz.getAnnotation(JsonNullable.class);
+        Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields, true);
+        for (Field f : fields) {
+
             String name = f.getName();
-            f.setAccessible(true);
-            Object val = null;
+            String value = "";
+            SerializedTo serialized = f.getAnnotation(SerializedTo.class);
+
+            if (serialized != null)
+                name = (String)serialized.value();
             try {
-                val = f.get(object);
-            } catch (Exception e) {
+                Object objInner = f.get(object);
+                if (objInner != null || nullable != null) {
+                    value = toJson(objInner);
+                }
+            } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
-            System.out.println(String.format("%s : %s\n", name, val));
+            resultMap.put(name, value);
+
         }
-        // TODO: implement!
+        return formatObject(resultMap);
 
-        return null;
     }
 
-    /**
-     * Вспомогательный метод для форматирования содержимого Map<K, V>
-     *
-     * @param map
-     * @return "{key:value, key:value,..}"
-     */
-    @NotNull
-    private static String formatObject(@NotNull Map<String, String> map) {
-        String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
-                .collect(Collectors.toList())
-        );
 
-        return String.format("{%s}", r);
+        /**
+         * Вспомогательный метод для форматирования содержимого Map<K, V>
+         *
+         * @param map
+         * @return "{key:value, key:value,..}"
+         */
+        @NotNull
+        private static String formatObject (@NotNull Map < String, String > map){
+            String r = String.join(",", map.entrySet().stream()
+                    .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                    .collect(Collectors.toList())
+            );
+
+            return String.format("{%s}", r);
+        }
+
     }
-
-}
