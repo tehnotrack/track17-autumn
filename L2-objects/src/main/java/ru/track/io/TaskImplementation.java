@@ -59,10 +59,13 @@ public final class TaskImplementation implements FileEncoder {
                 // out.write(result[counter]);
             }
 
+           // out.write(new String(result).getBytes());
             out.write(new String(result).getBytes());
 
         }
+        input.close();
         return fout;
+
     }
 
     private static final char[] toBase64 = {
