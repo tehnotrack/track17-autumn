@@ -63,15 +63,14 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         Object[] myArray = new Object[length];
-
-        for (int counter = 0; counter < length; counter++) {
-            myArray[counter] = Array.get(object, counter);
-        }
-
         StringBuilder myStringBuilder = new StringBuilder("[");
 
-        for (int counter = 0; counter < length - 1; counter++) {
+        for (int counter = 0; counter < length-1; counter++) {
+            myArray[counter] = Array.get(object, counter);
             myStringBuilder.append(toJson(myArray[counter])).append(',');
+            if (counter==length-2) {
+                myArray[counter+1] = Array.get(object, (counter+1));
+            }
         }
 
         myStringBuilder.append(toJson(myArray[length - 1])).append(']');
