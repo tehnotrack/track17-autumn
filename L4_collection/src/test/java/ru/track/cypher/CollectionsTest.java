@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -15,6 +16,7 @@ public class CollectionsTest {
 
 
     @Test
+    @Ignore
     public void collections() {
         List<Integer> list = Arrays.asList(3, 2, 1, 4);
 

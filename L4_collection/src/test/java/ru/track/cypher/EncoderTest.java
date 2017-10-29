@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class EncoderTest {
@@ -12,6 +13,7 @@ public class EncoderTest {
     static final Encoder encoder = new Encoder();
 
     @Test
+    @Ignore
     public void generateCypher() throws Exception {
         Map<Character, Character> cypher = CypherUtil.generateCypher();
         Assert.assertNotNull(cypher);
@@ -28,6 +30,7 @@ public class EncoderTest {
     }
 
     @Test
+    @Ignore
     public void encodeEmpty() throws Exception {
         final Map<Character, Character> cypher = CypherUtil.generateCypher();
         String origin = "";
@@ -40,6 +43,7 @@ public class EncoderTest {
     }
 
     @Test
+    @Ignore
     public void encodeSymbolCase() throws Exception {
         final Map<Character, Character> cypher = CypherUtil.generateCypher();
         String origin = "AbC";
@@ -52,6 +56,7 @@ public class EncoderTest {
     }
 
     @Test
+    @Ignore
     public void encodeNoLetter() throws Exception {
         final Map<Character, Character> cypher = CypherUtil.generateCypher();
         String origin = " 132,. 12 ";
