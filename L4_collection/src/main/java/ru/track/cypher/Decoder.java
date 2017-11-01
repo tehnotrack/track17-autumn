@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +23,19 @@ public class Decoder {
 
         cypher = new LinkedHashMap<>();
 
+        Object[] domainHistKeyArray = domainHist.keySet().toArray();
+        Object[] encryptedDomainHistKeySet = encryptedDomainHist.keySet().toArray();
 
+        int length;
+        if (domainHistKeyArray.length != encryptedDomainHistKeySet.length) {
+            return;
+        } else {
+            length = domainHistKeyArray.length;
+        }
+
+        for (int i = 0; i < length; ++i) {
+            cypher.put((Character) encryptedDomainHistKeySet[i], (Character) domainHistKeyArray[i]);
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,13 +50,23 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder decoded = new StringBuilder();
+
+        for (int i = 0; i < encoded.length(); ++i) {
+            char c = encoded.charAt(i);
+            if (Character.isLetter(c)) {
+                decoded.append(cypher.get(c));
+            } else {
+                decoded.append(c);
+            }
+        }
+
+        return decoded.toString();
     }
 
     /**
      * Считывает входной текст посимвольно, буквы сохраняет в мапу.
      * Большие буквы приводит к маленьким
-     *
      *
      * @param text - входной текст
      * @return - мапа с частотой вхождения каждой буквы (Ключ - буква в нижнем регистре)
@@ -53,7 +74,31 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> hist = new HashMap<>();
+
+        for (int i = 0; i < text.length(); ++i) {
+            char c = Character.toLowerCase(text.charAt(i));
+            if (!Character.isLetter(c)) {
+                continue;
+            }
+
+            Integer char_count = hist.get(c);
+            if (char_count != null) {
+                hist.put(c, char_count + 1);
+            } else {
+                hist.put(c, 1);
+            }
+        }
+
+        List<Map.Entry<Character, Integer>> list = new LinkedList<>(hist.entrySet());
+        list.sort((Map.Entry<Character, Integer> o1, Map.Entry<Character, Integer> o2) -> o2.getValue() - o1.getValue());
+
+        Map<Character, Integer> result = new LinkedHashMap<>();
+        for (Map.Entry<Character, Integer> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+
+        return result;
     }
 
 }
