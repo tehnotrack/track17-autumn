@@ -1,9 +1,9 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class JsonWriter {
 
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
-    public static String toJson(@Nullable Object object) {
+    public static String toJson(@Nullable Object object) throws IllegalAccessException {
         if (object == null) {
             return "null";
         }
@@ -58,18 +58,35 @@ public class JsonWriter {
      * @return строковое представление массива: [item1, item2, ...]
      */
     @NotNull
-    private static String toJsonArray(@NotNull Object object) {
+    private static String toJsonArray(@NotNull Object object) throws IllegalAccessException {
         int length = Array.getLength(object);
         // TODO: implement!
 
-        return null;
+        if ( length == 0)
+        {
+            String str = "[]";
+            return  str;
+        }
+        StringBuilder myJsonArray = new StringBuilder();
+
+        myJsonArray.append('[');
+        for ( int i = 0; i < length ; i++){
+            myJsonArray.append(toJson(Array.get(object,i)));
+            if (i != length-1) {
+                myJsonArray.append(',');
+            }
+        }
+
+        myJsonArray.append(']');
+
+        return myJsonArray.toString();
     }
 
     /**
      * В 1 шаг приводится к Collection
      */
     @NotNull
-    private static String toJsonCollection(@NotNull Object object) {
+    private static String toJsonCollection(@NotNull Object object) throws IllegalAccessException {
         Collection collection = (Collection) object;
         return toJsonArray(collection.toArray());
     }
@@ -81,10 +98,56 @@ public class JsonWriter {
      * На входе мы проверили, что это Map, можно просто кастовать Map map = (Map) object;
      */
     @NotNull
-    private static String toJsonMap(@NotNull Object object) {
+    private static String toJsonMap(@NotNull Object object) throws IllegalAccessException {
         // TODO: implement!
 
-        return null;
+
+        StringBuilder myJsonMap = new StringBuilder();
+
+        Map<Object,Object> myMap = (Map) object;
+
+
+        myJsonMap.append('{');
+
+        Iterator<Map.Entry<Object,Object>> myiter = myMap.entrySet().iterator();
+
+
+
+
+        while (myiter.hasNext()){
+
+
+            Map.Entry nm = myiter.next();
+            Class clazz = nm.getKey().getClass();
+
+            if (clazz.equals(String.class)
+                    || clazz.equals(Character.class)
+                    || clazz.isEnum()
+                    ) {
+                myJsonMap.append(toJson(nm.getKey()));
+            }
+            else
+            {
+                myJsonMap.append('"');
+                myJsonMap.append(toJson(nm.getKey()));
+                myJsonMap.append('"');
+
+            }
+
+
+            myJsonMap.append(':');
+            myJsonMap.append(toJson(nm.getValue()));
+
+            if ( myiter.hasNext())
+            {
+                myJsonMap.append(',');
+            }
+        }
+
+        myJsonMap.append('}');
+        return myJsonMap.toString();
+
+
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -106,12 +169,33 @@ public class JsonWriter {
      * и воспользоваться методом {@link #formatObject(Map)}
      */
     @NotNull
-    private static String toJsonObject(@NotNull Object object) {
+    private static String toJsonObject(@NotNull Object object) throws IllegalAccessException {
         Class clazz = object.getClass();
         // TODO: implement!
 
+        Field[] myFields = clazz.getDeclaredFields();
+        Map<String,String> myMap = new LinkedHashMap<>();
 
-        return null;
+        boolean NullableBool = clazz.getAnnotation(JsonNullable.class) != null ;
+
+
+        for ( Field field: myFields){
+            field.setAccessible(true);
+
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+
+            if ( field.get(object) == null && !NullableBool  ) continue;
+
+
+                if (serializedTo != null){
+                    myMap.put(serializedTo.value(), toJson(field.get(object)));
+                }
+                else {
+                    myMap.put(field.getName(), toJson(field.get(object)));
+                }
+        }
+
+        return formatObject(myMap);
     }
 
     /**
