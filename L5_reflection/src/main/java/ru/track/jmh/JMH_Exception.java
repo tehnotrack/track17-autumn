@@ -1,10 +1,13 @@
 package ru.track.jmh;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -17,22 +20,17 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 /**
 
  */
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode({Mode.AverageTime})
 @Warmup(iterations = 5)
-@Fork(1)
 @Measurement(iterations = 5)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 public class JMH_Exception {
 
-
-//    @Benchmark
-//    public void testCreate(Blackhole bh) {
-//        bh.consume(new Exception());
-//    }
-
-    @Param({"0", "1", "5", "10", "100"})
+    @Param({"0", "1", "10", "100"})
     int depth;
 
+    @Fork(1)
     @Benchmark
     public Object testThrow() {
         try {
@@ -53,10 +51,6 @@ public class JMH_Exception {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(JMH_Exception.class.getSimpleName())
-                .threads(4)
-                .warmupIterations(5)
-                .measurementIterations(5)
-                .forks(2)
                 .build();
 
         new Runner(opt).run();
