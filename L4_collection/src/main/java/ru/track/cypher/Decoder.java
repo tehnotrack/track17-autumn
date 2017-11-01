@@ -61,7 +61,7 @@ public class Decoder {
         for(int i = 0; i < encoded.length(); i++) {
             Character c = encoded.charAt(i);
             c = Character.toLowerCase(c);
-            if((int)c >= 97 && (int)c <= 122) {
+            if(c >= 'a' && c <= 'z') {
                 result.append(cypher.get(c));
             }
             else {
