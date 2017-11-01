@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -18,13 +17,32 @@ public class Decoder {
      *
      * @param domain - текст по кторому строим гистограмму языка
      */
+
+    private Map<Character, Integer> sortMap(Map<Character, Integer> map) {
+        Map<Character, Integer> result = new LinkedHashMap<>();
+        List<Map.Entry<Character, Integer>> list = new LinkedList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Character, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Character, Integer> o1, Map.Entry<Character, Integer> o2) {
+                return o2.getValue() - o1.getValue();
+            }
+        });
+        for(Map.Entry<Character, Integer> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
         cypher = new LinkedHashMap<>();
 
-
+        Iterator<Character> it2 = domainHist.keySet().iterator();
+        for(Iterator<Character> it1 = encryptedDomainHist.keySet().iterator(); it1.hasNext(); ) {
+            cypher.put(it1.next(), it2.next());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,7 +57,18 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        StringBuilder result = new StringBuilder();
+        for(int i = 0; i < encoded.length(); i++) {
+            Character c = encoded.charAt(i);
+            c = Character.toLowerCase(c);
+            if(c >= 'a' && c <= 'z') {
+                result.append(cypher.get(c));
+            }
+            else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 
     /**
@@ -53,7 +82,23 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        Map<Character, Integer> map = new LinkedHashMap<>();
+        for(int i = 0; i < text.length(); i++) {
+            Character c = text.charAt(i);
+            c = Character.toLowerCase(c);
+            if(c >= 'a' && c <= 'z') {
+                if (map.get(c) != null) {
+                    int count = map.get(c);
+                    map.put(c, count + 1);
+                } else {
+                    map.put(c, 1);
+                }
+            }
+        }
+        map = sortMap(map);
+        return map;
     }
+
+
 
 }
