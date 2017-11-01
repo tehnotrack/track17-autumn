@@ -3,6 +3,7 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,16 +64,13 @@ public class JsonWriter {
         int length = Array.getLength(object);
         StringBuilder myJsArray = new StringBuilder();
 
-        myJsArray.append('[');
         for (int i = 0; i < length; i++) {
             myJsArray.append(toJson(Array.get(object, i)));
             if (i != length - 1) {
                 myJsArray.append(',');
             }
         }
-        myJsArray.append(']');
-
-        return myJsArray.toString();
+        return String.format("[%s]",myJsArray.toString());
     }
 
     /**
@@ -91,11 +89,13 @@ public class JsonWriter {
      * На входе мы проверили, что это Map, можно просто кастовать Map map = (Map) object;
      */
     @NotNull
-    private static String toJsonMap(@NotNull Object object) {
-        Map map = (Map) object;
-        return formatObject1(map);
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+    private static String toJsonMap(@NotNull Object object) throws IllegalAccessException {
+        Map<?,?> map= (Map) object;
+        Map<String, String> strMap = new LinkedHashMap<>();
+        for (Map.Entry pair : map.entrySet()) {
+            strMap.put(pair.getKey().toString(), toJson(pair.getValue()));
+        }
+        return formatObject(strMap);
     }
 
     /**
@@ -112,21 +112,21 @@ public class JsonWriter {
      * и в зависимости от этого изменить поведение
      * <p>
      * NOTE: Удобно сложить все поля объекта в Map<String, String> то етсь {имя поля -> значение поля в json}
-     * и воспользоваться методом {@link #formatObject2(Map)}
+     * и воспользоваться методом {@link #formatObject(Map)}
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) throws IllegalAccessException {
         Class clazz = object.getClass();
-        Field[] myFields = clazz.getDeclaredFields();
+        Field[] fields = clazz.getDeclaredFields();
         Map<String, String> myMap = new LinkedHashMap<>();
-        boolean NullableBool = clazz.getAnnotation(JsonNullable.class) != null;
+        boolean nullableBool = clazz.getAnnotation(JsonNullable.class) != null;
 
-        for (Field field : myFields) {
+        for (Field field : fields) {
             field.setAccessible(true);
 
             SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
 
-            if (field.get(object) == null && !NullableBool)
+            if (field.get(object) == null && !nullableBool)
                 continue;
 
             if (serializedTo != null) {
@@ -135,7 +135,7 @@ public class JsonWriter {
                 myMap.put(field.getName(), toJson(field.get(object)));
             }
         }
-        return formatObject2(myMap);
+        return formatObject(myMap);
     }
 
     /**
@@ -144,18 +144,9 @@ public class JsonWriter {
      * @param map
      * @return "{key:value, key:value,..}"
      */
-    @NotNull
-    private static String formatObject1(@NotNull Map<String, String> map) {
-        String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":\"%s\"", e.getKey(), e.getValue()))
-                .collect(Collectors.toList())
-        );
-
-        return String.format("{%s}", r);
-    }
 
     @NotNull
-    private static String formatObject2(@NotNull Map<String, String> map) {
+    private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
                 .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
