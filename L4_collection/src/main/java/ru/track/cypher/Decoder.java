@@ -25,6 +25,8 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
+        //
+
         Iterator<Map.Entry<Character, Integer>> val = domainHist.entrySet().iterator();
         Iterator<Map.Entry<Character, Integer>> key = encryptedDomainHist.entrySet().iterator();
 
