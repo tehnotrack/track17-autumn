@@ -1,7 +1,10 @@
 package ru.track.cypher;
 
+//import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -22,8 +25,16 @@ public class Decoder {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
 
+        //
+
+        Iterator<Map.Entry<Character, Integer>> val = domainHist.entrySet().iterator();
+        Iterator<Map.Entry<Character, Integer>> key = encryptedDomainHist.entrySet().iterator();
+
         cypher = new LinkedHashMap<>();
 
+        while(key.hasNext() && val.hasNext()) {
+            cypher.put(key.next().getKey(), val.next().getKey());
+        }
 
     }
 
@@ -39,7 +50,16 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        encoded.toLowerCase();
+        StringBuilder decoded = new StringBuilder();
+
+        for (int i = 0; i < encoded.length(); ++i) {
+
+            if(Character.isLetter(encoded.charAt(i))) {
+                decoded.append(cypher.get(encoded.charAt(i)));
+            } else decoded.append(encoded.charAt(i));
+        }
+        return decoded.toString();
     }
 
     /**
@@ -53,7 +73,27 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        text = text.toLowerCase();
+        Map<Character, Integer> hist = new LinkedHashMap<>();
+
+
+        for (int i = 0; i < text.length(); i++) {
+
+            if (Character.isLetter(text.charAt(i))) {
+                if(hist.containsKey(text.charAt(i))) {
+                    int quantity = hist.getOrDefault(text.charAt(i), 0);
+                    hist.put(text.charAt(i),quantity +1);
+                }else
+                    hist.put(text.charAt(i),1);
+
+            }
+        }
+        return hist.entrySet().stream()
+                .sorted(Map.Entry.<Character,Integer>comparingByValue().reversed())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new));
     }
 
 }
