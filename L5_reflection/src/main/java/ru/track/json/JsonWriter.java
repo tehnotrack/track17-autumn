@@ -2,10 +2,7 @@ package ru.track.json;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -63,20 +60,10 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         String tmp = "[";
-      //  if (object instanceof Array){
-            for (int i = 0; i < Array.getLength(object)-1; i++){
-                //if (Array.get(object,i) instanceof Integer) {
+            for (int i = 0; i < length-1; i++){
                     tmp = tmp + toJson(Array.get(object, i)) + ",";
-
-              //  }else {
-               //     tmp = tmp + "\"" + Array.get(object, i) + "\"" + ",";
-             //   }
             }
-            //if()
-            tmp = tmp + toJson(Array.get(object,Array.getLength(object)-1)) + "]";
-       // }
-        // TODO: implement!
-
+            tmp = tmp + toJson(Array.get(object,length-1)) + "]";
         return tmp;
     }
 
@@ -98,14 +85,15 @@ public class JsonWriter {
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
         StringBuilder s = new StringBuilder("{");
-        Map<String, String> map = (Map) object;
-        for (Map.Entry<String,String> m : map.entrySet())
-        {
-            s.append("\"" + toJson(m.getKey()) + "\":" + toJson(m.getValue()) + ",");
+        Map<?, ?> map = (Map) object;
+        Map<String,String> myMap = new LinkedHashMap<>();
+        for (Map.Entry<?,?> m : map.entrySet()) {
+            s.append("\"" + m.getKey().toString() + "\":" + toJson(m.getValue()) + ",");
         }
         s.deleteCharAt(s.length()-1);
         s.append("}");
         return s.toString();
+
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -128,11 +116,21 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
+
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields,true);
+        Map<String,String> map = new LinkedHashMap<>();
+        try{
+            for (Field field : fields) {
+                if (!(toJson(field.get(object)).equals("null"))) {
+                    map.put(field.getName(), toJson(field.get(object)));
+                }
+            }
+        }catch (IllegalAccessException e){
+            System.out.println("uuuuu");
+        }
+        return formatObject(map);
     }
 
     /**
@@ -149,7 +147,6 @@ public class JsonWriter {
                 .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
-
         return String.format("{%s}", r);
     }
 
