@@ -1,9 +1,9 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +60,12 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
-
-        return null;
+        String tmp = "[";
+            for (int i = 0; i < length - 1; i++) {
+                    tmp = tmp + toJson(Array.get(object, i)) + ",";
+            }
+            tmp = tmp + toJson(Array.get(object, length - 1)) + "]";
+        return tmp;
     }
 
     /**
@@ -82,9 +85,15 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        StringBuilder s = new StringBuilder("{");
+        Map<?, ?> map = (Map) object;
+        for (Map.Entry<?, ?> m : map.entrySet()) {
+            s.append("\"" + m.getKey().toString() + "\":" + toJson(m.getValue()) + ",");
+        }
+        s.deleteCharAt(s.length() - 1);
+        s.append("}");
+        return s.toString();
 
-        return null;
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -107,11 +116,37 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
+
         Class clazz = object.getClass();
-        // TODO: implement!
-
-
-        return null;
+        Annotation an = clazz.getAnnotation(JsonNullable.class);
+        Field[] fields = clazz.getDeclaredFields();
+        Field.setAccessible(fields, true);
+        Map<String, String> map = new LinkedHashMap<>();
+        try {
+            for (Field field : fields) {
+                SerializedTo ser = field.getAnnotation(SerializedTo.class);
+                if (an == null) {
+                    if (ser == null) {
+                        if (!(toJson(field.get(object)).equals("null"))) {
+                            map.put(field.getName(), toJson(field.get(object)));
+                        }
+                    } else if (ser != null) {
+                        if (!(toJson(field.get(object)).equals("null"))) {
+                            map.put(ser.value(), toJson(field.get(object)));
+                        }
+                    }
+                } else {
+                    if (ser == null) {
+                            map.put(field.getName(), toJson(field.get(object)));
+                    } else if (ser != null) {
+                            map.put(ser.value(), toJson(field.get(object)));
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            System.out.println("uuuuu");
+        }
+        return formatObject(map);
     }
 
     /**
@@ -120,13 +155,14 @@ public class JsonWriter {
      * @param map
      * @return "{key:value, key:value,..}"
      */
+
+
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
                 .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
-
         return String.format("{%s}", r);
     }
 
