@@ -1,5 +1,6 @@
 package ru.track.json;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -60,10 +61,10 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         String tmp = "[";
-            for (int i = 0; i < length-1; i++){
+            for (int i = 0; i < length - 1; i++) {
                     tmp = tmp + toJson(Array.get(object, i)) + ",";
             }
-            tmp = tmp + toJson(Array.get(object,length-1)) + "]";
+            tmp = tmp + toJson(Array.get(object, length - 1)) + "]";
         return tmp;
     }
 
@@ -86,11 +87,10 @@ public class JsonWriter {
     private static String toJsonMap(@NotNull Object object) {
         StringBuilder s = new StringBuilder("{");
         Map<?, ?> map = (Map) object;
-        Map<String,String> myMap = new LinkedHashMap<>();
-        for (Map.Entry<?,?> m : map.entrySet()) {
+        for (Map.Entry<?, ?> m : map.entrySet()) {
             s.append("\"" + m.getKey().toString() + "\":" + toJson(m.getValue()) + ",");
         }
-        s.deleteCharAt(s.length()-1);
+        s.deleteCharAt(s.length() - 1);
         s.append("}");
         return s.toString();
 
@@ -118,16 +118,32 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
 
         Class clazz = object.getClass();
+        Annotation an = clazz.getAnnotation(JsonNullable.class);
         Field[] fields = clazz.getDeclaredFields();
-        Field.setAccessible(fields,true);
-        Map<String,String> map = new LinkedHashMap<>();
-        try{
+        Field.setAccessible(fields, true);
+        Map<String, String> map = new LinkedHashMap<>();
+        try {
             for (Field field : fields) {
-                if (!(toJson(field.get(object)).equals("null"))) {
-                    map.put(field.getName(), toJson(field.get(object)));
+                SerializedTo ser = field.getAnnotation(SerializedTo.class);
+                if (an == null) {
+                    if (ser == null) {
+                        if (!(toJson(field.get(object)).equals("null"))) {
+                            map.put(field.getName(), toJson(field.get(object)));
+                        }
+                    } else if (ser != null) {
+                        if (!(toJson(field.get(object)).equals("null"))) {
+                            map.put(ser.value(), toJson(field.get(object)));
+                        }
+                    }
+                } else {
+                    if (ser == null) {
+                            map.put(field.getName(), toJson(field.get(object)));
+                    } else if (ser != null) {
+                            map.put(ser.value(), toJson(field.get(object)));
+                    }
                 }
             }
-        }catch (IllegalAccessException e){
+        } catch (IllegalAccessException e) {
             System.out.println("uuuuu");
         }
         return formatObject(map);
