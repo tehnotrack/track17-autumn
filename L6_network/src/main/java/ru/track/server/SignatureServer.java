@@ -17,7 +17,8 @@ import java.util.concurrent.Executors;
 
 import static ru.track.server.SignatureUtils.*;
 
-public class SignatureServer {
+public class
+SignatureServer {
 
     private final int port;
 
