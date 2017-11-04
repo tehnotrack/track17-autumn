@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class Server {
+public class Server implements Runnable{
     static Logger log = LoggerFactory.getLogger(Server.class);
     private int port;
 
@@ -20,14 +20,17 @@ public class Server {
         this.port = port;
     }
 
-    public void serve() throws IOException {
-        try (ServerSocket server = new ServerSocket(port, 10, InetAddress.getByName("localhost"))) {
+    public void serve()  {
 
-            Socket client = server.accept();
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
+            Socket client = serverSocket.accept();
             OutputStream out = client.getOutputStream();
             InputStream in = client.getInputStream();
             while(true)
             {
+
                 byte[] buffer = new byte[1024];
                 int count = in.read(buffer);
                 log.info("Client:"+ new String(buffer,0,count));
@@ -37,21 +40,21 @@ public class Server {
             }
 
         }
+
         catch(IOException e)
         {
            log.error("ERROR" + e.getMessage()) ;
         }
-        finally
-        {
-            if(client =! null)
-            {
-                client.close();
-            }
+        finally{
+
+
         }
+
     }
 
     public static void main(String[] args) throws Exception{
         Server server = new Server(9000);
-        server.serve();
+        new Thread(server).start();
+        //server.serve();
     }
 }
