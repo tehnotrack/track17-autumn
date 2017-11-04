@@ -58,7 +58,7 @@ public class StartThread {
         System.out.println("Starting thread...");
         t1.start();
         System.out.println("Joining...");
-        //t1.join();
+        t1.join();
         System.out.println("Joined");
     }
 
