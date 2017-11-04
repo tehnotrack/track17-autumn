@@ -1,23 +1,13 @@
 package ru.track.io;
 
-import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.awt.image.WritableRaster;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -29,12 +19,11 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
+
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        Path fileLocation = Paths.get(finPath);
+        final int BUFFER_SIZE = 3;
         File fileOut;
-        byte[] imageBytes = Files.readAllBytes(fileLocation);;
         if (foutPath == null) {
             fileOut = File.createTempFile("base64", ".txt");
             fileOut.deleteOnExit();
@@ -43,66 +32,55 @@ public final class TaskImplementation implements FileEncoder {
             fileOut = new File(foutPath);
         }
         FileWriter writer = new FileWriter(fileOut);
+        File file =new File(finPath);
+        InputStream in = new FileInputStream(file);
+        byte[] buffer = new byte[BUFFER_SIZE];
+
         int a;
         int b=0;
-        int count =0;
-        for (int i = 0; i < imageBytes.length; ++i) {
-            if(count%3==0){
-                a=imageBytes[i];
-                a=a&0xFF;
-                a>>>=2;
-                writer.write(toBase64[a+b]);
-                System.out.print(toBase64[a+b]);
-                b=imageBytes[i]&3;
-                b<<=4;
-                count++;
-            }else if (count%3==1){
-                a=imageBytes[i];
-                a=a&0xFF;
-                a>>>=4;
-                try {
+        int bytesRead = 0;
+        int counter=0;
+        while ((bytesRead = in.read(buffer)) >= 0){
+            for (int i = 0; i < bytesRead; i++){
+                if(i==0){
+                    a=buffer[i];
+                    a=a&0xFF;
+                    a>>>=2;
                     writer.write(toBase64[a+b]);
-                    //System.out.print(toBase64[a+b]);
-                }catch (Exception e){
-                    System.out.println(e);
+                    b=buffer[i]&3;
+                    b<<=4;
                 }
-                b=imageBytes[i]&0x0F;
-                b<<=2;
-                count++;
-            }
-            else{
-                a=imageBytes[i];
-                a=a&0xFF;
-                a>>>=6;
-                try {
+                else if(i==1){
+                    a=buffer[i];
+                    a=a&0xFF;
+                    a>>>=4;
                     writer.write(toBase64[a+b]);
-                    //System.out.print(toBase64[a+b]);
-                }catch (Exception e){
-                    System.out.println(e);
+                    b=buffer[i]&0x0F;
+                    b<<=2;
                 }
-                b=imageBytes[i]&63;
-                try {
+                else {
+                    a=buffer[i];
+                    a=a&0xFF;
+                    a>>>=6;
+                    writer.write(toBase64[a+b]);
+                    b=buffer[i]&63;
                     writer.write(toBase64[b]);
-                    //System.out.print(toBase64[b]);
-                }catch (Exception e){
-                    System.out.println(e);
+                    b=0;
                 }
-                b=0;
-                count++;
+                counter=bytesRead;
             }
         }
-        if(imageBytes.length%3!=0){
+        if(counter%3==2){
             writer.write(toBase64[b]);
-            System.out.print(toBase64[b]);
-        }
-        if(imageBytes.length%3==2){
             writer.write("=");
         }
-        else if(imageBytes.length%3==1){
+        else if(counter%3==1){
+            writer.write(toBase64[b]);
             writer.write("==");
         }
-        //System.out.println(result);
         writer.flush();
+        writer.close();
+        in.close();
 
         return fileOut;
     }
@@ -115,17 +93,6 @@ public final class TaskImplementation implements FileEncoder {
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
-
-    public static Collection<String> data() {
-        return Arrays.asList(
-                "xxx",
-                "xx",
-                "x",
-                "xxx000",
-                "xxx00",
-                "xxx0"
-        );
-    }
 
     private static @NotNull
     File createTempFile() throws IOException {
