@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -35,14 +35,27 @@ public class Client {
         while(true)
         {
             String line = scanner.nextLine();
-            out.write(line.getBytes());
-            out.flush();
-            int nRead = in.read(buffer);
-            if (line.equals("exit") | (nRead < 0)){
-                log.error("Ooops, breaked");
-                break;
+
+            if (!line.isEmpty()){
+
+                out.write(line.getBytes());
+                out.flush();
+
+                try {
+                    int nRead = in.read(buffer);
+                    if (line.equals("exit") | (nRead < 0)){
+                        log.error("Ooops, breaked");
+                        break;
+                    }
+                    log.info("Server:" + new String(buffer, 0, nRead));
+                }
+                catch (SocketException e)
+                {
+                    log.error("Server failed");
+                    break;
+                }
+
             }
-            log.info("Server:" + new String(buffer, 0, nRead));
         }
 
         socket.close();
