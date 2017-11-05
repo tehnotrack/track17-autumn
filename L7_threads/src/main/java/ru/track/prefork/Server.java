@@ -31,7 +31,7 @@ public class Server {
 
 
     private class Worker extends Thread {
-        private boolean send_succeeded;
+        private boolean deadSession; //session is dead if true
         private ReadWorker readWorker;
         private WriteWorker writeWorker;
         private Socket socket;
@@ -39,7 +39,6 @@ public class Server {
 
 
         private class ReadWorker extends Thread {
-            private boolean deadSession; //session is dead if true
             private InputStream inputStream;
 
             private ReadWorker() {
@@ -47,11 +46,6 @@ public class Server {
                 deadSession = false;
             }
 
-            private boolean stopMe() {
-                if (deadSession)
-                    return true;
-                return false;
-            }
 
             @Override
             public void run() {
@@ -88,41 +82,25 @@ public class Server {
         }
 
         private class WriteWorker extends Thread {
-            private boolean stop; //asks to stop the session if true
-            private int nRead;
-            private byte[] msgToWrite;
+//            private int nRead;
+//            private byte[] msgToWrite;
             private OutputStream outputStream;
+            private boolean can_work;
 
             private void putMsg(byte[] msg, int nRead) throws IOException {
-                log.info("put msg");
-                msgToWrite = new byte[nRead];
-                msgToWrite = Arrays.copyOf(msg, nRead);
-                this.nRead = nRead;
-                log.info("Sending " + new String(msgToWrite, 0, nRead));
-                outputStream.write(msgToWrite, 0, nRead);
+//                log.info("put msg");
+//                System.arraycopy(msg, 0, msgToWrite, 0, nRead);
+//                msgToWrite = Arrays.copyOf(msg, nRead);
+//                this.nRead = nRead;
+
+//                log.info("Sending " + new String(msg, 0, nRead));
+                outputStream.write(msg, 0, nRead);
                 outputStream.flush();
-                msgToWrite = null;
-                nRead = 0;
-                send_succeeded = true;
-                while (true) {
-                    if (send_succeeded) {
-                        send_succeeded = false;
-                        break;
-                    }
-                }
             }
-
-            private boolean hasMsgToWrite() {
-                if (msgToWrite != null && msgToWrite.length > 0 && nRead > 0)
-                    return true;
-                return false;
-            }
-
 
             private WriteWorker() {
-                msgToWrite = new byte[2048];
+//                msgToWrite = new byte[2048];
                 outputStream = null;
-                stop = false;
             }
 
             @Override
@@ -134,15 +112,14 @@ public class Server {
                 try {
                     outputStream = socket.getOutputStream();
                     while (true) {
-//                        if (hasMsgToWrite()) {
+                        if (can_work) { //send messages personally (not broadcasting) here
 //                            log.info("Sending " + new String(msgToWrite, 0, nRead));
 //                            outputStream.write(msgToWrite, 0, nRead);
 //                            outputStream.flush();
-//                            msgToWrite = null;
 //                            nRead = 0;
-//                            send_succeeded = true;
-//                        }
-                        if (stop)
+//                            can_work = false;
+                        }
+                        if (deadSession)
                             break;
                     }
                 } catch (IOException e) {
@@ -161,7 +138,6 @@ public class Server {
 
 
         private Worker(Socket socket, int id) {
-            this.send_succeeded = false;
             this.socket = socket;
             this.id = id;
         }
@@ -180,10 +156,9 @@ public class Server {
                 writeWorker.setName(this.getName() + "_Writer");
                 readWorker.setName(this.getName() + "_Reader");
                 readWorker.start();
-                writeWorker.start();
+                writeWorker.run(); // staying in this thread
                 while (true) {
-                    if (readWorker.stopMe()) {
-                        writeWorker.stop = true;
+                    if (deadSession) {
                         break;
                     }
                     else continue;
