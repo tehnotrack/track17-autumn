@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.*;
 
-public final class TaskImplementation implements FileEncoder {
+public final class TaskImplementation implements FileEncoder, AutoCloseable {
 
     /**
      * @param finPath  where to read binary data from
@@ -18,8 +18,14 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
+
+
+
     @NotNull
-    public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
+    public File encodeFile(@NotNull String finPath, @Nullable String foutPath)  throws IOException    {
+
+
+
         File fin = new File(finPath);
         BufferedInputStream input = new BufferedInputStream(new FileInputStream(fin));
 
@@ -65,6 +71,13 @@ public final class TaskImplementation implements FileEncoder {
         }
         input.close();
         return fout;
+
+
+
+    }
+
+    @Override
+    public void close() throws Exception{
 
     }
 
