@@ -32,7 +32,7 @@ public class Server {
 
         NewClient(Socket clientsocket, Integer id)
         {
-            String address = clientsocket.getInetAddress().toString().substring(1, clientsocket.getInetAddress().toString().length());
+            String address = clientsocket.getInetAddress().toString().replaceAll("\\/", "");
             this.name = "Client[" + id + "]@" + address + ":" + clientsocket.getPort();
             this.alive = true;
             this.clientsocket = clientsocket;
