@@ -1,5 +1,8 @@
 package ru.track.cypher;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +23,24 @@ public class Encoder {
      * @param text - исходный текст
      * @return зашифрованный текст
      */
+
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        return null;
+
+        if (text.length() == 0)
+            return text;
+
+        Character ch;
+
+        StringBuilder encoded = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i++) {
+            ch = cypherTable.get(Character.toLowerCase(text.charAt(i)));
+            if (ch == null)
+                encoded.append(text.charAt(i));
+            else
+                encoded.append(ch.charValue());
+        }
+
+        return encoded.toString();
     }
 }
