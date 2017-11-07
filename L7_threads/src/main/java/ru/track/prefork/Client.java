@@ -47,8 +47,12 @@ public class Client {
                 out.flush();
                 int nRead = in.read(buffer);
                 str = new String(buffer, 0, nRead);
-                if (str.equals("exit"))
+                if (str.equals("exit")) {
+                    out.close();
+                    fromKeyboard.close();
+                    in.close();
                     break;
+                }
                 else
                     System.out.println(str);
             }
