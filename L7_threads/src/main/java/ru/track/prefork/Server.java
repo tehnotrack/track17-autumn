@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.Scanner;
 
 /**
  *
@@ -28,16 +30,10 @@ public class Server {
             Socket client = socket.accept();
             System.out.println("Accepted!");
             OutputStream writer = client.getOutputStream();
-            InputStream reader = client.getInputStream();
-            int res = 1;
-            StringBuilder resp = new StringBuilder();
-            while (res != -1) {
-                byte[] query = new byte[1024];
-                res = reader.read(query);
-                resp.append(query);
-            }
-            writer.write(resp.toString().getBytes());
-//            System.out.println(query[0]);
+            String resp = Client.read(client);
+            System.out.println("Client: " + resp);
+            writer.write(resp.getBytes());
+            client.shutdownOutput();
         }
         socket.close();
     }
@@ -47,13 +43,11 @@ public class Server {
     }
     public static void main(String[] args) {
         try {
-            Server s =  new Server(8080);
+            Server s =  new Server(8080 );
             s.run();
         }
         catch (IOException exc) {
             System.out.println(exc.getMessage());
         }
-
-
     }
 }

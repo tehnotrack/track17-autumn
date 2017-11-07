@@ -3,6 +3,8 @@ package ru.track.prefork;
 import java.awt.image.ImagingOpException;
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.Scanner;
 
 /**
  *
@@ -17,18 +19,32 @@ public class Client {
         this.host = host;
         clientSocket = new Socket(host, port);
     }
+    public static String read(Socket clientSocket) throws IOException{
+        InputStream reader = clientSocket.getInputStream();
+        int len = 0;
+        StringBuilder resp = new StringBuilder();
+        while (len != -1) {
+            byte[] query = new byte[1024];
+            len = reader.read(query);
+            if (len != -1) {
+                byte [] subArr = Arrays.copyOfRange(query, 0, len);
+                String buf = new String(subArr);
+                resp.append(buf);
+            }
+        }
+        return resp.toString();
+    }
+
     public void connect() throws IOException {
         OutputStream writer = clientSocket.getOutputStream();
-        writer.write(111);
-        InputStream reader = clientSocket.getInputStream();
-        int res = 1;
-        StringBuilder resp = new StringBuilder();
-        while (res != -1) {
-            byte[] query = new byte[1024];
-            res = reader.read(query);
-            resp.append(query);
-        }
-        System.out.println(resp.toString());
+        Scanner in = new Scanner(System.in);
+        String str = in.nextLine();
+        writer.write(str.getBytes());
+        writer.flush();
+        clientSocket.shutdownOutput();
+
+        String resp = read(clientSocket);
+        System.out.println("Server answered: " + resp);
         clientSocket.close();
     }
     public static void main(String[] args) {
