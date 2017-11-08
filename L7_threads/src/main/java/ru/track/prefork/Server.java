@@ -37,16 +37,21 @@ public class Server {
 
             while (true) {
                 int nRead = in.read(buffer);
-                String input = new String(buffer, 0, nRead);
-                log.info("Client: " + input);
-                out.write(input.getBytes());
-                out.flush();
-                Arrays.fill(buffer, (byte) 0);
+                if (nRead != -1) {
+                    String input = new String(buffer, 0, nRead);
+                    log.info("Client: " + input);
+                    out.write(input.getBytes());
+                    out.flush();
+                    Arrays.fill(buffer, (byte) 0);
+                } else {
+                    log.info("Disconnected");
+                    return;
+                }
             }
-        }catch (IOException e){
-            log.error("ERROR"+e.getMessage());
+        } catch (IOException e) {
+            log.error("ERROR" + e.getMessage());
         } finally {
-            if (serverSocket!=null)
+            if (serverSocket != null)
                 serverSocket.close();
         }
 

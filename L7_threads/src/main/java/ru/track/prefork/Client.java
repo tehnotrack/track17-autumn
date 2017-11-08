@@ -43,9 +43,14 @@ public class Client {
                 out.flush();
 
                 int nRead = in.read(buffer);
-                String input = new String(buffer, 0, nRead);
-                System.out.println(input);
-                Arrays.fill(buffer, (byte) 0);
+                if (nRead != -1) {
+                    String input = new String(buffer, 0, nRead);
+                    System.out.println(input);
+                    Arrays.fill(buffer, (byte) 0);
+                } else {
+                    log.info("Disconnected");
+                    return;
+                }
 
             }
         } catch (IOException e) {
