@@ -1,7 +1,6 @@
 package ru.track.prefork;
 
 import java.io.*;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -11,13 +10,19 @@ import java.util.Scanner;
  */
 public class Client {
 
-    public static void main(String[] args) throws IOException{
-        int srvMsg;
+    private int port;
+
+    Client(int port) {
+       port = port;
+    }
+
+    public void runing() throws IOException {
+        int srvMsg = 0;
         String str;
         Socket socket = null;
         byte[] msg = new byte[1024];
         try {
-            socket = new Socket("localhost", 8100);
+            socket = new Socket("localhost", port);
             System.out.println("client started");
             try (InputStream in = socket.getInputStream()) {
                 ThreadSample t = new ThreadSample(socket);
@@ -39,7 +44,7 @@ public class Client {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+
             }
         } finally {
             try {
@@ -49,11 +54,17 @@ public class Client {
             }
         }
     }
+
+
+    public static void main(String[] args) throws IOException {
+        Client c = new Client(8100);
+        c.runing();
+    }
 }
+
 
 class ThreadSample extends Thread {
     Socket socket;
-    Scanner scan = new Scanner(System.in);
     ThreadSample (Socket s) {
         this.socket = s;
     }
@@ -70,11 +81,10 @@ class ThreadSample extends Thread {
                     if (!str.equals("")) {
                         if (!isInterrupted())
                             out.write(str.getBytes());
-                        //System.out.println("send " + str + " msg to server");
+                        if (str.equals("exit"))
+                            break;
                     }
             }
-        } catch (IOException | InterruptedException e) {
-
-        }
+        } catch (IOException | InterruptedException e) {}
     }
 }
