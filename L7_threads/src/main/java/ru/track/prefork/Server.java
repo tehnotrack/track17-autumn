@@ -19,6 +19,8 @@ public class Server {
 
     private int port;
     private int clientId = 0;
+    private String message = "";
+
     private static final int MAX_COUNT = 1024;
 
     public Server(int port) {
@@ -39,7 +41,7 @@ public class Server {
             try {
                 connectClient(socket, client);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: think about error handling
+                e.printStackTrace();
             }
         }
     }
@@ -47,7 +49,15 @@ public class Server {
     private void connectClient(Socket socket, String client) throws IOException {
         byte[] bytes = new byte[MAX_COUNT];
 
-        OutputStream outputStream = socket.getOutputStream();
+        Thread serveMessages = new Thread(() -> {
+            while(message.isEmpty()) {}
+
+            System.out.println(message);
+
+            message = "";
+        });
+        serveMessages.start();
+
         InputStream inputStream = socket.getInputStream();
 
         int messageSize;
@@ -60,16 +70,17 @@ public class Server {
 
             logger.info("new message from " + client + ": " + message);
 
-            outputStream.write(bytes, 0, messageSize);
-            outputStream.flush();
-
-            logger.info("sent message to " + client);
+            sendMessage(message);
 
             Arrays.fill(bytes, (byte) 0);
         }
 
         socket.close();
         logger.info("connection lost with " + client);
+    }
+
+    private synchronized void sendMessage(String message) {
+        this.message = message;
     }
 
     public void serve() throws IOException {
