@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class Client {
     private int port;
     private String host;
-    private static final int MAX_COUNT = 10;
+    private static final int MAX_COUNT = 1024;
 
     public Client(int port, String host) {
         this.port = port;
@@ -41,7 +41,7 @@ public class Client {
 
                 continue;
             }
-            
+
             outputStream.write(message.getBytes());
 
             int responseSize = inputStream.read(response);
