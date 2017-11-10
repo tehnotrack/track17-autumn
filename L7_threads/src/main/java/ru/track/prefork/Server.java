@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -24,8 +25,8 @@ public class Server {
     }
 
     public void starting () throws IOException {
-        Map<String, Socket> map = new ConcurrentHashMap<>();
-        List<User> users = new ArrayList<>();
+        ConcurrentMap<Long, User> users = new ConcurrentHashMap<>();
+        AtomicLong counter = new AtomicLong(0);
         Socket socket;
         ServerSocket server;
         String name;
@@ -38,14 +39,15 @@ public class Server {
             while (true) {
                 socket = server.accept();
                 System.out.println("Connection accepted: " + socket);
-                name = "Client@"  + socket.getInetAddress() +":" + socket.getPort();
+                Long id = counter.incrementAndGet();
+                name = "Client[" + id + "]";
                 User user = new User(name, socket);
-                users.add(user);
+                users.put(id, user);
                 try {
                     service.submit(new AloneThread(user, users));
                 } catch (Exception e) {
                     e.printStackTrace();
-                    map.values().remove(socket);
+                    users.remove(id);
                     socket.close();
                 }
             }

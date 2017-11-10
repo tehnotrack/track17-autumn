@@ -13,10 +13,11 @@ public class Client {
     private int port;
 
     Client(int port) {
-       port = port;
+       this.port = port;
     }
 
-    public void runing() throws IOException {
+    public void runing() throws IOException, ClassNotFoundException {
+        BinaryProtocol<Message> protocol = new BinaryProtocol<>();
         int srvMsg = 0;
         String str;
         Socket socket = null;
@@ -30,13 +31,15 @@ public class Client {
                 while (!socket.isOutputShutdown()) {
                     srvMsg = in.read(msg);
                     if (srvMsg != -1) {
-                        str = new String(msg, 0, srvMsg);
+                        Message message = (Message)protocol.decode(msg);
+                        str = message.getData();
+                        //str = new String(msg, 0, srvMsg);
                         if (str.equals("exit")) {
                             System.err.println("You were disconected from server");
                             t.interrupt();
                             break;
                         }
-                        System.out.println(new String(msg, 0, srvMsg));
+                        System.out.println(str);
                     } else {
                         System.err.println("Server was shut down");
                         t.interrupt();
@@ -56,7 +59,7 @@ public class Client {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         Client c = new Client(8100);
         c.runing();
     }
@@ -65,6 +68,7 @@ public class Client {
 
 class ThreadSample extends Thread {
     Socket socket;
+    BinaryProtocol<Message> protocol = new BinaryProtocol<>();
     ThreadSample (Socket s) {
         this.socket = s;
     }
@@ -74,13 +78,18 @@ class ThreadSample extends Thread {
              BufferedReader br = new BufferedReader(
                      new InputStreamReader(System.in))){
             String str;
+            Message message;
             while (!isInterrupted()) {
                 while (!br.ready())
                     sleep(1000);
                     str = br.readLine();
                     if (!str.equals("")) {
-                        if (!isInterrupted())
-                            out.write(str.getBytes());
+                        if (!isInterrupted()) {
+                            message = new Message(str);
+                            out.write(protocol.encode(message));
+//                            out.write(str.getBytes());
+                            out.flush();
+                        }
                         if (str.equals("exit"))
                             break;
                     }

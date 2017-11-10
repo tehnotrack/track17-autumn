@@ -2,7 +2,7 @@ package ru.track.prefork;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 public class AloneThread implements Runnable {
     private Socket socket;
@@ -12,36 +12,39 @@ public class AloneThread implements Runnable {
     private String str;
     private String name;
     private User user;
-    private List<User> users;
+    private ConcurrentMap<Long, User>  users;
+    BinaryProtocol<Message> protocol = new BinaryProtocol<>();
 
-    public AloneThread(User user, List<User> users) throws IOException {
+    public AloneThread(User user, ConcurrentMap<Long, User> users) throws IOException {
         this.user = user;
         this.socket = user.getSocket();
         this.in = socket.getInputStream();
         this.users = users;
         this.name = user.getName();
-        sendMessage(name + "connected to chat");
+        sendMessage(" connected to chat");
     }
 
     public void run() {
         try {
             while (!socket.isClosed()) {
                 message = in.read(msg);
-                str = new String(msg, 0, message);
+                Message message1 = (Message)protocol.decode(msg);
+                str = message1.getData();
+//                str = new String(msg, 0, message);
                 System.out.println("Get from client "  + str);
                 if (str == null || str.equals("exit")) {
                     break;
                 }
-                sendMessage(name + ">" + str);
+                sendMessage(">" + str);
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
 
-        } finally {
+        }  finally {
             try {
                 System.out.println("closing conection : " + socket);
-                sendMessage(name + "left chat");
+                sendMessage( " left chat");
                 socket.close();
-                users.remove(user);
+                users.values().remove(user);
             } catch (IOException e) {
                 System.err.println("Socket not closed");
             }
@@ -49,10 +52,14 @@ public class AloneThread implements Runnable {
     }
 
     public void sendMessage(String str) throws IOException {
-        for (User u : users) {
-            if (!u.getName().equals(name)) {
+        Message message = new Message(name + ">" + str);
+        for (User u : users.values()) {
+            if (!u.equals(user)) {
                 System.out.println("Sending to client " + u.getName() + " " + str);
-                u.getSocket().getOutputStream().write((name + ">" + str).getBytes());
+                u.getSocket().getOutputStream()
+                        .write(protocol.encode(message));
+                u.getSocket().getOutputStream().flush();
+//                u.getSocket().getOutputStream().write((name + ">" + str).getBytes());
             }
         }
     }

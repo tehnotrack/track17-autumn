@@ -5,7 +5,6 @@ import java.net.Socket;
 public class User {
     private String name;
     private Socket socket;
-    private Long id;
 
     User () {
 
@@ -16,12 +15,6 @@ public class User {
         this.socket = socket;
     }
 
-    User (String name, Socket socket, Long id){
-        this.name = name;
-        this.socket = socket;
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -30,19 +23,11 @@ public class User {
         this.socket = socket;
     }
 
-    public Long getId() {
-        return id;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
 
     public Socket getSocket() {
         return socket;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }
