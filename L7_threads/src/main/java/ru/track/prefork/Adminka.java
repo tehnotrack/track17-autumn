@@ -26,7 +26,7 @@ public class Adminka implements Runnable {
                 str = br.readLine().toLowerCase();
                 if (str.equals("list")) {
                     list();
-                } else if (str.startsWith("kick ")) {
+                } else if (str.startsWith("drop ")) {
                     try {
                         Long id = Long.parseLong(str.substring(5));
                         if (users.get(id) != null) {
