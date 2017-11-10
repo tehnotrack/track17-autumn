@@ -30,9 +30,14 @@ public class Server {
         Socket socket;
         ServerSocket server;
         String name;
-        ExecutorService service;
+        final ThreadPoolExecutor pool = new ThreadPoolExecutor(10,10,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(2));
+        pool.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+
+        ExecutorService  service = Executors.newCachedThreadPool();
+
         server = new ServerSocket(port);
-        service = Executors.newCachedThreadPool();
         System.out.println("server started");
 
         try {
@@ -44,7 +49,8 @@ public class Server {
                 User user = new User(name, socket);
                 users.put(id, user);
                 try {
-                    service.submit(new AloneThread(user, users));
+                    pool.submit(new AloneThread(user, users));
+//                    service.submit(new AloneThread(user, users));
                 } catch (Exception e) {
                     e.printStackTrace();
                     users.remove(id);

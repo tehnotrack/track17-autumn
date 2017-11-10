@@ -11,6 +11,8 @@ public class BinaryProtocol <T extends Serializable> {
             return bos.toByteArray();
         } catch (IOException e) {
             throw new IOException("Tyt o4ibka",e);
+        } finally {
+            bos.close();
         }
     }
     public T decode (byte[] bytes) throws ClassNotFoundException, IOException {
@@ -18,6 +20,8 @@ public class BinaryProtocol <T extends Serializable> {
         try (ObjectInputStream oin = new ObjectInputStream(bis)) {
             T message = (T) oin.readObject();
             return message;
+        } finally {
+            bis.close();
         }
     }
 }

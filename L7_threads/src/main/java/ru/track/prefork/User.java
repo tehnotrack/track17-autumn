@@ -19,14 +19,6 @@ public class User {
         return name;
     }
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Socket getSocket() {
         return socket;
     }
