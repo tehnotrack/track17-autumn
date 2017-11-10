@@ -1,6 +1,7 @@
 package ru.track.prefork;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -49,8 +50,11 @@ public class Client {
             } catch (IOException e) {
 
             }
-        } finally {
+        } catch (ConnectException e) {
+            System.err.println("Server does not response");
+        }finally {
             try {
+                if (socket != null)
                 socket.close();
             } catch (IOException e) {
                 System.err.println("Socket not closed");

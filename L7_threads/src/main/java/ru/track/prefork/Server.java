@@ -3,7 +3,6 @@ package ru.track.prefork;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,15 +29,19 @@ public class Server {
         Socket socket;
         ServerSocket server;
         String name;
+
         final ThreadPoolExecutor pool = new ThreadPoolExecutor(10,10,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(2));
         pool.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
 
-        ExecutorService  service = Executors.newCachedThreadPool();
+        //ExecutorService  service = Executors.newCachedThreadPool();
 
         server = new ServerSocket(port);
         System.out.println("server started");
+
+        Thread master = new Thread(new Adminka(users));
+        master.start();
 
         try {
             while (true) {
@@ -46,7 +49,7 @@ public class Server {
                 System.out.println("Connection accepted: " + socket);
                 Long id = counter.incrementAndGet();
                 name = "Client[" + id + "]";
-                User user = new User(name, socket);
+                User user = new User(name, socket,id);
                 users.put(id, user);
                 try {
                     pool.submit(new AloneThread(user, users));
