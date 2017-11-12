@@ -3,8 +3,6 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -62,17 +60,9 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            if (i == 0)
-                builder.append('[');
-            builder.append(toJson(Array.get(object, i)));
-            if (i == length - 1)
-                builder.append(']');
-            else
-                builder.append(',');
-        }
-        return builder.toString();
+        // TODO: implement!
+
+        return null;
     }
 
     /**
@@ -92,12 +82,11 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        Map<?,?> map = (Map) object;
-        Map<String, String> stringMap = new LinkedHashMap<>();
-        for (Map.Entry entry : map.entrySet()) {
-            stringMap.put(entry.getKey().toString(), toJson(entry.getValue()));
-        }
-        return formatObject(stringMap);
+        // TODO: implement!
+
+        return null;
+        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
+//        return formatObject(stringMap);
     }
 
     /**
@@ -119,28 +108,10 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
+        // TODO: implement!
 
-        Map<String, String>  stringMap = new LinkedHashMap<>();
 
-        for (Field field : clazz.getDeclaredFields()) {
-            try {
-                field.setAccessible(true);
-                String name = field.getName();
-
-                if (field.getAnnotation(SerializedTo.class) != null)
-                    name = field.getAnnotation(SerializedTo.class).value();
-
-                Boolean isNullable = clazz.getAnnotation(JsonNullable.class) != null;
-
-                Object value = field.get(object);
-                if (value != null || isNullable)
-                    stringMap.put(name, toJson(value));
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return formatObject(stringMap);
+        return null;
     }
 
     /**
