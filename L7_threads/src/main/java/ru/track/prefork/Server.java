@@ -1,31 +1,31 @@
 package ru.track.prefork;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class Server {
-    private int nextId; //next free worker id
+    private AtomicLong nextId; //next free worker id
     private int port;
-    private Map<Integer, Worker> idMap; //map of active ids and their workers
+    private Map<Long, Worker> idMap; //map of active ids and their workers
     private static Logger log = LoggerFactory.getLogger(Server.class);
+    private static Protocol<Message> protocol = new BinaryProtocol<>();
 
 
     public Server(int port) {
         this.port = port;
-        this.nextId = 0;
+        this.nextId = new AtomicLong(0);
         this.idMap = new LinkedHashMap<>();
     }
 
@@ -35,7 +35,7 @@ public class Server {
         private ReadWorker readWorker;
         private WriteWorker writeWorker;
         private Socket socket;
-        private int id;
+        private long id;
 
 
         private class ReadWorker extends Thread {
@@ -59,8 +59,9 @@ public class Server {
                     while (true) {
                         int nRead = inputStream.read(buffer);
                         if (nRead > 0) {
-                            System.out.println(this.getName() + "> " + new String(buffer, 0, nRead));
-                            broadcast(buffer, nRead, id);
+                            Message msg = new Message(buffer, id, nRead);
+                            System.out.println(this.getName() + "> " + msg.toString());
+                            broadcast(msg);
                         } else {
                             deadSession = true;
                             log.info("Disconnected");
@@ -82,24 +83,23 @@ public class Server {
         }
 
         private class WriteWorker extends Thread {
-//            private int nRead;
-//            private byte[] msgToWrite;
+            private AtomicInteger nRead;
+            private Message msgToWrite;
             private OutputStream outputStream;
-            private boolean can_work;
+            private AtomicBoolean can_work;
 
-            private void putMsg(byte[] msg, int nRead) throws IOException {
-//                log.info("put msg");
+            private void putMsg(Message msg) throws IOException { //method is called from outside
+                log.info("put msg");
 //                System.arraycopy(msg, 0, msgToWrite, 0, nRead);
-//                msgToWrite = Arrays.copyOf(msg, nRead);
-//                this.nRead = nRead;
-
-//                log.info("Sending " + new String(msg, 0, nRead));
-                outputStream.write(msg, 0, nRead);
-                outputStream.flush();
+                msgToWrite = new Message(msg);
+//                this.nRead.set(nRead);
+                this.can_work.set(true);
             }
 
             private WriteWorker() {
 //                msgToWrite = new byte[2048];
+                nRead = new AtomicInteger(0);
+                can_work = new AtomicBoolean(false);
                 outputStream = null;
             }
 
@@ -112,12 +112,12 @@ public class Server {
                 try {
                     outputStream = socket.getOutputStream();
                     while (true) {
-                        if (can_work) { //send messages personally (not broadcasting) here
-//                            log.info("Sending " + new String(msgToWrite, 0, nRead));
-//                            outputStream.write(msgToWrite, 0, nRead);
-//                            outputStream.flush();
-//                            nRead = 0;
-//                            can_work = false;
+                        if (can_work.get()) { //send messages
+                            log.info("Sending " + msgToWrite.toString());
+//                            outputStream.write(msgToWrite, 0, nRead.get());
+                            outputStream.write(protocol.encode(msgToWrite));
+                            outputStream.flush();
+                            can_work.set(false);
                         }
                         if (deadSession)
                             break;
@@ -137,7 +137,7 @@ public class Server {
         }
 
 
-        private Worker(Socket socket, int id) {
+        private Worker(Socket socket, long id) {
             this.socket = socket;
             this.id = id;
         }
@@ -161,27 +161,24 @@ public class Server {
                     if (deadSession) {
                         break;
                     }
-                    else continue;
                 }
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             } finally {
                 idMap.remove(id);
             }
-            return;
-
         }
 
     }
 
-    private void broadcast(@NotNull byte[] msg, @NotNull int nRead, @Nullable int passId) {
-        log.info("Start broadcasting " + new String(msg, 0, nRead));
-        for (Integer id : idMap.keySet()) {
-            if (id.equals(passId))
+    private void broadcast(@NotNull Message msg) {
+        log.info("Start broadcasting " + msg.toString());
+        for (Long id : idMap.keySet()) {
+            if (id.equals(msg.senderId()))
                 continue;
 
             try {
-                idMap.get(id).writeWorker.putMsg(msg, nRead);
+                idMap.get(id).writeWorker.putMsg(msg);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -190,7 +187,7 @@ public class Server {
 
 
     private void serve() {
-        ServerSocket serverSocket = null;
+        ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
         } catch (Exception e) {
@@ -202,9 +199,9 @@ public class Server {
         try {
             while (true) {
                 Socket socket = serverSocket.accept();
-                Worker w = new Worker(socket, nextId);
-                idMap.put(nextId, w);
-                w.setName(String.format("Client%d@%s:%s", nextId++, socket.getInetAddress(), socket.getPort()));
+                Worker w = new Worker(socket, nextId.get());
+                idMap.put(nextId.get(), w);
+                w.setName(String.format("Client%d@%s:%s", nextId.getAndIncrement(), socket.getInetAddress(), socket.getPort()));
                 w.start();
             }
         } catch (Exception e) {
@@ -225,3 +222,4 @@ public class Server {
         server.serve();
     }
 }
+

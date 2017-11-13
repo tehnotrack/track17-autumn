@@ -18,6 +18,7 @@ import java.util.Scanner;
  *
  */
 public class Client {
+    private static Protocol<Message> protocol = new BinaryProtocol<>();
     private boolean smthWentWrong;
     static Logger log = LoggerFactory.getLogger(Client.class);
     private int port;
@@ -46,7 +47,9 @@ public class Client {
                         smthWentWrong = true;
                         break;
                     }
-                    System.out.println(new String(buffer, 0, nByte));
+                    Message message = protocol.decode(buffer);
+                    System.out.println(message.toString());
+//                    System.out.println(new String(buffer, 0, nByte));
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
