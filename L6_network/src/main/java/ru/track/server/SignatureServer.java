@@ -70,7 +70,7 @@ public class SignatureServer {
             ssock = ssockFinal;
             //noinspection InfiniteLoopStatement
             while (true) {
-                handle(ssockFinal);
+               pool.execute(() -> handle(ssockFinal));
             }
         } finally {
             IOUtils.closeQuietly(ssock);
@@ -78,6 +78,7 @@ public class SignatureServer {
     }
 
     public static void main(String[] args) throws Exception {
+        final ExecutorService pool = Executors.newFixedThreadPool(10);
         final SignatureServer server = new SignatureServer(8100, 10, null, null);
         server.serve();
     }
