@@ -3,14 +3,9 @@ package ru.track;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.rmi.runtime.Log;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
-import java.util.Queue;
 import java.util.Scanner;
 
 public class Client {
@@ -41,35 +36,51 @@ public class Client {
             public void run() {
                 Scanner sc = new Scanner(System.in);
                 String input;
-                while ((input = sc.nextLine()) != null) {
-                    try {
-                        PrintWriter out = new PrintWriter(client.socket.getOutputStream(), true);
-                        out.println(input);
+                try(ObjectOutputStream oos = new ObjectOutputStream(client.socket.getOutputStream())) {
+
+                    while (!currentThread().isInterrupted()) {
+                        input = sc.nextLine();
+                        if(isInterrupted()){
+                            return;
+                        }
+
+                        oos.writeObject(new Message(System.currentTimeMillis(), input));
+                        oos.flush();
                         if (input.equals("exit")) {
-                            client.shutdown();
                             client.receiver.interrupt();
+                            client.shutdown();
                             break;
                         }
-                    } catch (IOException e) {
+                    }
+                } catch (IOException e) {
+                    if(!isInterrupted()){
                         logger.error("Troubles in connection: {}", e);
-                        break;
                     }
                 }
             }
+
         };
 
         client.receiver = new Thread() {
             @Override
             public void run() {
-                try {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(client.socket.getInputStream()));
-                    while (!currentThread().isInterrupted())
-                    {
-                        if (in.ready())
-                            logger.info("Got response from server: {}", in.readLine());
+                try(ObjectInputStream ios = new ObjectInputStream(client.socket.getInputStream())) {
+                    Message msg;
+                    while (!currentThread().isInterrupted()) {
+                        msg = (Message) ios.readObject();
+                        if(!msg.connected){
+                            logger.info("Dropped from server");
+                            client.sender.interrupt();
+                            return;
+                        }
+                        logger.info( msg.data);
                     }
                 } catch (IOException e) {
-                    logger.error("Troubles in connection: {}", e);
+                    if(!isInterrupted()){
+                        logger.error("Troubles in connection: {}", e);
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
             }
         };
