@@ -1,5 +1,6 @@
 package ru.track.prefork;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,9 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,6 +39,8 @@ public class Server {
 
 
     public void serve() {
+      //  Thread adminthread = new Adminthread();
+      //  adminthread.run();
         ServerSocket ssock = null;
         try {
             ssock = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
@@ -43,6 +48,10 @@ public class Server {
             e.printStackTrace();
         }
 
+        Thread adminthread = new Adminthread();
+        adminthread.start();
+
+        log.info("Its ok, im here");
         while (true) {
             Socket socket = null;
             try {
@@ -60,7 +69,28 @@ public class Server {
     }
 
 
+    class Adminthread extends Thread
+    {
+        @Override
+        public void run()
+        {
+            Scanner scanner = new Scanner(System.in);
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.equals("list"))
+                    log.info(idmap.toString());
+                else if (line.matches("drop \\d+"))
+                {
+                    Integer id = Integer.parseInt(line.split(" ")[1]);
+                    if (idmap.get(id) != null)
+                        IOUtils.closeQuietly(idmap.get(id).getSocket());
+                }
+            }
+
+        }
+    }
     class Mythread extends Thread {
+
         @NotNull
         Socket socket;
         Integer id;
@@ -74,6 +104,11 @@ public class Server {
 
         void setOut(OutputStream out) {
             this.out = out;
+        }
+
+        Socket getSocket()
+        {
+            return this.socket;
         }
 
         @Override
@@ -108,7 +143,10 @@ public class Server {
                         }
                     }
                 }
-            } catch (IOException e) {
+            }catch (SocketException e){
+                log.info("dropped");
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
 
