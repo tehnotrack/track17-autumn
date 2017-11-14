@@ -1,10 +1,10 @@
 package ru.track.prefork;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -13,6 +13,7 @@ import java.util.Scanner;
  *
  */
 public class Client {
+    static Logger log = LoggerFactory.getLogger(Client.class);
     private int port;
     private String host;
 
@@ -21,35 +22,34 @@ public class Client {
         this.host = host;
     }
 
-    private void listen(OutputStream os, InputStream is) {
+    private void listen(ObjectOutputStream os, ObjectInputStream is) {
         try {
-            byte[] buffer = new byte[4096];
-            int nRead;
+            Message msg;
             while (true) {
-                nRead = is.read(buffer);
-                if (nRead == -1) {
-                    break;
+                try {
+                    msg = (Message) is.readObject();
+                    System.out.println(msg.getData());
                 }
-                System.out.println(new String(buffer, 0, nRead));
+                catch (ClassNotFoundException e){log.error("Message decoding failed");}
             }
         }
         catch(IOException e) {}
         finally {
             IOUtils.closeQuietly(os);
             IOUtils.closeQuietly(is);
-            System.out.println("Соединение с сервером разорвано");
         }
     }
 
-    private void send(OutputStream os, InputStream is) {
-        try {
-            Scanner in = new Scanner(System.in);
+    private void send(ObjectOutputStream os, ObjectInputStream is) {
+        try (Scanner in = new Scanner(System.in)){
             String str;
+            Message msg;
             while (true) {
                 str = in.nextLine();
                 if (str.equals("exit")) break;
-                if (str.length() > 0) {
-                    os.write(str.getBytes());
+                else if (str.length() > 0) {
+                    msg = new Message(System.currentTimeMillis(), str);
+                    os.writeObject(msg);
                     os.flush();
                 }
             }
@@ -66,8 +66,8 @@ public class Client {
         Thread t;
         try {
             sock = new Socket(host, port);
-            final OutputStream os = sock.getOutputStream();
-            final InputStream is = sock.getInputStream();
+            final ObjectOutputStream os = new ObjectOutputStream(sock.getOutputStream());
+            final ObjectInputStream is = new ObjectInputStream(sock.getInputStream());
             t = new Thread(() -> {send(os, is);});
             t.setDaemon(true);
             t.start();
@@ -75,6 +75,7 @@ public class Client {
         }
         finally {
             IOUtils.closeQuietly(sock);
+            log.info("Disconnected from server");
         }
     }
     public static void main(String[] args) throws Exception {

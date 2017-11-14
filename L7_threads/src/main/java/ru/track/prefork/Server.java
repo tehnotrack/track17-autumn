@@ -1,15 +1,15 @@
 package ru.track.prefork;
 
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,85 +19,117 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  */
 public class Server {
+    static Logger log = LoggerFactory.getLogger(Server.class);
     private int port;
     private AtomicLong counter;
-    private ConcurrentMap<Long, String> messages;
-    Object sync = new Object();
+    private ConcurrentMap<Long, Worker> workersMap;
 
     public Server(int port) {
         this.port = port;
         counter = new AtomicLong(0);
-        messages = new ConcurrentHashMap<>();
+        workersMap = new ConcurrentHashMap<>();
     }
 
-    private void handle(@NotNull Socket sock){
-        try {
-            long id = counter.getAndIncrement();
-            Thread.currentThread().setName("Client[" + id + "]@"+sock.getInetAddress().toString()+":"+sock.getPort());
-            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-            System.out.println("Подключился: " + Thread.currentThread().getName());
-            InputStream is = sock.getInputStream();
-            OutputStream os = sock.getOutputStream();
-            new Thread(() -> {listen(is, id, "Client@"+sock.getInetAddress().toString()+":"+sock.getPort()+"> ", Thread.currentThread());}).start();
-            synchronized(sync) {
-                try {
-                    while (true) {
-                        sync.wait();
-                        for (ConcurrentMap.Entry<Long, String> entry : messages.entrySet())
-                            if (!entry.getKey().equals(id))
-                                os.write(entry.getValue().getBytes());
-                    }
-                } catch (InterruptedException e) {}
-            }
-        }
-        catch(IOException e) {}
-    }
-
-    private void listen(InputStream is, long id, String name, Thread t){
-        try {
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            int nRead;
-            byte[] buffer = new byte[1024];
-            while (true) {
-                nRead = is.read(buffer);
-                if (nRead > -1) {
-                    String str = new String(buffer, 0, nRead);
-                    System.out.println(name + str);
-                    synchronized(sync){
-                        messages.clear();
-                        messages.put(id, name + str);
-                        sync.notifyAll();
-                    }
-                } else break;
-            }
-        }
-        catch(IOException e) {}
-        finally{
-            System.out.println("Client["+ id + "] отсоединился");
-            t.interrupt();
-        }
-    }
-
-    public void serve() throws IOException{
+    public void serve(){
         ServerSocket ssock = null;
         try {
             ssock = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
             Socket sock;
-            Thread t;
+            Worker worker;
+            new Thread(() -> admin()).start();
             while (true) {
                 sock = ssock.accept();
-                final Socket socket = sock;
-                t = new Thread(() -> {handle(socket);});
-                t.start();
+                try {
+                    worker = new Worker(sock);
+                    worker.start();
+                }
+                catch (IOException e){log.error("Connection failed");}
             }
         }
+        catch (Exception e){log.error("Server dropped");}
         finally {
             IOUtils.closeQuietly(ssock);
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        final Server server = new Server(8100);
-        server.serve();
+    public void admin() {
+        try (Scanner in = new Scanner(System.in)){
+            String cmd;
+            Long id;
+            while (true) {
+                cmd = in.nextLine();
+                if(cmd.equals("list"))
+                    for(Map.Entry<Long, Worker> entry: workersMap.entrySet())
+                        System.out.println(entry.getValue().name);
+                else {
+                    String[] strlist = cmd.split(" ");
+                    if (strlist.length == 2 && strlist[0].equals("drop"))
+                        try {
+                            id = new Long(strlist[1]);
+                            if(workersMap.get(id) == null)
+                                System.out.println("No such client");
+                            else
+                                IOUtils.closeQuietly(workersMap.get(id).sock);
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid syntax");
+                        }
+                    else System.out.println("Unknown command");
+                }
+            }
+        }
     }
+
+    private class Worker extends Thread{
+        private long id;
+        private ObjectInputStream is;
+        private ObjectOutputStream os;
+        private String name;
+        private Socket sock;
+
+        public Worker(Socket sock) throws IOException {
+            this.sock = sock;
+            is = new ObjectInputStream(sock.getInputStream());
+            os = new ObjectOutputStream(sock.getOutputStream());
+            this.id = counter.getAndIncrement();
+            name = String.format("Client[%d]@%s:%s", id, sock.getInetAddress().toString(), sock.getPort());
+        }
+
+        public synchronized void send(Long id, Message msg){
+            try {
+                if(id != this.id) {
+                    os.writeObject(msg);
+                }
+            }
+            catch(Exception e){}
+        }
+
+        public void run(){
+            try {
+                workersMap.put(id, this);
+                Thread.currentThread().setName(name);
+                log.info("Connected");
+                Message msg;
+                while (true) {
+                    try{
+                    msg = (Message) is.readObject();
+                    log.info("msg: " + msg.getData());
+                    final Message msgsend = new Message(msg.getTs(), String.format("Client@%s:%s> %s", sock.getInetAddress().toString() , sock.getPort(), msg.getData()));
+                    workersMap.forEach((id, worker) -> worker.send(this.id, msgsend));
+                    }
+                    catch (ClassNotFoundException e){log.error("Decoding failed");}
+                }
+            }
+            catch(IOException e){}
+            finally {
+                IOUtils.closeQuietly(sock);
+                log.info("Disconnected");
+                workersMap.remove(id);
+                }
+            }
+        }
+
+        public static void main(String[] args){
+            final Server server = new Server(8100);
+            server.serve();
+        }
 }
