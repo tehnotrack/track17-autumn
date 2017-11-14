@@ -2,7 +2,7 @@ package ru.track;
 
 import java.io.Serializable;
 
-public class Message implements Serializable{
+public class Message implements Serializable {
     long ts;
     String data;
     boolean connected = true;

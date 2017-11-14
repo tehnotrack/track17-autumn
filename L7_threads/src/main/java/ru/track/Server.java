@@ -126,16 +126,19 @@ public class Server {
         public void run() {
             try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
                 while (!currentThread().isInterrupted()) {
-                    synchronized (toSend) {
-                        while (!toSend.isEmpty()) {
-                            Message msg = toSend.poll(100, TimeUnit.MILLISECONDS);
-                            oos.writeObject(msg);
-                            oos.flush();
-                            if (!msg.connected) {
-                                return;
-                            }
+                    while (true) {
+                        Message msg = toSend.poll(100, TimeUnit.MILLISECONDS);
+                        if (msg == null) {
+                            continue;
+                        }
+
+                        oos.writeObject(msg);
+                        oos.flush();
+                        if (!msg.connected) {
+                            return;
                         }
                     }
+
                 }
 
             } catch (IOException e) {
@@ -180,30 +183,24 @@ public class Server {
                         idWriterMap.get(ID).toSend.add(new Message(0L, null, false));
                         logger.info("Dropped " + ID);
                     }
-
-
                 }
             }
         };
 
 
-
-
         adminTerminal.start();
 
-        while(true)
+        while (true) {
+            Socket clientSocket = server.serverSocket.accept();
+            currentId++;
+            ServerReaderThread newReaderThread = new ServerReaderThread(clientSocket, currentId);
+            ServerWriterThread newWriterThread = new ServerWriterThread(clientSocket, currentId);
+            idReaderMap.put(currentId, newReaderThread);
+            idWriterMap.put(currentId, newWriterThread);
+            newReaderThread.start();
+            newWriterThread.start();
+        }
 
-    {
-        Socket clientSocket = server.serverSocket.accept();
-        currentId++;
-        ServerReaderThread newReaderThread = new ServerReaderThread(clientSocket, currentId);
-        ServerWriterThread newWriterThread = new ServerWriterThread(clientSocket, currentId);
-        idReaderMap.put(currentId, newReaderThread);
-        idWriterMap.put(currentId, newWriterThread);
-        newReaderThread.start();
-        newWriterThread.start();
     }
-
-}
 
 }

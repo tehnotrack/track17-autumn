@@ -30,17 +30,19 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
         Client client = new Client(args[0], Integer.parseInt(args[1]));
+        InputStreamReader in = new InputStreamReader(System.in);
+
 
         client.sender = new Thread() {
             @Override
             public void run() {
-                Scanner sc = new Scanner(System.in);
                 String input;
-                try(ObjectOutputStream oos = new ObjectOutputStream(client.socket.getOutputStream())) {
+                try (ObjectOutputStream oos = new ObjectOutputStream(client.socket.getOutputStream());
+                     Scanner sc = new Scanner(System.in)) {
 
                     while (!currentThread().isInterrupted()) {
                         input = sc.nextLine();
-                        if(isInterrupted()){
+                        if (isInterrupted()) {
                             return;
                         }
 
@@ -53,7 +55,7 @@ public class Client {
                         }
                     }
                 } catch (IOException e) {
-                    if(!isInterrupted()){
+                    if (!isInterrupted()) {
                         logger.error("Troubles in connection: {}", e);
                     }
                 }
@@ -61,26 +63,29 @@ public class Client {
 
         };
 
+
         client.receiver = new Thread() {
             @Override
             public void run() {
-                try(ObjectInputStream ios = new ObjectInputStream(client.socket.getInputStream())) {
+                try (ObjectInputStream ios = new ObjectInputStream(client.socket.getInputStream())) {
                     Message msg;
+
                     while (!currentThread().isInterrupted()) {
                         msg = (Message) ios.readObject();
-                        if(!msg.connected){
+                        if (!msg.connected) {
                             logger.info("Dropped from server");
-                            client.sender.interrupt();
                             return;
                         }
-                        logger.info( msg.data);
+                        logger.info(msg.data);
                     }
                 } catch (IOException e) {
-                    if(!isInterrupted()){
+                    if (!isInterrupted()) {
                         logger.error("Troubles in connection: {}", e);
                     }
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
+                } finally {
+                    client.sender.interrupt();
                 }
             }
         };
