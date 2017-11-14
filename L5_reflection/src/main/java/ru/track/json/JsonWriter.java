@@ -1,16 +1,13 @@
 package ru.track.json;
 
-import java.awt.*;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static jdk.nashorn.internal.runtime.regexp.joni.Syntax.Java;
-
 
 /**
  * сериализатор в json
@@ -136,15 +133,24 @@ public class JsonWriter {
         Class clazz = object.getClass();
         // TODO: implement!
         Map<String, String> map = new LinkedHashMap<>();
+        Annotation nullable = clazz.getAnnotation(JsonNullable.class);
+
         Field[] fields = clazz.getDeclaredFields();
         for (Field field: fields) {
             field.setAccessible(true);
+            SerializedTo serializedTo= field.getAnnotation(SerializedTo.class);
+            String fieldName = field.getName();
+            if (serializedTo != null) {
+                fieldName = serializedTo.value();
+            }
+
             try {
-                if (field.get(object) != null) {
-                    map.put(toJson(field.getName()), toJson(field.get(object)));
+                if (field.get(object) != null || nullable != null) {
+                    map.put(toJson(fieldName), toJson(field.get(object)));
                 }
             }
-            catch (IllegalAccessException ex) {
+
+            catch (IllegalAccessException ex){
                 System.out.println(ex.getMessage() + "in method toJsonObjexct()");
             }
 
