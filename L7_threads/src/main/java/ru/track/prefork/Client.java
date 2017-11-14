@@ -16,10 +16,12 @@ public class Client {
     private int port;
     private String host;
     static Logger log = LoggerFactory.getLogger(Client.class);
+    Protocol<Message> protocol;
 
     public Client(int port, String host) {
         this.port = port;
         this.host = host;
+        this.protocol = new BinaryProtocol<>();
     }
 
     class Mythread extends Thread {
@@ -36,18 +38,15 @@ public class Client {
                 while (!isInterrupted()) {
                     try {
                         int nRead = in.read(buffer);
-                        if (nRead < 0)
-                        {
+                        if (nRead < 0) {
                             log.error("Server died");
                             break;
                         }
-                        log.info("Server:" + new String(buffer, 0, nRead));
-                    }
-                    catch (SocketException e) {
+                        log.info(protocol.decode(buffer).getText());
+                    } catch (SocketException e) {
                     }
                 }
-            }
-             catch (IOException e) {
+            } catch (IOException e) {
 
             }
             try {
@@ -58,8 +57,7 @@ public class Client {
         }
     }
 
-    public void loop() throws IOException
-    {
+    public void loop() throws IOException {
         try {
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
@@ -69,27 +67,22 @@ public class Client {
             String line;
 
             write.start();
-            while (scanner.hasNextLine())
-            {
+            while (scanner.hasNextLine()) {
                 line = scanner.nextLine();
                 if (!line.isEmpty()) {
-                    if (line.equals("exit")){
+                    if (line.equals("exit")) {
                         log.info("You finished your session");
                         break;
                     }
-                    out.write(line.getBytes());
+                    out.write(protocol.encode(new Message(line)));
                     out.flush();
                 }
             }
             write.interrupt();
             socket.close();
-        }
-        catch (ConnectException e)
-        {
+        } catch (ConnectException e) {
             log.error("Cant connect");
-        }
-        catch (SocketException e)
-        {
+        } catch (SocketException e) {
         }
     }
 
