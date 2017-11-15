@@ -1,23 +1,23 @@
 package ru.track.prefork;
-import java.security.Signature;
-import java.util.Scanner;
-import org.apache.commons.io.IOUtils;
+import ru.track.prefork.Protocol.Message;
+import ru.track.prefork.Protocol.Protocol;
+import ru.track.prefork.Protocol.MySerializationProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.track.workers.NioClient;
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
 
-/**
- *
- */
+
 public class Client {
-    private boolean myError;
+    private static Protocol<Message> protocol = new MySerializationProtocol<>();
+    public boolean myError;
     static Logger log = LoggerFactory.getLogger(Client.class);
     private int port;
     private String host;
-    Socket socket;
+    public  Socket socket;
+    public String exNextLine ="";
 
     public Client( @NotNull String host, int port) {
         this.myError = false;
@@ -44,7 +44,7 @@ public class Client {
                 OutputStream out = socket.getOutputStream();
         ) {
             while (true) {
-                String myNextLine = myScanner.nextLine();
+                 String myNextLine = myScanner.nextLine();
                 if (myExit(myNextLine))
                     myError = true;
                 if (myError) {
@@ -63,10 +63,12 @@ public class Client {
 
 
     private boolean myExit(String message) {
-        if (message.equals("exit"))
+        if (message.equals("exit")   )
             return true;
         return false;
+
     }
+
 
     private class myClientReader extends Thread {
 
@@ -87,12 +89,25 @@ public class Client {
                     myStream = socket.getInputStream();
                     byte[] myBuffer = new byte[1024];
                     int amountOfBytes = myStream.read(myBuffer);
+
+
+
                     if ( myError || !(amountOfBytes >= 0) ) {
-                        log.info("Error has occured! Please contact adminstrator");
+                        if ( amountOfBytes >= 0) {
+                           Message message = protocol.decode(myBuffer);
+                           if ( message.toString().equals("Your connection was terminated, sorry")){
+                               System.out.println(message.toString());
+                               socket.close();
+                               break;
+                           }
+                        }
+                        log.info("Your connection was terminated, sorry");
                         myError = true;
                         break;
                     }
-                    System.out.println(new String(myBuffer, 0, amountOfBytes));
+                    Message message = protocol.decode(myBuffer);
+                    System.out.println(message.toString());
+
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
