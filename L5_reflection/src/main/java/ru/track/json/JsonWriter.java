@@ -64,9 +64,9 @@ public class JsonWriter {
         StringBuilder str = new StringBuilder();
         str.append('[');
         for (int i = 0; i < length; i++) {
-            str.append(toJson(Array.get(object, i)));
-            if (i != length - 1) {
-                str.append(",");
+            str.append(toJson(Array.get(object,i)));
+            if (i < length - 1) {
+                str.append(',');
             }
         }
         str.append(']');
@@ -90,7 +90,6 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
         StringBuilder str = new StringBuilder();
         str.append('{');
         Map map = (Map) object;
@@ -108,8 +107,6 @@ public class JsonWriter {
         }
         str.append('}');
         return str.toString();
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
     }
 
     /**
@@ -151,7 +148,7 @@ public class JsonWriter {
             }
 
             catch (IllegalAccessException ex){
-                System.out.println(ex.getMessage() + "in method toJsonObjexct()");
+                throw new RuntimeException(ex);
             }
 
         }
