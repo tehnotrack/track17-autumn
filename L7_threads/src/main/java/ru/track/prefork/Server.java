@@ -8,8 +8,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,6 +36,11 @@ public class Server {
         private Socket socket;
         private long id;
 
+        public void kill() {
+            deadSession = true;
+            log.info("kicking");
+        }
+
 
         private class ReadWorker extends Thread {
             private InputStream inputStream;
@@ -62,7 +66,13 @@ public class Server {
                             Message msg = new Message(buffer, id, nRead);
                             System.out.println(this.getName() + "> " + msg.toString());
                             broadcast(msg);
-                        } else {
+                        }
+                        if (deadSession) {
+                            deadSession = true;
+                            log.info("force disconnect");
+                            break;
+                        }
+                        if (nRead <= 0) {
                             deadSession = true;
                             log.info("Disconnected");
                             break;
@@ -185,9 +195,62 @@ public class Server {
         }
     }
 
+    class Console extends Thread {
+        private boolean kill = false;
+        private void kill() { //interrupt
+            kill = true;
+        }
+        @Override
+        public void run() { consoleWork(); }
+
+        private void list() {
+            if (idMap.isEmpty()) {
+                System.out.println("Nobody is here");
+                break;
+            }
+            for (Map.Entry<Long, Worker> entry: idMap.entrySet()) {
+                System.out.println(String.format("Client[%d]@[%s]:[%d]", entry.getKey(), entry.getValue().socket.getLocalAddress().toString(), entry.getValue().socket.getPort()));
+            }
+        }
+
+        private void dropWorker(long dropId) throws Exception{
+            if (idMap.containsKey(dropId)) {
+                idMap.get(dropId).kill();
+            }
+            else log.info("user not exits");
+        }
+
+        private void consoleWork() {
+
+            try ( Scanner scanner = new Scanner(System.in);
+            ) {
+                while (true) {
+                    if (kill == true)
+                        break;
+                    String string = scanner.nextLine();
+
+                    if (string.equals("list"))
+                        list();
+
+                    if (string.matches("drop \\d+")) {
+                        long id = Long.parseLong(string.split(" ")[1]);
+                        dropWorker(id);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
+
 
     private void serve() {
         ServerSocket serverSocket;
+        Console console = new Console();
         try {
             serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
         } catch (Exception e) {
@@ -197,6 +260,8 @@ public class Server {
         System.out.println("Server runs!\n");
 
         try {
+            console.setName("AdminConsole");
+            console.start();
             while (true) {
                 Socket socket = serverSocket.accept();
                 Worker w = new Worker(socket, nextId.get());
@@ -210,6 +275,7 @@ public class Server {
 
             try {
                 serverSocket.close();
+                console.kill();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -222,4 +288,3 @@ public class Server {
         server.serve();
     }
 }
-
