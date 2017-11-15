@@ -20,10 +20,7 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        TaskImplementation t = new TaskImplementation();
-        //final FileEncoder encoder = new ReferenceTaskImplementation();
         final FileEncoder encoder = new TaskImplementation();
-        //t.encodeFile("image_256.png", null);
 
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
@@ -37,7 +34,6 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
         final File fout;
         if (foutPath != null) {
             fout = new File(foutPath);
@@ -47,14 +43,12 @@ public final class TaskImplementation implements FileEncoder {
         }
 
         try (
-                FileWriter fw = new FileWriter(fout);
-                FileInputStream fis = new FileInputStream(finPath);
+                BufferedWriter fw = new BufferedWriter(new FileWriter(fout));
+                BufferedInputStream fis = new BufferedInputStream(new FileInputStream(finPath));
         ) {
-            byte[] buffer = new byte[1002];
-            StringBuilder sb = new StringBuilder();
+            byte[] buffer = new byte[8001];
             int nRead = -1;
-            String toWrite;
-            while ((nRead = fis.read(buffer)) != -1) {
+            while ((nRead = fis.read(buffer, 0, buffer.length)) != -1) {
                 int i = 0;
                 while (i < (nRead - nRead % 3)) {
                     int threeBytes;
@@ -62,32 +56,30 @@ public final class TaskImplementation implements FileEncoder {
                             + (((int) buffer[i + 1] & 0b11111111) << 8)
                             + ((int) buffer[i + 2] & 0b11111111);
 
-                    toWrite = "" + toBase64[(threeBytes & 0b111111000000000000000000) >> 18]
-                            + toBase64[(threeBytes & 0b111111000000000000) >> 12]
-                            + toBase64[(threeBytes & 0b111111000000) >> 6]
-                            + toBase64[threeBytes & 0b111111];
+                    fw.append(toBase64[(threeBytes & 0b111111000000000000000000) >> 18])
+                            .append(toBase64[(threeBytes & 0b111111000000000000) >> 12])
+                            .append(toBase64[(threeBytes & 0b111111000000) >> 6])
+                            .append(toBase64[threeBytes & 0b111111]);
 
-                    fw.write(toWrite);
                     i = i + 3;
                 }
 
                 if (nRead % 3 == 1) {
-                    toWrite = "" + toBase64[((int) buffer[nRead - 1] & 0b11111111) >> 2]
-                            + toBase64[(buffer[nRead - 1] & 0b11) << 4]
-                            + "==";
+                    fw.append(toBase64[((int) buffer[nRead - 1] & 0b11111111) >> 2])
+                            .append(toBase64[(buffer[nRead - 1] & 0b11) << 4])
+                            .append("==");
                 } else if (nRead % 3 == 2) {
                     int twoBytes;
                     twoBytes = (((int) buffer[nRead - 2] & 0b11111111) << 8)
                             + (((int) buffer[nRead - 1] & 0b11111111));
 
-                    toWrite = "" + toBase64[(twoBytes & 0b1111110000000000) >> 10]
-                            + toBase64[(twoBytes & 0b1111110000) >> 4]
-                            + toBase64[(twoBytes & 0b1111) << 2]
-                            + "=";
-                } else
-                    toWrite = "";
 
-                fw.write(toWrite);
+                    fw.append(toBase64[(twoBytes & 0b1111110000000000) >> 10])
+                            .append(toBase64[(twoBytes & 0b1111110000) >> 4])
+                            .append(toBase64[(twoBytes & 0b1111) << 2])
+                            .append("=");
+                }
+
             }
 
             return fout;
