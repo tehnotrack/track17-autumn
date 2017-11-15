@@ -111,9 +111,9 @@ public class StopThread {
     }
 
     public static void main(String[] args) throws Exception {
-//        flagThread();
+          flagThread();
 //        interruptThread();
-        dummyThread();
+//        dummyThread();
     }
 
 }
