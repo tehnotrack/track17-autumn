@@ -1,6 +1,7 @@
 package ru.track.prefork;
 
 import java.io.*;
+import java.net.ProtocolException;
 import java.net.Socket;
 import java.util.Scanner;
 import org.slf4j.Logger;
@@ -13,43 +14,61 @@ public class Client {
     private int port;
     private String host;
     static Logger log = LoggerFactory.getLogger(Client.class);
+    private Protocol<Message> protocol;
 
-    public Client(int port, String host) {
+    public Client(int port, String host, Protocol<Message> protocol) {
         this.port = port;
         this.host = host;
+        this.protocol = protocol;
     }
 
     public void loop() throws IOException {
 
-        Socket socket = null;
+        Socket socket  = new Socket(host, port);
 
-        try {
+        final InputStream in = socket.getInputStream();
+        final OutputStream out = socket.getOutputStream();
+        Scanner scanner = new Scanner(System.in);
 
-            socket = new Socket(host, port);
-            InputStream in = socket.getInputStream();
-            OutputStream out = socket.getOutputStream();
-
-            Scanner scanner = new Scanner(System.in);
-            byte[] buff = new byte[1024];
-
-            while (true) {
-                String line = scanner.nextLine();
-                out.write(line.getBytes());
-                out.flush();
-                int reader = in.read(buff);
-                System.out.println(new String(buff, 0, reader));
+        Thread scannerThread = new Thread(() -> {
+            try {
+                while (true) {
+                    String line = scanner.nextLine();
+                   if(line.equals("exit"))
+                    {
+                        socket.close();
+                        System.exit(0);
+                       // break;
+                    }
+                    else{
+                        Message msg = new Message(System.currentTimeMillis(), line);
+                        out.write(protocol.encode(msg));
+                        out.flush();
+                }}
+            }catch (IOException e){
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            log.error("ERROR" + e.getMessage());
-        } finally {
-            if (socket != null)
-                socket.close();
+
+        });
+        scannerThread.start();
+
+        byte[] buff = new byte[1024];
+
+        while (true) {
+
+            int nRead = in.read(buff);
+            if (nRead != -1) {
+                protocol.decode(buff);
+            } else {
+                log.error("Connection failed");
+                return;
+            }
         }
-    }
+        }
 
 
     public static void main(String[] args) throws Exception{
-        Client client = new Client(9000,"localhost");
+        Client client = new Client(9000,"localhost",new BinaryProtocol<>());
         client.loop();
     }
 
