@@ -32,15 +32,14 @@ public class Server {
 
         final ThreadPoolExecutor pool = new ThreadPoolExecutor(10,10,
                 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(2));
+                new LinkedBlockingQueue<Runnable>(10));
         pool.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
-
-        //ExecutorService  service = Executors.newCachedThreadPool();
 
         server = new ServerSocket(port);
         System.out.println("server started");
 
         Thread master = new Thread(new Adminka(users));
+        master.setDaemon(true);
         master.start();
 
         try {
@@ -53,7 +52,6 @@ public class Server {
                 users.put(id, user);
                 try {
                     pool.submit(new AloneThread(user, users));
-//                    service.submit(new AloneThread(user, users));
                 } catch (Exception e) {
                     e.printStackTrace();
                     users.remove(id);

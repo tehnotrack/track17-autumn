@@ -3,10 +3,8 @@ package ru.track.prefork;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.lang.Thread.sleep;
 
 public class Adminka implements Runnable {
     ConcurrentMap<Long, User> users;
@@ -21,8 +19,6 @@ public class Adminka implements Runnable {
             String str;
             Message message;
             while (true) {
-                while (!br.ready())
-                    sleep(1000);
                 str = br.readLine().toLowerCase();
                 if (str.equals("list")) {
                     list();
@@ -38,11 +34,8 @@ public class Adminka implements Runnable {
                         System.err.println("wrong format");
                     }
                 }
-//                else {
-//                    System.out.println("3");
-//                }
             }
-        } catch (IOException | InterruptedException e) {}
+        } catch (IOException e) {}
     }
 
     public void list () {

@@ -33,8 +33,6 @@ public class AloneThread implements Runnable {
                     if (message != -1) {
                         Message message1 = (Message) protocol.decode(msg);
                         str = message1.getData();
-    //                str = new String(msg, 0, message);
-                        System.out.println("Get from client " + str);
                         if (str == null || str.equals("exit")) {
                             break;
                         }
@@ -64,14 +62,11 @@ public class AloneThread implements Runnable {
 
     public void sendMessage(String str) throws IOException {
         Message message = new Message(name + ">" + str);
-        //System.out.println(users.keySet());
         for (User u : users.values()) {
             if (!u.equals(user)) {
-                //System.out.println("Sending to client " + u.getName() + " " + str);
                 u.getSocket().getOutputStream()
                         .write(protocol.encode(message));
                 u.getSocket().getOutputStream().flush();
-//                u.getSocket().getOutputStream().write((name + ">" + str).getBytes());
             }
         }
     }

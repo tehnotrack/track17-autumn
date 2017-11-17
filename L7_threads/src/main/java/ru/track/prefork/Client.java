@@ -28,6 +28,7 @@ public class Client {
             System.out.println("client started");
             try (InputStream in = socket.getInputStream()) {
                 ThreadSample t = new ThreadSample(socket);
+                t.setDaemon(true);
                 t.start();
                 while (!socket.isOutputShutdown()) {
                     srvMsg = in.read(msg);
@@ -83,9 +84,7 @@ class ThreadSample extends Thread {
                      new InputStreamReader(System.in))){
             String str;
             Message message;
-            while (!isInterrupted()) {
-                while (!br.ready())
-                    sleep(1000);
+            while (true) {
                     str = br.readLine();
                     if (!str.equals("")) {
                         if (!isInterrupted()) {
@@ -94,10 +93,11 @@ class ThreadSample extends Thread {
 //                            out.write(str.getBytes());
                             out.flush();
                         }
-                        if (str.equals("exit"))
+                        if (str.equals("exit")) {
                             break;
+                        }
                     }
             }
-        } catch (IOException | InterruptedException e) {}
+        } catch (IOException e) {}
     }
 }
