@@ -1,20 +1,19 @@
 package ru.track.json;
 
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 
 /**
  * сериализатор в json
  */
-public class JsonWriter {
 
+public class JsonWriter {
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
     public static String toJson(@Nullable Object object) {
         if (object == null) {
@@ -49,6 +48,7 @@ public class JsonWriter {
         return toJsonObject(object);
     }
 
+
     /**
      * Используется вспомогательный класс {@link Array}, чтобы работать с object instanceof Array
      * <p>
@@ -61,8 +61,16 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         // TODO: implement!
-
-        return null;
+        StringBuilder str = new StringBuilder();
+        str.append('[');
+        for (int i = 0; i < length; i++) {
+            str.append(toJson(Array.get(object,i)));
+            if (i < length - 1) {
+                str.append(',');
+            }
+        }
+        str.append(']');
+        return str.toString();
     }
 
     /**
@@ -82,11 +90,23 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
-
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        StringBuilder str = new StringBuilder();
+        str.append('{');
+        Map map = (Map) object;
+        Iterator<Map.Entry<?, ?>> iter = map.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<?, ?> curr = iter.next();
+            str.append("\"");
+            str.append(curr.getKey().toString());
+            str.append("\"");
+            str.append(":");
+            str.append(toJson(curr.getValue()));
+            if (iter.hasNext()) {
+                str.append(",");
+            }
+        }
+        str.append('}');
+        return str.toString();
     }
 
     /**
@@ -109,9 +129,30 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
         // TODO: implement!
+        Map<String, String> map = new LinkedHashMap<>();
+        Annotation nullable = clazz.getAnnotation(JsonNullable.class);
 
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field: fields) {
+            field.setAccessible(true);
+            SerializedTo serializedTo= field.getAnnotation(SerializedTo.class);
+            String fieldName = field.getName();
+            if (serializedTo != null) {
+                fieldName = serializedTo.value();
+            }
 
-        return null;
+            try {
+                if (field.get(object) != null || nullable != null) {
+                    map.put(toJson(fieldName), toJson(field.get(object)));
+                }
+            }
+
+            catch (IllegalAccessException ex){
+                throw new RuntimeException(ex);
+            }
+
+        }
+        return formatObject(map);
     }
 
     /**
@@ -123,11 +164,10 @@ public class JsonWriter {
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
-                .map(e -> String.format("\"%s\":%s", e.getKey(), e.getValue()))
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
                 .collect(Collectors.toList())
         );
 
         return String.format("{%s}", r);
     }
-
 }
