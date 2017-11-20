@@ -1,290 +1,161 @@
 package ru.track.prefork;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 public class Server {
-    private AtomicLong nextId; //next free worker id
-    private int port;
-    private Map<Long, Worker> idMap; //map of active ids and their workers
+    private boolean killServer = false;
+    private int nWorkers;
+    private AtomicLong nextId = new AtomicLong(0); //next free worker id
+    private int serverPort;
     private static Logger log = LoggerFactory.getLogger(Server.class);
     private static Protocol<Message> protocol = new BinaryProtocol<>();
+    private Map<Long, Worker> workerMap = new ConcurrentHashMap<>();
+    private Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
 
-
-    public Server(int port) {
-        this.port = port;
-        this.nextId = new AtomicLong(0);
-        this.idMap = new LinkedHashMap<>();
+    private Server(int serverPort, int workerNmb) {
+        this.nWorkers = workerNmb;
+        this.serverPort = serverPort;
     }
 
+    public static void main(String[] args) {
+        Server server = new Server(9000, 5);
+        server.serve();
+    }
 
-    private class Worker extends Thread {
-        private boolean deadSession; //session is dead if true
-        private ReadWorker readWorker;
-        private WriteWorker writeWorker;
-        private Socket socket;
-        private long id;
-
-        public void kill() {
-            deadSession = true;
-            log.info("kicking");
+    private void serve() {
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(serverPort, 10, InetAddress.getByName("localhost"));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
 
+        new Thread(this::sendServe).start();
 
-        private class ReadWorker extends Thread {
-            private InputStream inputStream;
+        new Thread(this::consoleServe).start();
 
-            private ReadWorker() {
-                inputStream = null;
-                deadSession = false;
+        ExecutorService pool = Executors.newFixedThreadPool(nWorkers);
+
+        log.info("server started");
+
+        while (true) {
+            final Socket socket;
+            try {
+                socket = serverSocket.accept();
+                pool.submit(() -> handleSocket(socket, nextId.getAndIncrement()));
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+                break;
             }
+        }
+        killServer = true;
+        while (!workerMap.isEmpty())
+            for (Worker w : workerMap.values())
+                w.deadSession = true;
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
+    }
 
-            @Override
-            public void run() {
-                readWork();
-            }
+    private void consoleServe() {
+        Thread.currentThread().setName("admin console");
+        try (Scanner scanner = new Scanner(System.in)
+        ) {
+            while (true) {
+                if (killServer)
+                    break;
+                String string = scanner.nextLine();
 
-            private void readWork() {
-                byte[] buffer = new byte[2048];
-                try {
-                    inputStream = socket.getInputStream();
-                    while (true) {
-                        int nRead = inputStream.read(buffer);
-                        if (nRead > 0) {
-                            Message msg = new Message(buffer, id, nRead);
-                            System.out.println(this.getName() + "> " + msg.toString());
-                            broadcast(msg);
-                        }
-                        if (deadSession) {
-                            deadSession = true;
-                            log.info("force disconnect");
-                            break;
-                        }
-                        if (nRead <= 0) {
-                            deadSession = true;
-                            log.info("Disconnected");
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        System.out.println(e.getMessage());
-                        e.printStackTrace();
-                    }
+                if (string.equals("list"))
+                    list();
+
+                if (string.matches("drop \\d+")) {
+                    long id = Long.parseLong(string.split(" ")[1]);
+                    dropWorker(id);
                 }
             }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
 
-        private class WriteWorker extends Thread {
-            private AtomicInteger nRead;
-            private Message msgToWrite;
-            private OutputStream outputStream;
-            private AtomicBoolean can_work;
+    }
 
-            private void putMsg(Message msg) throws IOException { //method is called from outside
-                log.info("put msg");
-//                System.arraycopy(msg, 0, msgToWrite, 0, nRead);
-                msgToWrite = new Message(msg);
-//                this.nRead.set(nRead);
-                this.can_work.set(true);
+    private void list() {
+        if (workerMap.isEmpty()) {
+            System.out.println("Nobody is here");
+            return;
+        }
+        for (Worker w : workerMap.values()) {
+            System.out.println(String.format("Client[%d]@[%s]:[%d]", w.id, w.socket.getInetAddress().toString(), w.socket.getPort()));
+        }
+    }
+
+    private void dropWorker(long dropId) throws Exception {
+        if (workerMap.containsKey(dropId)) {
+            workerMap.get(dropId).drop();
+        } else log.info("user not exits");
+    }
+
+    private void sendServe() {
+        Thread.currentThread().setName("Sender");
+        while (true) {
+            if (!messageQueue.isEmpty()) {
+                send(messageQueue.poll());
             }
+        }
+    }
 
-            private WriteWorker() {
-//                msgToWrite = new byte[2048];
-                nRead = new AtomicInteger(0);
-                can_work = new AtomicBoolean(false);
-                outputStream = null;
-            }
-
-            @Override
-            public void run() {
-                writeWork();
-            }
-
-            private void writeWork() {
+    private void send(Message message) {
+        long senderId = message.senderId();
+        for (Long id : workerMap.keySet()) {
+            if (id != senderId) {
                 try {
-                    outputStream = socket.getOutputStream();
-                    while (true) {
-                        if (can_work.get()) { //send messages
-                            log.info("Sending " + msgToWrite.toString());
-//                            outputStream.write(msgToWrite, 0, nRead.get());
-                            outputStream.write(protocol.encode(msgToWrite));
-                            outputStream.flush();
-                            can_work.set(false);
-                        }
-                        if (deadSession)
-                            break;
-                    }
+                    workerMap.get(id).outputStream.write(protocol.encode(message));
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-                finally {
-                    try {
-                        outputStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-
-
-        private Worker(Socket socket, long id) {
-            this.socket = socket;
-            this.id = id;
-        }
-
-        @Override
-        public void run() {
-            work();
-        }
-
-        private void work() {
-
-            try {
-                log.info("Connected");
-                readWorker = new ReadWorker();
-                writeWorker = new WriteWorker();
-                writeWorker.setName(this.getName() + "_Writer");
-                readWorker.setName(this.getName() + "_Reader");
-                readWorker.start();
-                writeWorker.run(); // staying in this thread
-                while (true) {
-                    if (deadSession) {
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            } finally {
-                idMap.remove(id);
-            }
-        }
-
-    }
-
-    private void broadcast(@NotNull Message msg) {
-        log.info("Start broadcasting " + msg.toString());
-        for (Long id : idMap.keySet()) {
-            if (id.equals(msg.senderId()))
-                continue;
-
-            try {
-                idMap.get(id).writeWorker.putMsg(msg);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
 
-    class Console extends Thread {
-        private boolean kill = false;
-        private void kill() { //interrupt
-            kill = true;
-        }
-        @Override
-        public void run() { consoleWork(); }
+    private void handleSocket(Socket socket, long id) {
+        Thread.currentThread().setName(String.format("Client[%d]@%s:%s", id, socket.getInetAddress(), socket.getPort()));
+        log.info("connected");
 
-        private void list() {
-            if (idMap.isEmpty()) {
-                System.out.println("Nobody is here");
+        Worker worker = new Worker(id, socket);
+        workerMap.put(id, worker);
+        while (true) {
+            Message message = worker.listen();
+            if (worker.deadSession) {
+                worker.endSession();
+                workerMap.remove(worker.id);
                 break;
             }
-            for (Map.Entry<Long, Worker> entry: idMap.entrySet()) {
-                System.out.println(String.format("Client[%d]@[%s]:[%d]", entry.getKey(), entry.getValue().socket.getLocalAddress().toString(), entry.getValue().socket.getPort()));
-            }
+            if (message != null)
+                System.out.printf("Client[%d]@%s:%s > %s\n", id, socket.getInetAddress(), socket.getPort(), message.toString());
+            messageQueue.add(message);
         }
-
-        private void dropWorker(long dropId) throws Exception{
-            if (idMap.containsKey(dropId)) {
-                idMap.get(dropId).kill();
-            }
-            else log.info("user not exits");
-        }
-
-        private void consoleWork() {
-
-            try ( Scanner scanner = new Scanner(System.in);
-            ) {
-                while (true) {
-                    if (kill == true)
-                        break;
-                    String string = scanner.nextLine();
-
-                    if (string.equals("list"))
-                        list();
-
-                    if (string.matches("drop \\d+")) {
-                        long id = Long.parseLong(string.split(" ")[1]);
-                        dropWorker(id);
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-            }
-
-        }
-
-    }
-
-
-
-    private void serve() {
-        ServerSocket serverSocket;
-        Console console = new Console();
-        try {
-            serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
-        } catch (Exception e) {
-            System.out.println("Couldn't run server:\n" + e.getMessage());
-            return;
-        }
-        System.out.println("Server runs!\n");
-
-        try {
-            console.setName("AdminConsole");
-            console.start();
-            while (true) {
-                Socket socket = serverSocket.accept();
-                Worker w = new Worker(socket, nextId.get());
-                idMap.put(nextId.get(), w);
-                w.setName(String.format("Client%d@%s:%s", nextId.getAndIncrement(), socket.getInetAddress(), socket.getPort()));
-                w.start();
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } finally {
-
-            try {
-                serverSocket.close();
-                console.kill();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        Server server = new Server(9000);
-        server.serve();
     }
 }

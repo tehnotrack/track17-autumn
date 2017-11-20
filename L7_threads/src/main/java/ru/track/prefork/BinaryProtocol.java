@@ -1,17 +1,17 @@
 package ru.track.prefork;
 
 import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.net.ProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.net.ProtocolException;
+
 public class BinaryProtocol<T extends Serializable> implements Protocol<T> {
-    static final Logger log = LoggerFactory.getLogger(BinaryProtocol.class);
+    static private final Logger log = LoggerFactory.getLogger(BinaryProtocol.class);
     @Override
     public byte[] encode(T msg) throws ProtocolException, IOException {
-        log.info("encode:" + msg);
+//        log.info("encode:" + msg);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream objOut = new ObjectOutputStream(bos)) {
             objOut.writeObject(msg);
