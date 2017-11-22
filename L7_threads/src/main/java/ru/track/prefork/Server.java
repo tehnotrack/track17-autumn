@@ -1,5 +1,6 @@
 package ru.track.prefork;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,39 +8,43 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
  *
  */
 public class Server {
+    private static final AtomicInteger id = new AtomicInteger(0);
     private int port;
     static Logger log = LoggerFactory.getLogger(Server.class);
+    ExecutorService ex;
 
     public Server(int port) {
         this.port = port;
+        ex = Executors.newCachedThreadPool();
     }
 
     public void serve() {
         try (
-                ServerSocket listener = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
-                Socket clientSocket = listener.accept();
-                PrintWriter out =
-                        new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream())
-                )
-                ) {
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                if (inputLine.equals("exit")) break;
-                out.println(inputLine);
+                ServerSocket listener = new ServerSocket(port, 10, InetAddress.getByName("localhost"))) {
+            while (true) {
+                Socket clientSocket;
+                try {
+                    clientSocket = listener.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+                ClientHandler ch = new ClientHandler(clientSocket, id.getAndIncrement());
+                ex.execute(ch);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // log.info("Client: " + new String(buffer, 0, nRead));
     }
 
     public static void main(String[] args) {

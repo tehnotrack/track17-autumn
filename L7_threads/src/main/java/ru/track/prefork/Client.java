@@ -29,13 +29,13 @@ public class Client {
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(echoSocket.getInputStream()));
                 BufferedReader stdIn = new BufferedReader(
-                        new InputStreamReader(System.in));
+                        new InputStreamReader(System.in))
                 ) {
             String userInput;
             while ((userInput = stdIn.readLine()) != null) {
                 out.println(userInput);
                 if (userInput.equals("exit")) break;
-                System.out.printf("Echo: %s%n", in.readLine());
+                System.out.printf("Echo from %s%n", in.readLine());
             }
         } catch (IOException e) {
             e.printStackTrace();
