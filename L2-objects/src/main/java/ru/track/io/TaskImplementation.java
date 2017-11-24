@@ -1,13 +1,13 @@
 package ru.track.io;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -19,8 +19,76 @@ public final class TaskImplementation implements FileEncoder {
      */
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        final File fin = new File(finPath);
+        final File fout;
+
+        if (foutPath != null) {
+            fout = new File(foutPath);
+        } else {
+            fout = File.createTempFile("based_file_", ".txt");
+            fout.deleteOnExit();
+        }
+        byte[] in = new byte[(int)fin.length()];
+        try(BufferedInputStream reader = new BufferedInputStream (new FileInputStream(finPath)))
+        {
+            int c;
+            int i = 0;
+            while((c=reader.read()) != -1){
+                in[i++] = (byte)c;
+            }
+        }
+        try(FileWriter writer = new FileWriter(fout))
+        {
+            byte[] test = new byte[]{(byte) 0xd8, (byte) 0xff, (byte) 0xe0, (byte) 0xff};
+            writer.write(Base64(in));
+            writer.flush();
+        }
+        return fout;
+    }
+
+    private static String Base64(byte[] in){
+        StringBuilder res = new StringBuilder();
+        for(int i = 2; i < in.length; i+=3){
+            byte byte1 = in[i - 2];
+            byte byte2 = in[i - 1];
+            byte byte3 = in[i];
+
+            byte newByte1 = (byte)((byte1 >> 2) & 0b111111);
+            byte newByte2 = (byte)((byte1 << 4) & 0b110000 | (byte2 >> 4) & 0b001111);
+            byte newByte3 = (byte)((byte2 << 2) & 0b111100 | (byte3 >> 6) & 0b000011);
+            byte newByte4 = (byte)(byte3 & 0b111111);
+
+            res.append(toBase64[newByte1])
+                    .append(toBase64[newByte2])
+                    .append(toBase64[newByte3])
+                    .append(toBase64[newByte4]);
+        }
+        if(in.length % 3 == 1){
+            byte byte1 = in[in.length - 1];
+
+            byte newByte1 = (byte)((byte1 >> 2) & 0b111111);
+            byte newByte2 = (byte)((byte1 << 4) & 0b110000);
+
+            res.append(toBase64[newByte1])
+                    .append(toBase64[newByte2])
+                    .append('=')
+                    .append('=');
+        }
+
+        else if(in.length % 3 == 2){
+            byte byte1 = in[in.length - 1];
+            byte byte2 = in[in.length - 1];
+
+            byte newByte1 = (byte)((byte1 >> 2) & 0b111111);
+            byte newByte2 = (byte)((byte1 << 4) & 0b110000 | (byte2 >> 4) & 0b001111);
+            byte newByte3 = (byte)((byte2 << 2) & 0b111100);
+
+            res.append(toBase64[newByte1])
+                    .append(toBase64[newByte2])
+                    .append(toBase64[newByte3])
+                    .append('=');
+        }
+        return res.toString();
     }
 
     private static final char[] toBase64 = {
@@ -32,9 +100,9 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
-        new Bootstrapper(args, encoder).bootstrap(9000);
+        new Bootstrapper(args, encoder).bootstrap(9090);
     }
 
 }
