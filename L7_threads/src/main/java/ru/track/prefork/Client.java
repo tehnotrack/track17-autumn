@@ -1,12 +1,10 @@
 package ru.track.prefork;
 
-import com.sun.imageio.spi.OutputStreamImageOutputStreamSpi;
+
 import ru.track.prefork.protocol.JavaSerializationProtocol;
 import ru.track.prefork.protocol.Message;
 import ru.track.prefork.protocol.Protocol;
 import ru.track.prefork.protocol.ProtocolException;
-
-import java.awt.image.ImagingOpException;
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
@@ -59,11 +57,15 @@ public class Client {
             int nRead = reader.read(buf);
             if (nRead != -1) {
                 try {
-                    protocol.decode(buf);
+                    Message m = protocol.decode(buf);
+                    if (m.text.startsWith("Your")) {
+                        clientSocket.close();
+                    }
                 } catch (ProtocolException exc) {
                     exc.printStackTrace();
                 }
             } else {
+
                 break;
             }
         }

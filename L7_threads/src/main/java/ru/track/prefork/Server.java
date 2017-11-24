@@ -13,22 +13,26 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class Server {
 
-    public class Worker implements Runnable {
+    public class Worker extends Thread {
         Socket clientSocket;
         private Protocol<Message> protocol;
         private long id;
+        boolean isOpen;
 
         Worker(@NotNull Socket client, @NotNull Protocol<Message> protocol, long id) {
+            super(String.format("Client[%d]@%s:%d", id, client.getInetAddress(), client.getPort()));
             this.clientSocket = client;
             this.protocol = protocol;
             this.id = id;
-            Thread.currentThread().setName(String.format("Client[%d]@%s:%d", id, client.getInetAddress(), client.getPort()));
+            this.isOpen = true;
         }
 
         void send(Message msg) {
@@ -51,7 +55,17 @@ public class Server {
 
             byte[] buf = new byte[1024];
             while (true) {
-                int nRead = in.read(buf);
+                int nRead = -1;
+                try {
+                    nRead = in.read(buf);
+                }
+                catch (IOException exc) {
+                    if (!isOpen) {
+                        System.err.println("Connection closed by server");
+                    } else {
+                        throw exc;
+                    }
+                }
                 if (nRead != -1) {
                     Message fromClient = protocol.decode(buf);
                     fromClient.text = ">" + fromClient.text;
@@ -68,6 +82,31 @@ public class Server {
         }
 
         public void run() {
+            new Thread(() -> {
+                Scanner in = new Scanner(System.in);
+                while (true) {
+                    String str = in.nextLine();
+                    if (str.equals("list")) {
+                        for (Worker w : workersMap.values()) {
+                            System.out.println(w.getName());
+                        }
+                    } else if (str.startsWith("drop")) {
+                        String[] subs = str.split(" ");
+                        Worker w = workersMap.get(Long.parseLong(subs[1]));
+                        if (w == null) {
+                            System.out.println("No such client");
+                        } else {
+                            w.send(new Message(0, "Your connection was dropped", "Server"));
+                            try {
+                                w.isOpen = false;
+                                w.clientSocket.close();
+                            } catch (IOException exc) {
+                                System.out.println("Can't drop connection");
+                            }
+                        }
+                    }
+                }
+            }).start();
             try {
                 handleSocket(clientSocket);
             } catch (Exception exc) {
@@ -77,6 +116,7 @@ public class Server {
                 throw new RuntimeException(exc);
             }
         }
+
     }
 
     private int port;
@@ -85,13 +125,13 @@ public class Server {
     static Logger log = LoggerFactory.getLogger(NioClient.class);
     private Protocol<Message> protocol;
     private ConcurrentMap<Long,Worker> workersMap;
-    private Long clientsCounter;
+    private AtomicLong clientsCounter;
 
     public Server(int port, Protocol<Message> protocol) throws IOException {
         socket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
         this.port = port;
         this.protocol = protocol;
-        this.clientsCounter = 0L;
+        this.clientsCounter = new AtomicLong();
         workersMap = new ConcurrentHashMap<>();
     }
 
@@ -100,10 +140,9 @@ public class Server {
         while (!stopped) {
             Socket client = socket.accept();
             log.info("New client connected");
-            Worker worker = new Worker(client, protocol, clientsCounter);
-            workersMap.put(clientsCounter, worker);
-            clientsCounter += 1;
-            new Thread(worker).start();
+            Worker worker = new Worker(client, protocol, clientsCounter.addAndGet(1));
+            workersMap.put(clientsCounter.get(), worker);
+            worker.start();
         }
         socket.close();
     }
@@ -113,7 +152,7 @@ public class Server {
     }
     public static void main(String[] args) {
         try {
-            Server s =  new Server(8080, new JavaSerializationProtocol() );
+            Server s =  new Server(8080, new JavaSerializationProtocol());
             s.run();
         }
         catch (IOException exc) {
