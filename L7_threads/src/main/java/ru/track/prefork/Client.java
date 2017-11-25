@@ -1,63 +1,99 @@
 package ru.track.prefork;
 
+
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Scanner;
+
+import ru.track.prefork.protocol.Message;
+import ru.track.prefork.protocol.Protocol;
+import ru.track.prefork.protocol.JavaSerializationProtocol;
+import ru.track.prefork.protocol.ProtocolException;
+
 
 /**
  *
  */
 public class Client {
+
+    static Logger log = LoggerFactory.getLogger(Server.class);
+
     private int port;
     private String host;
-    static Logger log = LoggerFactory.getLogger(Client.class);
+    private Protocol<Message> protocol;
 
-
-    public Client(int port, String host) {
+    public Client(int port, String host, Protocol<Message> protocol) {
         this.port = port;
         this.host = host;
+        this.protocol = protocol;
     }
 
-    public void loop() throws IOException {
+
+    public void Connect() throws IOException {
         Socket socket = null;
 
         try {
             socket = new Socket(host, port);
 
-            InputStream in = socket.getInputStream();
-            OutputStream out = socket.getOutputStream();
+            final InputStream in = socket.getInputStream();
+            final OutputStream os = socket.getOutputStream();
 
-            Scanner scanner = new Scanner(System.in);
-            byte[] buffer = new byte[1024];
+            Scanner scan = new Scanner(System.in);
+            Thread scannerThread = new Thread(() -> {
+                try {
+                    while (true) {
+                        String line = scan.nextLine();
+                        Message msg = new Message(System.currentTimeMillis(), line);
+                        msg.username = "KIRILL";
+                        os.write(protocol.encode(msg));
+                        os.flush();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                }
 
+            });
+
+            scannerThread.start();
+
+
+            byte[] buf = new byte[1024];
             while (true) {
-                String line = scanner.nextLine();
-                out.write(line.getBytes());
-                out.flush();
-
-                int nRead = in.read(buffer);
-                String input = new String(buffer, 0, nRead);
-                System.out.println(input);
-                Arrays.fill(buffer, (byte) 0);
-
+                int nRead = in.read(buf);
+                if (nRead != -1) {
+                    protocol.decode(buf);
+                } else {
+                    log.error("Connection failed");
+                    return;
+                }
             }
+
         } catch (IOException e) {
-            log.error("ERROR" + e.getMessage());
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
         } finally {
-            if (socket != null)
-                socket.close();
+            IOUtils.closeQuietly(socket);
         }
+
     }
+
 
     public static void main(String[] args) throws Exception {
-        final Client client = new Client(9000, "127.0.0.1");
-        client.loop();
+        Client myclient = new Client(9000, "localhost", new JavaSerializationProtocol());
+        try {
+            myclient.Connect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
+
 }
