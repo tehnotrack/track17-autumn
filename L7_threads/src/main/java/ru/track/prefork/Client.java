@@ -1,17 +1,23 @@
 package ru.track.prefork;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.track.prefork.protocol.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.track.prefork.protocol.JsonProtocol;
+import ru.track.prefork.protocol.Message;
+import ru.track.prefork.protocol.Protocol;
+import ru.track.prefork.protocol.ProtocolException;
 
 public class Client {
-    static Logger log = LoggerFactory.getLogger(Client.class);
+
+    private Logger log = LoggerFactory.getLogger(Client.class);
+
     private int port;
     private String host;
     private Protocol<Message> protocol;
@@ -22,62 +28,85 @@ public class Client {
         this.protocol = protocol;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Client client = new Client(9000, "localhost", new JsonProtocol());
-        try {
-            client.loop();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        client.loop();
     }
 
-    private void loop() throws Exception {
-        System.out.println("Client started!");
-        Socket socket = new Socket(host, port);
+    private void loop() throws IOException {
+        int count = 0;
+        final int maxTries = 10;
+        Socket tryToConnectSocket;
+        while (true) {
+            try {
+                tryToConnectSocket = new Socket(host, port);
+                break;
+            } catch (Exception e) {
+                if (++count == maxTries) {
+                    log.error("Can't connect, exiting ");
+                    return;
+                }
+                log.info("Can't connect, try again in 2 sec ");
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+        Socket socket = tryToConnectSocket;
+        log.info(String.format("Connected to %s:%d", host, port));
 
         try (InputStream in = socket.getInputStream();
-             OutputStream out = socket.getOutputStream();) {
+            OutputStream out = socket.getOutputStream();) {
 
             Scanner scanner = new Scanner(System.in);
             Thread scannerThread = new Thread(() -> {
                 try {
-                    while (true) {
-                        // read line
-                        String line = scanner.next();
-
-                        Message msg = new Message(System.currentTimeMillis(), line);
-                        msg.username = "User";
-
-                        // write to socket
-                        out.write(protocol.encode(msg));
-                        out.flush();
-                        // condition to close socket
-                        if (line.equalsIgnoreCase("exit")) {
-                            break;
+                    while (!Thread.currentThread().isInterrupted()) {
+                        if (scanner.hasNextLine()) {
+                            String line = scanner.nextLine();
+                            Message msg = new Message(System.currentTimeMillis(), line);
+                            msg.username = "User";
+                            out.write(protocol.encode(msg));
+                            out.flush();
+                            if (line.equalsIgnoreCase("exit")) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
                         }
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error("IO exception", e);
                 } catch (ProtocolException e) {
-                    e.printStackTrace();
+                    log.error("Protocol exception", e);
                 }
             });
+            scannerThread.setDaemon(true);
             scannerThread.start();
 
             byte[] buffer = new byte[1024];
-            while (!socket.isOutputShutdown()) {
-                // read msg from server
-//                int nbytes = in.read(buffer);
-//                if (nbytes != -1) {
-                    // print msg from server
-                    Message msgFromServer = protocol.decode(in, Message.class);
-//                    log.info("From server: " + msgFromServer);
-//                }
+            try {
+                while (!scannerThread.isInterrupted()) {
+                    int nbytes = in.read(buffer);
+                    if (nbytes != -1) {
+                        Message msgFromServer = protocol
+                            .decode(Arrays.copyOfRange(buffer, 0, nbytes),
+                                Message.class);
+                        log.info("decode: " + msgFromServer);
+                    } else {
+                        scannerThread.interrupt();
+                        break;
+                    }
+                }
+            } finally {
+                scannerThread.interrupt();
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             socket.close();
+            log.info("Connection dropped, exiting...");
         }
     }
 }
