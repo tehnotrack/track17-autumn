@@ -30,7 +30,7 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
         byte[] in = new byte[(int)fin.length()];
-        try(BufferedInputStream reader = new BufferedInputStream (new FileInputStream(finPath)))
+        try(BufferedInputStream reader = new BufferedInputStream (new FileInputStream(fin)))
         {
             int c;
             int i = 0;
@@ -44,6 +44,7 @@ public final class TaskImplementation implements FileEncoder {
         {
             writer.write(Base64(in));
             writer.flush();
+            writer.close();
         }
         return fout;
     }
