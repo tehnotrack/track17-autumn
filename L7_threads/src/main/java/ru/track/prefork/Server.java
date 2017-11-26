@@ -4,22 +4,18 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
-
 import static java.lang.System.exit;
 
-/**
- *
- */
 public class Server {
     static Logger log = LoggerFactory.getLogger(Server.class);
 
@@ -32,7 +28,7 @@ public class Server {
     }
 
     private AtomicLong atomicID = new AtomicLong(0);
-    private Map<AtomicLong, ServerThread> threadPool = new ConcurrentHashMap<>();
+    private Map<Long, ServerThread> threadPool = new ConcurrentHashMap<>();
 
     public void serve() throws Exception {
         try {
@@ -40,32 +36,34 @@ public class Server {
             log.info("Server has started");
             while (true) {
                 final Socket clientSocket = serverSocket.accept();
-                ServerThread serverThread = new ServerThread(clientSocket, protocol);
-                atomicID.getAndIncrement();
+                Long userID = atomicID.getAndIncrement();
+                ServerThread serverThread = new ServerThread(clientSocket, protocol, userID);
                 log.info("Got new client from port " + clientSocket.getPort());
-                threadPool.put(atomicID, serverThread);
+                threadPool.put(userID, serverThread);
                 serverThread.start();
             }
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             log.error("Can't handle server");
             exit(-1);
         }
     }
 
     class ServerThread extends Thread {
+        private Long userID;
         private Socket clientSocket;
         private Protocol<Message> protocol;
         OutputStream out = null;
         InputStream in = null;
-        private boolean justConnected;
+        private boolean newClient;
 
-        public ServerThread (@NotNull Socket clientSocket, Protocol<Message> protocol) throws IOException {
+        public ServerThread(@NotNull Socket clientSocket, Protocol<Message> protocol, Long atomicID) throws IOException {
             this.protocol = protocol;
             this.clientSocket = clientSocket;
-            this.justConnected = false;
+            this.newClient = true;
+            this.userID = atomicID;
             String address = clientSocket.getLocalAddress().toString().replaceAll("/", "");
             setName(String.format("Client[%d]@%s:%d",
-                    atomicID.get(),
+                    userID,
                     address,
                     clientSocket.getPort()));
             try {
@@ -77,25 +75,37 @@ public class Server {
         }
 
         @Override
-        public void run () {
+        public void run() {
             byte[] buffer = new byte[1024];
             int nRead;
             try {
                 while (true) {
-                    nRead = in.read(buffer);
-                    if (nRead == 0 || nRead == -1) ;
-                    else {
+                    String username = null;
+                    if (newClient) {
+                        send(new Message("Enter your name"));
+                        in.read(buffer);
                         Message fromClient = protocol.decode(buffer);
+                        if (!fromClient.text.isEmpty()) {
+                            send(new Message(("Welcome to chat, " + fromClient.text)));
+                            username = fromClient.text;
+                            newClient = false;
+                        }
+                    }
+                    nRead = in.read(buffer);
+                    if (nRead != 0 && nRead != -1) {
+                        Message fromClient = new Message(protocol.decode(buffer).text, username);
                         log.info(fromClient.toString());
                         threadPool.forEach((atomicLong, serverThread) -> {
-                            try {
-                                serverThread.send(fromClient);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                            if (serverThread.userID != this.userID)
+                                try {
+                                    serverThread.send(fromClient);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                         });
                     }
                 }
+
             } catch (ProtocolException e) {
                 log.error("cant decode message");
                 return;
@@ -105,14 +115,13 @@ public class Server {
             }
         }
 
-        private void send (Message message) throws IOException {
+        private void send(Message message) throws IOException {
             try {
                 out.write(protocol.encode(message));
                 out.flush();
             } catch (IOException ex) {
                 log.error("cant send message:" + message.text);
             }
-
         }
         //удалять клиента из мапы если поймали ошибку
     }

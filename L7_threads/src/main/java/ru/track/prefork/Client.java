@@ -37,9 +37,11 @@ public class Client {
             try {
                 while (true) {
                     String toServer = fromKeyboard.readLine();
-                    Message message = new Message(toServer);
-                    out.write(protocol.encode(message));
-                    out.flush();
+                    if (!toServer.isEmpty()) {
+                        Message message = new Message(toServer);
+                        out.write(protocol.encode(message));
+                        out.flush();
+                    }
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();

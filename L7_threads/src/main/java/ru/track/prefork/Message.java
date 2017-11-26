@@ -1,5 +1,7 @@
 package ru.track.prefork;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -9,9 +11,14 @@ public class Message implements Serializable {
     String date;
     String username;
 
-    public Message (String text) {
+    public Message (String text, String username) {
         this.text = text;
         this.date = getDate();
+        this.username = username;
+    }
+
+    public Message (String text) {
+        this (text, "");
     }
 
     public String getDate () {
@@ -22,6 +29,6 @@ public class Message implements Serializable {
     }
     @Override
     public String toString() {
-        return String.format("%s -- %s", date, text);
+        return String.format("%s -- %s > %s", date, username, text);
     }
 }
