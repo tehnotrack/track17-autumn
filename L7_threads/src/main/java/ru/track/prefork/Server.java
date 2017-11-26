@@ -3,6 +3,7 @@ package ru.track.prefork;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import static java.lang.System.exit;
@@ -31,12 +33,36 @@ public class Server {
     private Map<Long, ServerThread> threadPool = new ConcurrentHashMap<>();
 
     public void serve() throws Exception {
-        try {
-            ServerSocket serverSocket = new ServerSocket(9000, 10, InetAddress.getByName("localhost"));
-            log.info("Server has started");
+        Scanner scanner = new Scanner(System.in);
+        Thread adminThread = new Thread(() -> {
             while (true) {
+                String command = scanner.nextLine();
+                if (command.equals("list")) {
+                    threadPool.forEach((atomicLong, serverThread) ->
+                        log.info(serverThread.getName()));
+                }
+                else if (command.contains("drop ")) {
+                    Long whomToDrop = Long.parseLong(command.substring(5));
+                    if (threadPool.containsKey(whomToDrop)) {
+                        threadPool.get(whomToDrop).interrupt();
+                        IOUtils.closeQuietly(threadPool.get(whomToDrop).clientSocket);
+                        log.info(threadPool.get(whomToDrop).getName() + " has disconnected");
+                        threadPool.remove(whomToDrop);
+                    }
+                    else log.info("no client with such id");
+                }
+            }
+        });
+        adminThread.setName("adminThread");
+        adminThread.start();
+
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(9000, 10, InetAddress.getByName("localhost"));
+            log.info("Server has started");
+            while (!serverSocket.isClosed()) {
                 final Socket clientSocket = serverSocket.accept();
-                Long userID = atomicID.getAndIncrement();
+                final Long userID = atomicID.getAndIncrement();
                 ServerThread serverThread = new ServerThread(clientSocket, protocol, userID);
                 log.info("Got new client from port " + clientSocket.getPort());
                 threadPool.put(userID, serverThread);
@@ -45,25 +71,39 @@ public class Server {
         } catch (IOException ioe) {
             log.error("Can't handle server");
             exit(-1);
+        } finally {
+            IOUtils.closeQuietly(serverSocket);
         }
+
+
     }
 
     class ServerThread extends Thread {
-        private Long userID;
         private Socket clientSocket;
-        private Protocol<Message> protocol;
+        Protocol<Message> protocol;
         OutputStream out = null;
         InputStream in = null;
-        private boolean newClient;
+        private User user;
+
+        private class User {
+            private Long userID;
+            private String username;
+            private boolean isNewClient;
+
+            private User (Long userID, String username, boolean isNewClient) {
+                this.userID = userID;
+                this.username = username;
+                this.isNewClient = isNewClient;
+            }
+        }
 
         public ServerThread(@NotNull Socket clientSocket, Protocol<Message> protocol, Long atomicID) throws IOException {
             this.protocol = protocol;
             this.clientSocket = clientSocket;
-            this.newClient = true;
-            this.userID = atomicID;
+            this.user = new User(atomicID, null, true);
             String address = clientSocket.getLocalAddress().toString().replaceAll("/", "");
             setName(String.format("Client[%d]@%s:%d",
-                    userID,
+                    atomicID,
                     address,
                     clientSocket.getPort()));
             try {
@@ -79,33 +119,36 @@ public class Server {
             byte[] buffer = new byte[1024];
             int nRead;
             try {
-                while (true) {
-                    String username = null;
-                    if (newClient) {
+                while (!this.isInterrupted()) {
+                    if (user.isNewClient) {
                         send(new Message("Enter your name"));
                         in.read(buffer);
                         Message fromClient = protocol.decode(buffer);
                         if (!fromClient.text.isEmpty()) {
                             send(new Message(("Welcome to chat, " + fromClient.text)));
-                            username = fromClient.text;
-                            newClient = false;
+                            user.username = fromClient.text;
+                            sendAsBroadcast(new Message((user.username +" has joined the chat")));
+                            user.isNewClient = false;
                         }
                     }
                     nRead = in.read(buffer);
                     if (nRead != 0 && nRead != -1) {
-                        Message fromClient = new Message(protocol.decode(buffer).text, username);
+                        Message fromClient = new Message(protocol.decode(buffer).text, user.username);
                         log.info(fromClient.toString());
-                        threadPool.forEach((atomicLong, serverThread) -> {
-                            if (serverThread.userID != this.userID)
-                                try {
-                                    serverThread.send(fromClient);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                        });
+                        if (fromClient.text.equalsIgnoreCase("exit")) {
+                            send(fromClient);
+                            sendAsBroadcast(new Message((fromClient.username + " has left the chat room")));
+                            threadPool.get(user.userID).interrupt();
+                            IOUtils.closeQuietly(threadPool.get(user.userID).clientSocket);
+                            threadPool.get(user.userID).out.close();
+                            threadPool.get(user.userID).in.close();
+                            log.info(threadPool.get(user.userID).getName().toString() + " has disconnected");
+                            threadPool.remove(user.userID);
+                            break;
+                        }
+                        else sendAsBroadcast(fromClient);
                     }
                 }
-
             } catch (ProtocolException e) {
                 log.error("cant decode message");
                 return;
@@ -123,7 +166,17 @@ public class Server {
                 log.error("cant send message:" + message.text);
             }
         }
-        //удалять клиента из мапы если поймали ошибку
+
+        private void sendAsBroadcast (Message message) throws IOException {
+            threadPool.forEach((atomicLong, serverThread) -> {
+                if (serverThread.user.userID != this.user.userID)
+                    try {
+                        serverThread.send(message);
+                    } catch (IOException e) {
+                        log.error("error broadcasting message");
+                    }
+            });
+        }
     }
 
     public static void main(String[] args) throws Exception {

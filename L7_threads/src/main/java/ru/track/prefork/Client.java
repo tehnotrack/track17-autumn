@@ -1,11 +1,14 @@
 package ru.track.prefork;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+
+import static java.lang.System.exit;
 
 public class Client {
     private int port;
@@ -27,40 +30,49 @@ public class Client {
             socket = new Socket(host, port);
         } catch (UnknownHostException uhe) {
             log.error ("cant open socket");
-            System.exit(-1);
+            exit(-1);
         }
 
-        InputStream in = socket.getInputStream();
-        OutputStream out = socket.getOutputStream();
+        try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream())
+        {
+            Thread threadToWrite = new Thread(() -> {
+                try {
+                    while (!Thread.interrupted()) {
+                        String toServer = fromKeyboard.readLine();
+                        if (!toServer.isEmpty()) {
+                            Message message = new Message(toServer);
+                            out.write(protocol.encode(message));
+                            out.flush();
+                        }
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+            threadToWrite.setDaemon(true);
+            threadToWrite.start();
 
-        Thread threadToWrite = new Thread(() -> {
+            byte[] buffer = new byte[1024];
             try {
                 while (true) {
-                    String toServer = fromKeyboard.readLine();
-                    if (!toServer.isEmpty()) {
-                        Message message = new Message(toServer);
-                        out.write(protocol.encode(message));
-                        out.flush();
-                    }
+                    int nRead = in.read(buffer);
+                    Message fromServer = protocol.decode(buffer);
+                    if (nRead == -1 || fromServer.text.equalsIgnoreCase("exit")) {
+                        log.info("you quited chat room");
+                        threadToWrite.interrupt();
+                        break;
+                    } else System.out.println(fromServer.toString());
                 }
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error("Server has died");
             }
-        });
-        threadToWrite.start();
 
-
-        byte [] buffer = new byte [1024];
-        while (true){
-            int nRead = in.read(buffer);
-            Message fromServer = protocol.decode(buffer);
-            if (nRead == -1 || fromServer.equals("exit")) {
-                out.close();
-                fromKeyboard.close();
-                in.close();
-                return;
-            }
-            else System.out.println(fromServer.toString());
+        }
+        catch (IOException ex) {
+            log.error("check input/output streams");
+        }
+        finally {
+            IOUtils.closeQuietly(socket);
         }
     }
 
