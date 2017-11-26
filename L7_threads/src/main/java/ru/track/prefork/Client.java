@@ -63,19 +63,20 @@ public class Client {
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
             Mythread write = new Mythread(in);
-            Scanner scanner = new Scanner(System.in);
+         //   Scanner scanner = new Scanner(System.in);
             String line;
 
             write.start();
-            while (scanner.hasNextLine()) {
-                line = scanner.nextLine();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            while (!Thread.interrupted()) {
+                line = reader.readLine();
                 if (!line.isEmpty()) {
+                    out.write(protocol.encode(new Message(line)));
+                    out.flush();
                     if (line.equals("exit")) {
                         log.info("You finished your session");
                         break;
                     }
-                    out.write(protocol.encode(new Message(line)));
-                    out.flush();
                 }
             }
             write.interrupt();

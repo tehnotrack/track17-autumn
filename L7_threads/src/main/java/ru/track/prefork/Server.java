@@ -39,8 +39,6 @@ public class Server {
 
 
     public void serve() {
-      //  Thread adminthread = new Adminthread();
-      //  adminthread.run();
         ServerSocket ssock = null;
         try {
             ssock = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
@@ -82,8 +80,13 @@ public class Server {
                 else if (line.matches("drop \\d+"))
                 {
                     Integer id = Integer.parseInt(line.split(" ")[1]);
-                    if (idmap.get(id) != null)
+                    if (idmap.get(id) != null){
                         IOUtils.closeQuietly(idmap.get(id).getSocket());
+                        idmap.remove(id);
+                        log.info("dropped");
+                    }
+                    else
+                        log.info("no such client");
                 }
             }
 
@@ -130,7 +133,10 @@ public class Server {
                 while (in.read(buffer) > 0) {
                     Message newmes = protocol.decode(buffer);
                     if (newmes.getText().equals("exit"))
+                    {
+                        idmap.remove(id);
                         break;
+                    }
                     log.info("Client:" + newmes.getText());
 
                     for (Map.Entry<Integer, Mythread> entry : idmap.entrySet()) {
@@ -144,13 +150,13 @@ public class Server {
                     }
                 }
             }catch (SocketException e){
-                log.info("dropped");
+ //               log.info("dropped1234");
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
 
-            idmap.get(id).interrupt();
+   //         idmap.get(id).interrupt();
             try {
                 socket.close();
             } catch (IOException e) {
