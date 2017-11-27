@@ -7,7 +7,6 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.Scanner;
 
 /**
  *
@@ -30,7 +29,7 @@ public class Client {
         Mythread(InputStream in) {
             this.in = in;
         }
-
+//
         @Override
         public void run() {
             byte[] buffer = new byte[1024];
@@ -63,7 +62,7 @@ public class Client {
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
             Mythread write = new Mythread(in);
-         //   Scanner scanner = new Scanner(System.in);
+            //   Scanner scanner = new Scanner(System.in);
             String line;
 
             write.start();
