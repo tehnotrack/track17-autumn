@@ -75,17 +75,20 @@ public class Server {
     public void serve() throws IOException {
         ServerSocket serverSocket = new ServerSocket(port);
         Socket socket;
+        Pool pool = new Pool();
 
         while (true) {
             socket = serverSocket.accept();
 
-            String client = "Client[" + clientId++ + "]@" + socket.getLocalAddress() + ":" + socket.getPort();
+            pool.addClient(clientId++, socket.getLocalAddress().toString(), socket.getPort(), socket);
 
-            logger.info(client + " connected");
+//            String client = "Client[" + clientId++ + "]@" + socket.getLocalAddress() + ":" + socket.getPort();
 
-            Thread newClient = new Thread(new NewClient(socket, client));
-            newClient.setName(client);
-            newClient.start();
+//            logger.info(client + " connected");
+
+//            Thread newClient = new Thread(new NewClient(socket, client));
+//            newClient.setName(client);
+//            newClient.start();
         }
     }
 
