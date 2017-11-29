@@ -42,19 +42,18 @@ public class Client {
             final InputStream in = socket.getInputStream();
             final OutputStream os = socket.getOutputStream();
 
+            //new thread, that read from console and send data to server
             Scanner scan = new Scanner(System.in);
             Thread scannerThread = new Thread(() -> {
                 try {
                     while (true) {
                         String line = scan.nextLine();
                         Message msg = new Message(System.currentTimeMillis(), line);
-                        msg.username = "KIRILL";
+                        msg.username = "KIRILL"; //there can be smth another, for instant, socket.getInetAddress()
                         os.write(protocol.encode(msg));
                         os.flush();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ProtocolException e) {
+                } catch (IOException | ProtocolException e) {
                     e.printStackTrace();
                 }
 
@@ -67,16 +66,14 @@ public class Client {
             while (true) {
                 int nRead = in.read(buf);
                 if (nRead != -1) {
-                    protocol.decode(buf);
+                    System.out.println(protocol.decode(buf));
                 } else {
                     log.error("Connection failed");
                     return;
                 }
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
+        } catch (IOException | ProtocolException e) {
             e.printStackTrace();
         } finally {
             IOUtils.closeQuietly(socket);

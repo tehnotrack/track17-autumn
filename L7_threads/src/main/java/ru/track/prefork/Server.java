@@ -111,8 +111,6 @@ public class Server {
                 workerMap.put(workerId, worker);
                 worker.start();
 
-            } catch (IOException e) {
-                e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
             }
