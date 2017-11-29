@@ -9,7 +9,7 @@ public class Message implements Serializable {
     public String data;
     public String username;
 
-    public Message(long ts, String text) {
+    public Message(long ts, String data) {
         this.ts = ts;
         this.data = data;
 

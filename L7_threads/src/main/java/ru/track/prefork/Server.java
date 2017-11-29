@@ -34,7 +34,7 @@ public class Server {
     private AtomicLong serverCounter = new AtomicLong(0);
     private Protocol<Message> protocol;
 
-    private ConcurrentMap<Long, Worker> workerMap;
+    private ConcurrentMap<Long, Worker> workerMap;  //providing additional atomic putIfAbsent, remove, and replace methods.
 
 
     public Server(int port, Protocol<Message> protocol) {
@@ -136,6 +136,7 @@ public class Server {
             this.socket = socket;
             this.id = id;
             this.protocol = protocol;
+            //Changes the name of this thread to be equal to the argument
             setName(String.format("Client[%d]@%s:%d", id, socket.getInetAddress(), socket.getPort()));
 
             out = socket.getOutputStream();
@@ -157,9 +158,7 @@ public class Server {
             try {
                 out.write(protocol.encode(message));
                 out.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ProtocolException e) {
+            } catch (IOException | ProtocolException e) {
                 e.printStackTrace();
             }
         }
@@ -171,9 +170,13 @@ public class Server {
             while (true) {
                 int nRead = in.read(buf);
                 if (nRead != -1) {
-                    Message fromClient = protocol.decode(buf);
-                    fromClient.data = ">" + fromClient.data;
-                    workerMap.forEach((aLong, worker) -> worker.send(fromClient));
+                    Message fromClient = protocol.decode(buf); //decode because of this is server
+                    fromClient.data = String.format("Client@%s:%d>", socket.getInetAddress(), socket.getPort())
+                            + fromClient.data;
+                    workerMap.forEach((aLong, worker) -> {
+                        if (worker.id != id)
+                            worker.send(fromClient);
+                    }); //broadcast
                 } else {
                     log.error("Connection failed");
                     return;
