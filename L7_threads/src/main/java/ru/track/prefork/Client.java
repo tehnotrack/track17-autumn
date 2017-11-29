@@ -22,26 +22,33 @@ public class Client {
         this.host = host;
     }
 
-    private void listen(ObjectOutputStream os, ObjectInputStream is) {
+    private void logexception(Exception e){
+        log.error(e.toString());
+        for (StackTraceElement elem : e.getStackTrace())
+            log.error("at " + elem.toString());
+    }
+
+    private void listen(ObjectInputStream is, Socket sock) {
         try {
             Message msg;
             while (true) {
                 try {
                     msg = (Message) is.readObject();
                     System.out.println(msg.getData());
+                } catch (ClassNotFoundException e) {
+                    log.error("Message decoding failed");
+                    logexception(e);
                 }
-                catch (ClassNotFoundException e){log.error("Message decoding failed");}
             }
-        }
-        catch(IOException e) {}
-        finally {
-            IOUtils.closeQuietly(os);
-            IOUtils.closeQuietly(is);
+        } catch (IOException e) {
+            logexception(e);
+        } finally {
+            IOUtils.closeQuietly(sock);
         }
     }
 
-    private void send(ObjectOutputStream os, ObjectInputStream is) {
-        try (Scanner in = new Scanner(System.in)){
+    private void send(ObjectOutputStream os, Socket sock) {
+        try (Scanner in = new Scanner(System.in)) {
             String str;
             Message msg;
             while (true) {
@@ -53,33 +60,39 @@ public class Client {
                     os.flush();
                 }
             }
-        }
-        catch(IOException e) {}
-        finally{
-            IOUtils.closeQuietly(os);
-            IOUtils.closeQuietly(is);
+        } catch (IOException e) {
+            log.error("Message sending failed");
+            logexception(e);
+        } finally {
+            IOUtils.closeQuietly(sock);
         }
     }
 
-    public void start() throws IOException {
+    public void start() {
         Socket sock = null;
         Thread t;
         try {
             sock = new Socket(host, port);
+            final Socket fsock = sock;
             final ObjectOutputStream os = new ObjectOutputStream(sock.getOutputStream());
             final ObjectInputStream is = new ObjectInputStream(sock.getInputStream());
-            t = new Thread(() -> {send(os, is);});
+            t = new Thread(() -> {
+                send(os, fsock);
+            });
             t.setDaemon(true);
             t.start();
-            listen(os, is);
-        }
-        finally {
+            listen(is, sock);
+        } catch (IOException e) {
+            log.error("Connection to server failed");
+            logexception(e);
+        } finally {
             IOUtils.closeQuietly(sock);
             log.info("Disconnected from server");
         }
     }
-    public static void main(String[] args) throws Exception {
-        final Client client = new Client(8100,"localhost");
+
+    public static void main(String[] args) {
+        final Client client = new Client(8100, "localhost");
         client.start();
     }
 }

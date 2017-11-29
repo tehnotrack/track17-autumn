@@ -30,7 +30,13 @@ public class Server {
         workersMap = new ConcurrentHashMap<>();
     }
 
-    public void serve(){
+    private void logexception(Exception e){
+        log.error(e.toString());
+        for (StackTraceElement elem : e.getStackTrace())
+            log.error("at " + elem.toString());
+    }
+
+    public void serve() {
         ServerSocket ssock = null;
         try {
             ssock = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
@@ -42,31 +48,34 @@ public class Server {
                 try {
                     worker = new Worker(sock);
                     worker.start();
+                } catch (IOException e) {
+                    log.error("Connection failed");
+                    logexception(e);
                 }
-                catch (IOException e){log.error("Connection failed");}
             }
-        }
-        catch (Exception e){log.error("Server dropped");}
-        finally {
+        } catch (Exception e) {
+            log.error("Server dropped");
+            logexception(e);
+        } finally {
             IOUtils.closeQuietly(ssock);
         }
     }
 
     public void admin() {
-        try (Scanner in = new Scanner(System.in)){
+        try (Scanner in = new Scanner(System.in)) {
             String cmd;
             Long id;
             while (true) {
                 cmd = in.nextLine();
-                if(cmd.equals("list"))
-                    for(Map.Entry<Long, Worker> entry: workersMap.entrySet())
+                if (cmd.equals("list"))
+                    for (Map.Entry<Long, Worker> entry : workersMap.entrySet())
                         System.out.println(entry.getValue().name);
                 else {
                     String[] strlist = cmd.split(" ");
                     if (strlist.length == 2 && strlist[0].equals("drop"))
                         try {
                             id = new Long(strlist[1]);
-                            if(workersMap.get(id) == null)
+                            if (workersMap.get(id) == null)
                                 System.out.println("No such client");
                             else
                                 IOUtils.closeQuietly(workersMap.get(id).sock);
@@ -79,7 +88,7 @@ public class Server {
         }
     }
 
-    private class Worker extends Thread{
+    private class Worker extends Thread {
         private long id;
         private ObjectInputStream is;
         private ObjectOutputStream os;
@@ -94,42 +103,43 @@ public class Server {
             name = String.format("Client[%d]@%s:%s", id, sock.getInetAddress().toString(), sock.getPort());
         }
 
-        public synchronized void send(Long id, Message msg){
+        public synchronized void send(Long id, Message msg) {
             try {
-                if(id != this.id) {
+                if (id != this.id) {
                     os.writeObject(msg);
                 }
+            } catch (Exception e) {
+                logexception(e);
             }
-            catch(Exception e){}
         }
 
-        public void run(){
+        public void run() {
             try {
                 workersMap.put(id, this);
                 Thread.currentThread().setName(name);
                 log.info("Connected");
-                Message msg;
                 while (true) {
-                    try{
-                    msg = (Message) is.readObject();
-                    log.info("msg: " + msg.getData());
-                    final Message msgsend = new Message(msg.getTs(), String.format("Client@%s:%s> %s", sock.getInetAddress().toString() , sock.getPort(), msg.getData()));
-                    workersMap.forEach((id, worker) -> worker.send(this.id, msgsend));
+                    try {
+                        final Message msg = (Message) is.readObject();
+                        log.info("msg: " + msg.getData());
+                        workersMap.forEach((id, worker) -> worker.send(this.id, msg));
+                    } catch (ClassNotFoundException e) {
+                        log.error("Decoding failed");
+                        logexception(e);
                     }
-                    catch (ClassNotFoundException e){log.error("Decoding failed");}
                 }
-            }
-            catch(IOException e){}
-            finally {
+            } catch (IOException e) {
+                logexception(e);
+            } finally {
                 IOUtils.closeQuietly(sock);
                 log.info("Disconnected");
                 workersMap.remove(id);
-                }
             }
         }
+    }
 
-        public static void main(String[] args){
-            final Server server = new Server(8100);
-            server.serve();
-        }
+    public static void main(String[] args) {
+        final Server server = new Server(8100);
+        server.serve();
+    }
 }
