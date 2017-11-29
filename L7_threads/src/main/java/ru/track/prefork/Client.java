@@ -37,6 +37,7 @@ public class Client {
                 log.info("Reading line...");
 
                 String line = scan.nextLine();
+                if (line.equals("exit")) break;
 
                 log.info("Sending line...");
 
@@ -48,7 +49,7 @@ public class Client {
                 byte[] buffer = new byte[1024];
                 System.out.print("Echo: ");
                 int nRead = input.read(buffer);
-                System.out.print(new String(buffer, 0, nRead));
+                if (nRead != -1) System.out.print(new String(buffer, 0, nRead));
 //                while (nRead != -1) {
 //                    nRead = input.read(buffer);
 //                }

@@ -45,6 +45,7 @@ public class Server {
                 int nRead = input.read(buffer);
                 while(nRead != -1) {
                     line = new String(buffer, 0, nRead);
+                    if (line.equals("exit")) break;
                     log.info("line: " + line);
                     log.info("writing");
                     output.write(line.getBytes());
