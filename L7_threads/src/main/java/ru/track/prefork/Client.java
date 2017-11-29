@@ -2,13 +2,11 @@ package ru.track.prefork;
 
 import com.sun.mail.iap.ByteArray;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
@@ -30,22 +28,32 @@ public class Client {
         Socket sock = null;
         try {
             sock = new Socket(host, port);
-            log.info("Connected. Reading line...");
             OutputStream output = sock.getOutputStream();
-            Scanner scan = new Scanner(System.in);
-            String line = scan.nextLine();
-            log.info("Sending line...");
-            output.write((line + "\n").getBytes());
-            output.flush();
-
-            log.info("Getting echo");
             InputStream input = sock.getInputStream();
-            byte[] buffer = new byte[1024];
-            int nRead = input.read(buffer);
-            if (nRead == -1) {
-                throw new IOException();
+            Scanner scan = new Scanner(System.in);
+            log.info("Connected.");
+            while (true) {
+
+                log.info("Reading line...");
+
+                String line = scan.nextLine();
+
+                log.info("Sending line...");
+
+                output.write((line).getBytes());
+                output.flush();
+
+                log.info("Getting echo");
+
+                byte[] buffer = new byte[1024];
+                System.out.print("Echo: ");
+                int nRead = input.read(buffer);
+                System.out.print(new String(buffer, 0, nRead));
+//                while (nRead != -1) {
+//                    nRead = input.read(buffer);
+//                }
+                System.out.println();
             }
-            System.out.println("Echo: " + new String(buffer, 0, nRead));
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -54,7 +62,7 @@ public class Client {
         log.info("Connection closed!");
     }
 
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         Client cl = new Client(8000, "localhost");
         cl.connect();
     }

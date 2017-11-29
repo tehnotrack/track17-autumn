@@ -34,17 +34,25 @@ public class Server {
             Socket socket = null;
             try {
                 socket = serverSocket.accept();
-                log.info("Client accepted");
-
-                log.info("reading line");
                 InputStream input = socket.getInputStream();
-                Scanner scan = new Scanner(input);
-                String line = scan.nextLine();
-                log.info("line: " + line);
-
-                log.info("writing");
                 OutputStream output = socket.getOutputStream();
-                output.write(line.getBytes());
+
+                log.info("Client accepted");
+                log.info("reading line");
+
+                String line;
+                byte[] buffer = new byte[1024];
+                int nRead = input.read(buffer);
+                while(nRead != -1) {
+                    line = new String(buffer, 0, nRead);
+                    log.info("line: " + line);
+                    log.info("writing");
+                    output.write(line.getBytes());
+                    output.flush();
+                    nRead = input.read(buffer);
+                }
+
+
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
