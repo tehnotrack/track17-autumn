@@ -3,18 +3,17 @@ package ru.track.prefork;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
  */
 public class Client {
+    private static final int MAX_SIZE = 1024;
+
     private int port;
     private String host;
-    private static final int MAX_COUNT = 1024;
 
     public Client(int port, String host) {
         this.port = port;
@@ -24,10 +23,31 @@ public class Client {
     public void connect() throws IOException, InterruptedException {
         Socket socket = new Socket(host, port);
 
-        OutputStream outputStream = socket.getOutputStream();
+        Thread thread = new Thread(() -> {
+            try {
+                handleServer(socket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
+
+        handleClient(socket);
+    }
+
+    private void handleServer(Socket socket) throws IOException {
         InputStream inputStream = socket.getInputStream();
 
-        byte[] response = new byte[MAX_COUNT];
+        byte[] message = new byte[MAX_SIZE];
+        int size;
+
+        while ((size = inputStream.read(message)) != -1) {
+            System.out.println("new message: " + new String(message, 0, size));
+        }
+    }
+
+    private void handleClient(Socket socket) throws IOException {
+        OutputStream outputStream = socket.getOutputStream();
 
         Scanner scanner = new Scanner(System.in);
         String message;
@@ -36,17 +56,13 @@ public class Client {
                 continue;
             }
 
-            if (message.length() > MAX_COUNT) {
+            if (message.length() > MAX_SIZE) {
                 System.out.println("The message is too long. Try one more time.");
 
                 continue;
             }
 
             outputStream.write(message.getBytes());
-
-            int responseSize = inputStream.read(response);
-
-            System.out.println(new String(response, 0, responseSize));
         }
     }
 

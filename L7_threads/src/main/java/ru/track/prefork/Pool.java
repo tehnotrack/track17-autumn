@@ -7,17 +7,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 public class Pool {
+    private static final int MAX_SIZE = 1024;
     private static Logger logger = LoggerFactory.getLogger("logger");
-    private ArrayList<Connection> connections = new ArrayList<>();
+//    private ArrayList<Connection> connections = new ArrayList<>();
+    private Set<Connection> connections = Collections.synchronizedSet(new HashSet<>());
 
-    private synchronized void serveClient(Connection connection) throws IOException {
+    private void serveClient(Connection connection) throws IOException {
         logger.info("connected");
 
-        byte[] bytes = new byte[1024]; // TODO: clear constant here
+        byte[] bytes = new byte[MAX_SIZE];
 
         Socket socket = connection.getSocket();
 
@@ -41,10 +42,12 @@ public class Pool {
         }
 
         socket.close();
-        logger.info("connection lost with");
+        connections.remove(connection);
+
+        logger.info("connection lost");
     }
 
-    private synchronized void broadcast(Connection currentConnection, byte[] message, int size) throws IOException {
+    private void broadcast(Connection currentConnection, byte[] message, int size) throws IOException {
         for (Connection connection : connections) {
             if (!connection.equals(currentConnection)) {
                 Socket socket = connection.getSocket();
@@ -55,8 +58,8 @@ public class Pool {
         }
     }
 
-    public void addClient(int id, String host, int port, Socket socket) throws IOException {
-        Connection connection = new Connection(id, host, port, socket);
+    public void addClient(int id, Socket socket) throws IOException {
+        Connection connection = new Connection(id, socket.getLocalAddress().toString(), socket.getPort(), socket);
         connections.add(connection);
 
         Thread thread = new Thread(() -> {
