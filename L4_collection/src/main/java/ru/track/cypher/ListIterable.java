@@ -3,9 +3,6 @@ package ru.track.cypher;
 
 import java.util.Iterator;
 
-/**
- * Реализация связного списка с итератором
- */
 public class ListIterable implements Iterable<Integer> {
 
     private static class Node {
