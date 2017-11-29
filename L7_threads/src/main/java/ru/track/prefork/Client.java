@@ -54,7 +54,7 @@ public class Client {
 
 
             Thread readerThread = new Thread(() -> {
-                while (!socket.isOutputShutdown() && !Thread.interrupted()) {
+                while (!socket.isClosed() && !Thread.interrupted()) {
                     try {
                         log.info("Try to read");
                         int nRead = in.read(buf);
@@ -63,6 +63,8 @@ public class Client {
                             log.info("Response read");
                             log.info("I have read: " + data.text);
                             System.out.println(data.text);
+                        } else {
+                            break;
                         }
                     } catch (IOException e) {
                         log.error("Error while reading: " + e.getLocalizedMessage());
@@ -90,7 +92,6 @@ public class Client {
                     }
                 }
             }
-
         } catch (IOException e) {
             log.error("Error: " + e.getLocalizedMessage());
         }

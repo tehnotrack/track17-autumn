@@ -8,9 +8,12 @@ import javax.xml.ws.ProtocolException;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -49,13 +52,24 @@ public class Server {
         log.info("Start admin thread");
 
 
-
-            Thread adminThread = new Thread(() -> {
-                try(BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
-                    while (isRunning) {
+        Thread adminThread = new Thread(() -> {
+            try(BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+                Pattern patter = Pattern.compile("^drop (\\d+)$");
+                Matcher matcher = null;
+                 while (isRunning) {
                         if (br.ready()) {
                             String data = br.readLine();
                             log.info("Admin write: " + data);
+                            matcher = patter.matcher(data);
+                            if(matcher.matches()) {
+                                Worker thread = threadMap.get(Long.parseLong(matcher.group(1)));
+                                if(thread == null) {
+                                    System.out.println("Client #" + matcher.group(1) + " not found.");
+                                    continue;
+                                }
+                                log.info("Dropping client#" + matcher.group(1));
+                                thread.dropClient();
+                            }
                             if (data.equalsIgnoreCase("list")) {
                                 for (Map.Entry<Long, Worker> entry : threadMap.entrySet()) {
                                     System.out.println(entry.getValue().getName());
@@ -118,9 +132,23 @@ public class Server {
                 MyMessage msg = new MyMessage(System.currentTimeMillis() / 1000L, message);
                 out.write(protocol.encode(msg));
                 out.flush();
+                log.info("Sent: \"" + message + "\" to client: " + this.getName());
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        public void dropClient() {
+            log.info("Close connection");
+            threadMap.remove(id);
+            try {
+                out.close();
+                in.close();
+                socket.close();
+            } catch (IOException e) {
+                log.error("Error while dropping: " + e.getLocalizedMessage());
+            }
+            log.info("Connection closed.");
         }
 
         @Override
@@ -142,16 +170,11 @@ public class Server {
                                 break;
                             }
 
-//                            EHO Server:
-//                            data.text = ">" + data.text;
-//                            System.out.println(Thread.currentThread().getName() + ": " + data.text);
-
-//                            out.write(protocol.encode(data));
-//                            out.flush();
-//                            log.info("Sent: \"" + data.text + "\" to client.");
+//                            ECHO Server:
+                            sendMessage(data.text);
 
 //                            BroadCast server:
-                            System.out.println(Thread.currentThread().getName() + ": >" + data.text);
+                            System.out.println(Thread.currentThread().getName() + ":>" + data.text);
 
                             for (Map.Entry<Long, Worker> entry : threadMap.entrySet()) {
                                 if (entry.getKey().equals(id)) {
@@ -162,15 +185,14 @@ public class Server {
 
                         } catch (ProtocolException e) {
                             log.error("Error with encoding/decoding: " + e.getLocalizedMessage());
+                        } catch (SocketException e) {
+                            log.error("Socket exception: " + e.getLocalizedMessage());
                         }
+                    } else {
+                        break;
                     }
                 }
-                log.info("Close connection");
-                threadMap.remove(id);
-
-                out.close();
-                in.close();
-                socket.close();
+                dropClient();
             } catch (IOException e) {
                 log.error("Error while new client acceptance: " + e.getLocalizedMessage());
             }
