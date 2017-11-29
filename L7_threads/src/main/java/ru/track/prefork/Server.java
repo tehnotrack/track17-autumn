@@ -90,6 +90,8 @@ public class Server {
                         System.err.println("Drop: error\nClient does not exist");
                     }
 
+                } else {
+                    System.out.println("Unknown command");
                 }
 
             }
@@ -103,7 +105,7 @@ public class Server {
             try {
                 log.info("serving...");
 
-                final Socket socket = serverSocket.accept();
+                final Socket socket = serverSocket.accept(); //Listens for a connection to be made to this socket and accepts it.
                 final long workerId = serverCounter.getAndIncrement();
                 Worker worker = new Worker(socket, protocol, workerId);
                 workerMap.put(workerId, worker);
