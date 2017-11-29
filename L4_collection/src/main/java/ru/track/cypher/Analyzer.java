@@ -14,9 +14,6 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- *
- */
 public class Analyzer {
 
     public static final String SYMBOLS = "abcdefghijklmnopqrstuvwxyz";
@@ -35,8 +32,6 @@ public class Analyzer {
                 }
             }
         }
-
-        //System.out.println(hist);
         return hist;
     }
 
@@ -64,42 +59,25 @@ public class Analyzer {
 
         listToSet();
 
-
-
-
-
-
-//        Map<Character, Integer> hist = printHist("AaBb BBAAa", Character::isLetter);
         Map<Character, Integer> hist = printHist("abbcddddef", Character::isLetter);
 
         Collection<Integer> values = hist.values();
 
-        // считаем сумму
         int sum = 0;
         for (Integer val : values) {
             sum += val;
         }
-
-        // int sum = values.stream().mapToInt(v -> v).sum();
-
 
         for (Map.Entry<Character, Integer> entry : hist.entrySet()) {
             int val = entry.getValue();
             entry.setValue((val * 100 / sum));
         }
 
-        //System.out.println(hist);
-
         List<Integer> listValues = new ArrayList<>(values);
         listValues.sort(new MyComparator());
-        //System.out.printf("before:\t%s\nafter:\t%s\n", values, listValues);
-
-
 
         Map<Character, Integer> sortedHist = new LinkedHashMap<>();
         List<Map.Entry<Character, Integer>> entries = new ArrayList<>(hist.entrySet());
-//        entries.sort(new MyComparator())
-
     }
 
     static class MyComparator implements Comparator<Integer> {
