@@ -22,10 +22,16 @@ public class Encoder {
      * @return зашифрованный текст
      */
     public String encode(@NotNull Map<Character, Character> cypherTable, @NotNull String text) {
-        ArrayList<Character> arr = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
         for(int i = 0; i < text.length(); i++){
-            arr.add(cypherTable.get(text.charAt(i)));
+            Character Char = text.toLowerCase().charAt(i);
+            if(Character.isLetter(Char)){
+                sb.append(cypherTable.get(Char));
+            }
+            else{
+                sb.append(Char);
+            }
         }
-        return arr.toString();
+        return sb.toString();
     }
 }
