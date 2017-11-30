@@ -1,6 +1,7 @@
 package ru.track.prefork;
 
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,6 +143,7 @@ public class Server {
             log.info("Close connection");
             threadMap.remove(id);
             try {
+                IOUtils.closeQuietly(in, out, socket);
                 out.close();
                 in.close();
                 socket.close();
@@ -192,9 +194,10 @@ public class Server {
                         break;
                     }
                 }
-                dropClient();
             } catch (IOException e) {
                 log.error("Error while new client acceptance: " + e.getLocalizedMessage());
+            } finally {
+                dropClient();
             }
         }
     }

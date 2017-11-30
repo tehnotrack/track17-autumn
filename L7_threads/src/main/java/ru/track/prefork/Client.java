@@ -52,46 +52,51 @@ public class Client {
 
             log.info("Start reading thread");
 
-
             Thread readerThread = new Thread(() -> {
-                while (!socket.isClosed() && !Thread.interrupted()) {
-                    try {
-                        log.info("Try to read");
-                        int nRead = in.read(buf);
-                        if (nRead != -1) {
-                            MyMessage data = protocol.decode(buf);
-                            log.info("Response read");
-                            log.info("I have read: " + data.text);
-                            System.out.println(data.text);
-                        } else {
-                            break;
+                try {
+                    while (!socket.isOutputShutdown()) {
+                        if (br.ready()) {
+                            String data = br.readLine();
+                            log.info("User write: " + data);
+                            MyMessage msg = new MyMessage(System.currentTimeMillis() / 1000L, data);
+                            out.write(protocol.encode(msg));
+                            if (data.equalsIgnoreCase("exit")) {
+                                log.info("Exit...");
+                                break;
+                            }
                         }
-                    } catch (IOException e) {
-                        log.error("Error while reading: " + e.getLocalizedMessage());
-                        break;
-                    } catch (ProtocolException e) {
-                        log.error("Error while decoding: " + e.getLocalizedMessage());
                     }
+                } catch (IOException e) {
+                    log.error("Reader error: " + e.getLocalizedMessage());
                 }
+
             });
 
             readerThread.start();
 
-            System.out.println("Try write something to server:");
-
-            while (!socket.isOutputShutdown()) {
-                if (br.ready()) {
-                    String data = br.readLine();
-                    log.info("User write: " + data);
-                    MyMessage msg = new MyMessage(System.currentTimeMillis() / 1000L, data);
-                    out.write(protocol.encode(msg));
-                    if (data.equalsIgnoreCase("exit")) {
-                        readerThread.interrupt();
-                        log.info("Exit...");
+            while (!socket.isClosed() && !Thread.interrupted()) {
+                try {
+                    log.info("Try to read");
+                    int nRead = in.read(buf);
+                    if (nRead != -1) {
+                        MyMessage data = protocol.decode(buf);
+                        log.info("Response read");
+                        log.info("I have read: " + data.text);
+                        System.out.println(data.text);
+                    } else {
                         break;
                     }
+                } catch (IOException e) {
+                    log.error("Error while reading: " + e.getLocalizedMessage());
+                    break;
+                } catch (ProtocolException e) {
+                    log.error("Error while decoding: " + e.getLocalizedMessage());
                 }
             }
+
+            System.out.println("Try write something to server:");
+
+
         } catch (IOException e) {
             log.error("Error: " + e.getLocalizedMessage());
         }
