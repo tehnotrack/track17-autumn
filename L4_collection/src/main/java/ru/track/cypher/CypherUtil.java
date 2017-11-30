@@ -1,5 +1,8 @@
 package ru.track.cypher;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +22,16 @@ public class CypherUtil {
      */
     @NotNull
     public static Map<Character, Character> generateCypher() {
-        return null;
+        ArrayList<Character> arr = new ArrayList<>();
+        for(int i = 0; i < SYMBOLS.length(); i++){
+            arr.add(SYMBOLS.charAt(i));
+        }
+        Collections.shuffle(arr);
+        HashMap<Character, Character> dict = new HashMap<>();
+        for(int i = 0; i < arr.size(); i++){
+            dict.put(SYMBOLS.charAt(i), arr.get(i));
+        }
+        return dict;
     }
 
 }
