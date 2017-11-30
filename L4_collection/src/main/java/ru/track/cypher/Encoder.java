@@ -32,6 +32,7 @@ public class Encoder {
                 sb.append(Char);
             }
         }
+
         return sb.toString();
     }
 }

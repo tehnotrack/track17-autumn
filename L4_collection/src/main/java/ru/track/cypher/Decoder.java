@@ -56,25 +56,28 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        HashMap<Character, Integer> hist =  new HashMap<>();
+        Map<Character, Integer> hist =  new HashMap<>();
         text = text.toLowerCase();
         for(int i = 0; i < text.length(); i++){
             Character Char = text.charAt(i);
             if(Character.isLetter(Char)) {
-                if (hist.containsKey(text.charAt(i))) {
-                    hist.put(text.charAt(i), hist.get(text.charAt(i)) + 1);
+                if (hist.containsKey(Char)) {
+                    hist.put(Char, hist.get(Char) + 1);
                 } else {
-                    hist.put(text.charAt(i), 1);
+                    hist.put(Char, 1);
                 }
             }
         }
+
         ArrayList<Map.Entry<Character, Integer>> list = new ArrayList<>(hist.entrySet());
-        Collections.sort(list,(e1, e2) -> {return (int)e2.getValue() - (int)e1.getValue();});
-        LinkedHashMap<Character, Integer> res =  new LinkedHashMap<>();
+        Collections.sort(list, (e1, e2) -> {return (int)e2.getValue() - (int)e1.getValue();});
+
+        hist =  new LinkedHashMap<>();
         for(Map.Entry entry: list){
-            res.put((Character)entry.getKey(), (Integer)entry.getValue());
+            hist.put((Character)entry.getKey(), (Integer)entry.getValue());
         }
-        return res;
+
+        return hist;
     }
 
 }
