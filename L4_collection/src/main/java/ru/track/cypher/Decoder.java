@@ -1,7 +1,6 @@
 package ru.track.cypher;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -21,10 +20,13 @@ public class Decoder {
     public Decoder(@NotNull String domain, @NotNull String encryptedDomain) {
         Map<Character, Integer> domainHist = createHist(domain);
         Map<Character, Integer> encryptedDomainHist = createHist(encryptedDomain);
-
         cypher = new LinkedHashMap<>();
 
-
+        Iterator iterDomain = domainHist.keySet().iterator();
+        Iterator iterEncrypted = encryptedDomainHist.keySet().iterator();
+        while(iterDomain.hasNext() && iterEncrypted.hasNext()){
+            cypher.put((Character) iterEncrypted.next(), (Character)iterDomain.next());
+        }
     }
 
     public Map<Character, Character> getCypher() {
@@ -39,7 +41,8 @@ public class Decoder {
      */
     @NotNull
     public String decode(@NotNull String encoded) {
-        return null;
+        Encoder enc = new Encoder();
+        return enc.encode(cypher, encoded);
     }
 
     /**
@@ -53,7 +56,25 @@ public class Decoder {
      */
     @NotNull
     Map<Character, Integer> createHist(@NotNull String text) {
-        return null;
+        HashMap<Character, Integer> hist =  new HashMap<>();
+        text = text.toLowerCase();
+        for(int i = 0; i < text.length(); i++){
+            Character Char = text.charAt(i);
+            if(Character.isLetter(Char)) {
+                if (hist.containsKey(text.charAt(i))) {
+                    hist.put(text.charAt(i), hist.get(text.charAt(i)) + 1);
+                } else {
+                    hist.put(text.charAt(i), 1);
+                }
+            }
+        }
+        ArrayList<Map.Entry<Character, Integer>> list = new ArrayList<>(hist.entrySet());
+        Collections.sort(list,(e1, e2) -> {return (int)e2.getValue() - (int)e1.getValue();});
+        LinkedHashMap<Character, Integer> res =  new LinkedHashMap<>();
+        for(Map.Entry entry: list){
+            res.put((Character)entry.getKey(), (Integer)entry.getValue());
+        }
+        return res;
     }
 
 }
