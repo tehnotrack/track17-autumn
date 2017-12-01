@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,7 @@ public class JsonWriter {
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
         StringBuilder sb = new StringBuilder("[");
+
         for(int i = 0; i < length; i++){
             sb.append(toJson(Array.get(object, i)));
             if(i != length - 1){
@@ -69,6 +71,7 @@ public class JsonWriter {
             }
         }
         sb.append("]");
+
         return sb.toString();
     }
 
@@ -91,6 +94,7 @@ public class JsonWriter {
     private static String toJsonMap(@NotNull Object object) {
         HashMap map = (HashMap) object;
         StringBuilder sb = new StringBuilder("{");
+
         int i = 0;
         for(Object ob : map.entrySet()){
             Map.Entry entry = (Map.Entry) ob;
@@ -105,6 +109,7 @@ public class JsonWriter {
             }
         }
         sb.append("}");
+
         return sb.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
@@ -130,32 +135,27 @@ public class JsonWriter {
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
-        StringBuilder sb = new StringBuilder("{");
-        boolean writterNullField = clazz.getAnnotation(JsonNullable.class) != null;
-        int i = 0;
+        LinkedHashMap<Object, Object> map = new LinkedHashMap<>();
+        boolean writeNullField = clazz.getAnnotation(JsonNullable.class) != null;
+
         for(Field field : fields){
             try {
                 field.setAccessible(true);
-                if(field.get(object) != null || writterNullField) {
-                    if (i++ != 0) {
-                        sb.append(",");
-                    }
+                if(field.get(object) != null || writeNullField) {
                     SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
                     if(serializedTo == null) {
-                        sb.append(String.format(toJson(field.getName()) + ":" + toJson(field.get(object))));
+                        map.put(field.getName(), field.get(object));
                     }
                     else{
-                        sb.append(toJson(serializedTo.value()) + ":" + toJson(field.get(object)));
+                        map.put(serializedTo.value(), field.get(object));
                     }
                 }
-            }
-            catch (IllegalAccessException e){
+            } catch (IllegalAccessException e){
                 System.out.println(e.getMessage());
             }
         }
 
-        sb.append("}");
-        return sb.toString();
+        return toJsonMap(map);
     }
 
     /**
