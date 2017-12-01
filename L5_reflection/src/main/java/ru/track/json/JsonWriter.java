@@ -131,15 +131,22 @@ public class JsonWriter {
         Class clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
         StringBuilder sb = new StringBuilder("{");
+        boolean writterNullField = clazz.getAnnotation(JsonNullable.class) != null;
         int i = 0;
         for(Field field : fields){
             try {
                 field.setAccessible(true);
-                if(field.get(object) != null) {
+                if(field.get(object) != null || writterNullField) {
                     if (i++ != 0) {
                         sb.append(",");
                     }
-                    sb.append(String.format(toJson(field.getName()) + ":" + toJson(field.get(object))));
+                    SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+                    if(serializedTo == null) {
+                        sb.append(String.format(toJson(field.getName()) + ":" + toJson(field.get(object))));
+                    }
+                    else{
+                        sb.append(toJson(serializedTo.value()) + ":" + toJson(field.get(object)));
+                    }
                 }
             }
             catch (IllegalAccessException e){
