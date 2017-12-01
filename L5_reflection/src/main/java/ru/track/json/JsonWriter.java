@@ -94,7 +94,12 @@ public class JsonWriter {
         int i = 0;
         for(Object ob : map.entrySet()){
             Map.Entry entry = (Map.Entry) ob;
-            sb.append(String.format("\"%s\"",toJson(entry.getKey())) + ":" + toJson(entry.getValue()));
+            if(entry.getKey() instanceof String) {
+                sb.append(toJson(entry.getKey()) + ":" + toJson(entry.getValue()));
+            }
+            else{
+                sb.append(String.format("\"%s\"", entry.getKey()) + ":" + toJson(entry.getValue()));
+            }
             if(i++ != map.size() - 1){
                 sb.append(",");
             }
@@ -130,9 +135,11 @@ public class JsonWriter {
         for(Field field : fields){
             try {
                 field.setAccessible(true);
-                sb.append(String.format(toJson(field.getName()) + ":" + toJson(field.get(object))));
-                if (i++ != fields.length - 1) {
-                    sb.append(",");
+                if(field.get(object) != null) {
+                    if (i++ != 0) {
+                        sb.append(",");
+                    }
+                    sb.append(String.format(toJson(field.getName()) + ":" + toJson(field.get(object))));
                 }
             }
             catch (IllegalAccessException e){
