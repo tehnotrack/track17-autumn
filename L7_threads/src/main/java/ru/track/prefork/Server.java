@@ -9,10 +9,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
-//import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Scanner;
 import org.slf4j.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -22,7 +23,7 @@ public class Server {
     static Logger log = LoggerFactory.getLogger(Server.class);
     private AtomicLong counter = new AtomicLong(0);
     private Protocol<Message> protocol;
-    private Map<Long, Worker> workerMap;//
+    private Map<Long, Worker> workerMap;
 
 
     public Server(int port, Protocol<Message> protocol) {
@@ -35,8 +36,55 @@ public class Server {
 
     public void serve() throws Exception {
 
-        ServerSocket serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
+        ServerSocket serverSocket = null;
 
+        try {
+            serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+        Scanner scanner = new Scanner(System.in);
+
+        Thread scannerThread = new Thread(() -> {
+            try {
+                while (true) {
+                    String line = scanner.nextLine();
+                    Pattern p = Pattern.compile("^drop (\\d+)$");
+                    Matcher m = p.matcher(line);
+
+                    if(line.equals("list")) {
+                        log.info("list");
+                        for (Map.Entry<Long, Worker> entry : workerMap.entrySet()) {
+                            Worker value = entry.getValue();
+                            System.out.println(value);
+                        }
+
+                    }
+
+                    else if(m.matches()){
+                        Long id = Long.parseLong(line.substring(5));
+
+                        if(workerMap.containsKey(id))
+                        {
+                            workerMap.remove(id);
+                            log.info("drop "+ id.toString()+" client");
+                        }
+                        else{
+                            log.info("No such client!");
+                        }
+
+                    }
+                    else{
+                        log.info("Invalid command");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        });
+
+        scannerThread.start();
 
         while (true) {
             log.info("on select...");
@@ -45,39 +93,6 @@ public class Server {
             Worker worker = new Worker(socket, protocol, workerId);
             workerMap.put(workerId, worker);
             worker.start();
-            Scanner scanner = new Scanner(System.in);
-            Thread scannerThread = new Thread(() -> {
-                try {
-                    while (true) {
-                        String line = scanner.nextLine();
-                        if (line.equals("exit")) {
-                            socket.close();
-                            log.info("buy admin");
-                            System.exit(0);
-                        }
-                        else if(line.equals("list")) {
-                            log.info("list");
-                            for (Map.Entry<Long, Worker> entry : workerMap.entrySet()) {
-                                Worker value = entry.getValue();
-                                System.out.println(value);
-                            }
-
-                        }
-                        else if(line.equals("drop "+Long.toString(workerId))) {
-                            log.info("drop " + Long.toString(workerId) + " client");
-                            workerMap.remove(workerId);
-
-                        }
-                        else{
-                            log.info("Invalid command");
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            });
-            scannerThread.start();
 
         }
 
@@ -107,10 +122,10 @@ public class Server {
             try {
                 log.info("Connected");
                 handleSocket(socket);
-                //admin(socket);
+
             } catch (Exception e) {
                 workerMap.remove(id);
-                //  throw new RuntimeException(e);
+
             }
         }
 
@@ -120,8 +135,7 @@ public class Server {
                 out.flush();
             } catch (IOException e) {
                 e.printStackTrace();
-                //} catch (ProtocolException e) {
-                //e.printStackTrace();
+
             }
         }
 
@@ -135,27 +149,19 @@ public class Server {
                     Message fromClient = protocol.decode(buf);
                     fromClient.text = ">" + fromClient.text;
 
-                    workerMap.forEach((aLong, worker) -> worker.send(fromClient));
+                    workerMap.forEach((aLong, worker) -> {
+                        if(worker.id != id)
+                            worker.send(fromClient);
 
-                } else {
+                });}
+                else {
                     log.error("Connection failed");
                     return;
                 }
             }
         }
 
-      /* public void admin(Socket socket) throws IOException {
 
-            //Socket socket = new Socket(port,host);
-
-            //final InputStream in = socket.getInputStream();
-            //final OutputStream out = socket.getOutputStream();
-
-
-        }
-
-
-*/
     }
 public static void main(String[] args) throws Exception{
         Server server = new Server(9000, new BinaryProtocol<>());

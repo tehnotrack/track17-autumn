@@ -24,52 +24,78 @@ public class Client {
 
     public void loop() throws IOException {
 
-        Socket socket  = new Socket(host, port);
+        Socket socket = null;
 
-        final InputStream in = socket.getInputStream();
-        final OutputStream out = socket.getOutputStream();
-        Scanner scanner = new Scanner(System.in);
+        try {
+            socket = new Socket(host, port);
 
-        Thread scannerThread = new Thread(() -> {
-            try {
-                while (true) {
-                    String line = scanner.nextLine();
-                   if(line.equals("exit"))
-                    {
-                        socket.close();
-                        System.exit(0);
-                       // break;
-                    }
-                    else{
-                        Message msg = new Message(System.currentTimeMillis(), line);
-                        out.write(protocol.encode(msg));
-                        out.flush();
-                }}
-            }catch (IOException e){
-                e.printStackTrace();
+            final InputStream in = socket.getInputStream();
+            final OutputStream out = socket.getOutputStream();
+            Scanner scanner = new Scanner(System.in);
+
+            Thread scannerThread = new Thread(() -> {
+                try {
+                    while (true) {
+                        String line = scanner.nextLine();
+                        if(line.equalsIgnoreCase("exit"))
+                        {
+                            log.info("Exit");
+                            System.exit(0);
+                            break;
+                        }
+
+                        else{
+                            Message msg = new Message(System.currentTimeMillis(), line);
+                            out.write(protocol.encode(msg));
+                            out.flush();
+                        }
+
+                        }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            });
+            scannerThread.setDaemon(true);
+            scannerThread.start();
+
+
+            byte[] buff = new byte[1024];
+
+            while (!socket.isClosed() && !Thread.interrupted()) {
+
+                int nRead = in.read(buff);
+                if (nRead != -1) {
+                    Message msg = protocol.decode(buff);
+
+                    System.out.println(msg.text);
+
+
+                } else {
+                    log.error("Connection failed");
+                    return;
+                }
             }
 
-        });
-        scannerThread.start();
+        } catch (IOException e) {
 
-        byte[] buff = new byte[1024];
+            e.printStackTrace();
+        } finally {
 
-        while (true) {
-
-            int nRead = in.read(buff);
-            if (nRead != -1) {
-                protocol.decode(buff);
-            } else {
-                log.error("Connection failed");
-                return;
-            }
+            socket.close();
         }
-        }
+    }
 
 
     public static void main(String[] args) throws Exception{
         Client client = new Client(9000,"localhost",new BinaryProtocol<>());
-        client.loop();
+        try {
+            client.loop();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
     }
 
 }
