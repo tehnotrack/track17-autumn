@@ -1,15 +1,14 @@
 package ru.track.prefork;
 
-import com.sun.mail.iap.ByteArray;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CharSequenceInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  *
@@ -18,53 +17,117 @@ public class Client {
     public static Logger log = LoggerFactory.getLogger(Client.class);
     private int port;
     private String host;
+    private Protocol<Message> protocol;
+    private ClientServerListener csl;
+    private ClientActionListener cal;
 
-    public Client(int port, String host) {
+    public Client(int port, String host, Protocol<Message> protocol) {
         this.port = port;
         this.host = host;
+        this.protocol = protocol;
     }
 
     public void connect() {
-        Socket sock = null;
+        Socket socket = null;
         try {
-            sock = new Socket(host, port);
-            OutputStream output = sock.getOutputStream();
-            InputStream input = sock.getInputStream();
-            Scanner scan = new Scanner(System.in);
+            socket = new Socket(host, port);
             log.info("Connected.");
-            while (true) {
-
-                log.info("Reading line...");
-
-                String line = scan.nextLine();
-                if (line.equals("exit")) break;
-
-                log.info("Sending line...");
-
-                output.write((line).getBytes());
-                output.flush();
-
-                log.info("Getting echo");
-
-                byte[] buffer = new byte[1024];
-                System.out.print("Echo: ");
-                int nRead = input.read(buffer);
-                if (nRead != -1) System.out.print(new String(buffer, 0, nRead));
-//                while (nRead != -1) {
-//                    nRead = input.read(buffer);
-//                }
-                System.out.println();
-            }
+            csl = new ClientServerListener(socket);
+            cal = new ClientActionListener(socket);
+            csl.start();
+            cal.start();
         } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            IOUtils.closeQuietly(sock);
+            log.error("Connection failed.");
         }
-        log.info("Connection closed!");
+    }
+
+    private void getMessagesService(Socket socket) throws IOException, ProtocolException, ServerByteProtocolException  {
+        ServerByteProtocol serverByteProtocol = new ServerByteProtocol(socket);
+        while (!Thread.currentThread().isInterrupted()) {
+            log.info("Listening to server...");
+            byte[] buffer = serverByteProtocol.read();
+            System.out.print("From server: ");
+            Message msg = protocol.decode(buffer);
+            System.out.println(msg.getAuthor() + "> " + msg.getText());
+        }
+    }
+
+    private void sendMessagesService(Socket socket) throws IOException, ProtocolException, ServerByteProtocolException {
+        ServerByteProtocol serverByteProtocol = new ServerByteProtocol(socket);
+        Scanner scan = new Scanner(System.in);
+        while (!Thread.currentThread().isInterrupted()) {
+            log.info("Reading line...");
+            String line = scan.nextLine();
+            log.info("Sending line...");
+            serverByteProtocol.write(protocol.encode(new Message(System.currentTimeMillis(), line)));
+            if (line.equals("exit")) break;
+        }
     }
 
     public static void main(String... args) throws IOException {
-        Client cl = new Client(8000, "localhost");
+        Client cl = new Client(8000, "localhost", new BinaryProtocol<>());
         cl.connect();
+    }
+
+    abstract class ClientHandler extends Thread {
+        private Socket socket;
+
+        public ClientHandler(Socket socket) {
+            this.socket = socket;
+        }
+
+        public Socket getSocket() {
+            return socket;
+        }
+    }
+
+    class ClientServerListener extends ClientHandler {
+
+        public ClientServerListener(Socket socket) {
+            super(socket);
+        }
+
+        @Override
+        public void run() {
+            Thread.currentThread().setName("ClientServer");
+            try {
+                getMessagesService(getSocket());
+            } catch (IOException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            } catch (ProtocolException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            } catch (ServerByteProtocolException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                IOUtils.closeQuietly(getSocket());
+                cal.interrupt();
+                log.info("Connection closed.");
+            }
+        }
+    }
+
+    class ClientActionListener extends ClientHandler {
+
+        public ClientActionListener(Socket socket) {
+            super(socket);
+        }
+
+        @Override
+        public void run() {
+            Thread.currentThread().setName("ClientAction");
+            try {
+                sendMessagesService(getSocket());
+            } catch (IOException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            } catch (ProtocolException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            } catch (ServerByteProtocolException e) {
+                log.error(e.getClass().getName() + ": " + e.getMessage());
+            }
+            if (!getSocket().isClosed() && !isInterrupted()) {
+                cal = new ClientActionListener(getSocket());
+                cal.start();
+            }
+        }
     }
 }
