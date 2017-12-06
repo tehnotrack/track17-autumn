@@ -15,11 +15,11 @@ public class SimpleExample {
 
             url.
                     append("jdbc:mysql://").        //db type
-                    append("localhost:").            //host name
+                    append("tdb-1.trail5.net:").            //host name
                     append("3306/").                //port
-                    append("db_example?").            //db name
-                    append("user=root&").            //login
-                    append("password=11");        //password
+                    append("track17?").            //db name
+                    append("user=track_student&").            //login
+                    append("password=7EsH.H6x");        //password
 
             System.out.append("URL: " + url + "\n");
 

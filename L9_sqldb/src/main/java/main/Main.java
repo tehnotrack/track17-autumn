@@ -13,8 +13,8 @@ import examples.TExample;
 
 public class Main {
     public static void main(String[] args) {
-        SimpleExample.connect();
-//        ConnectWithStatements.connect();
+    //   SimpleExample.connect();
+     ConnectWithStatements.connect();
 //        PreparedExample.connect();
 //        TExample.connect();
 //        DataSetExample.connect();

@@ -5,6 +5,7 @@ import handlers.ResultHandler;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import executor.SimpleExecutor;
 
@@ -20,9 +21,10 @@ public class ConnectWithStatements {
         Connection connection = SimpleExample.getConnection();
         SimpleExecutor exec = new SimpleExecutor();
         try {
-            exec.execUpdate(connection, "create table users (id bigint auto_increment, user_name varchar(256), primary key (id))");
-            System.out.append("Table created\n");
-            exec.execUpdate(connection, "insert into users (user_name) values ('test')");
+
+            String uuid = UUID.randomUUID().toString();
+
+            exec.execUpdate(connection, "insert into users (user_name) values ('" + uuid + "')");
             System.out.append("User added\n");
 
             ResultHandler handler = new ResultHandlerGetName();
