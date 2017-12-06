@@ -2,6 +2,7 @@ package ru.track.prefork;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.net.InetAddress;
 import java.net.ProtocolException;
@@ -11,7 +12,10 @@ import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Scanner;
+
 import org.slf4j.Logger;
+import org.apache.commons.io.IOUtils;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +44,7 @@ public class Server {
 
         try {
             serverSocket = new ServerSocket(port, 10, InetAddress.getByName("localhost"));
-        } catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
         Scanner scanner = new Scanner(System.in);
@@ -52,29 +56,26 @@ public class Server {
                     Pattern p = Pattern.compile("^drop (\\d+)$");
                     Matcher m = p.matcher(line);
 
-                    if(line.equals("list")) {
+                    if (line.equals("list")) {
                         log.info("list");
                         for (Map.Entry<Long, Worker> entry : workerMap.entrySet()) {
                             Worker value = entry.getValue();
                             System.out.println(value);
                         }
 
-                    }
-
-                    else if(m.matches()){
+                    } else if (m.matches()) {
                         Long id = Long.parseLong(line.substring(5));
 
-                        if(workerMap.containsKey(id))
-                        {
+                        if (workerMap.containsKey(id)) {
+                            workerMap.get(id).interrupt();
+                            IOUtils.closeQuietly(workerMap.get(id).socket);
                             workerMap.remove(id);
-                            log.info("drop "+ id.toString()+" client");
-                        }
-                        else{
+                            log.info("drop " + id.toString() + " client");
+                        } else {
                             log.info("No such client!");
                         }
 
-                    }
-                    else{
+                    } else {
                         log.info("Invalid command");
                     }
                 }
@@ -97,7 +98,6 @@ public class Server {
         }
 
     }
-
 
 
     class Worker extends Thread {
@@ -150,11 +150,11 @@ public class Server {
                     fromClient.text = ">" + fromClient.text;
 
                     workerMap.forEach((aLong, worker) -> {
-                        if(worker.id != id)
+                        if (worker.id != id)
                             worker.send(fromClient);
 
-                });}
-                else {
+                    });
+                } else {
                     log.error("Connection failed");
                     return;
                 }
@@ -163,7 +163,8 @@ public class Server {
 
 
     }
-public static void main(String[] args) throws Exception{
+
+    public static void main(String[] args) throws Exception {
         Server server = new Server(9000, new BinaryProtocol<>());
         server.serve();
     }

@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.ProtocolException;
 import java.net.Socket;
 import java.util.Scanner;
+
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +26,10 @@ public class Client {
 
     public void loop() throws IOException {
 
-        Socket socket = null;
+        final Socket socket = new Socket(host, port);
 
         try {
-            socket = new Socket(host, port);
+            //socket = new Socket(host, port);
 
             final InputStream in = socket.getInputStream();
             final OutputStream out = socket.getOutputStream();
@@ -36,25 +38,28 @@ public class Client {
             Thread scannerThread = new Thread(() -> {
                 try {
                     while (true) {
+                        
                         String line = scanner.nextLine();
-                        if(line.equalsIgnoreCase("exit"))
+                        if(line.equals("exit"))
                         {
-                            log.info("Exit");
-                            System.exit(0);
                             break;
                         }
+                        Message msg = new Message(System.currentTimeMillis(), line);
+                        out.write(protocol.encode(msg));
+                        out.flush();
 
-                        else{
-                            Message msg = new Message(System.currentTimeMillis(), line);
-                            out.write(protocol.encode(msg));
-                            out.flush();
-                        }
 
-                        }
+                    }
 
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                finally{
+
+                    IOUtils.closeQuietly(socket);
+                }
+
+
 
             });
             scannerThread.setDaemon(true);
@@ -67,6 +72,7 @@ public class Client {
 
                 int nRead = in.read(buff);
                 if (nRead != -1) {
+
                     Message msg = protocol.decode(buff);
 
                     System.out.println(msg.text);
@@ -83,13 +89,13 @@ public class Client {
             e.printStackTrace();
         } finally {
 
-            socket.close();
+            IOUtils.closeQuietly(socket);
         }
     }
 
 
-    public static void main(String[] args) throws Exception{
-        Client client = new Client(9000,"localhost",new BinaryProtocol<>());
+    public static void main(String[] args) throws Exception {
+        Client client = new Client(9000, "localhost", new BinaryProtocol<>());
         try {
             client.loop();
         } catch (IOException e) {

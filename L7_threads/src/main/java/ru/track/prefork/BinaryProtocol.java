@@ -14,22 +14,22 @@ public class BinaryProtocol<T extends Serializable> implements Protocol<T> {
     public byte[] encode(T msg) throws ProtocolException {
         log.info("encode:" + msg);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(bos)){
+        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject(msg);
             return bos.toByteArray();
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new ProtocolException();
         }
     }
 
     @Override
-    public T decode(byte[] bytes) throws ProtocolException{
+    public T decode(byte[] bytes) throws ProtocolException {
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        try(ObjectInputStream ois = new ObjectInputStream(bis)){
+        try (ObjectInputStream ois = new ObjectInputStream(bis)) {
             T message = (T) ois.readObject();
             log.info("decode: " + message);
             return message;
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new ProtocolException();
         }
     }
