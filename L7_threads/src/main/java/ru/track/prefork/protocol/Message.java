@@ -1,4 +1,5 @@
 package ru.track.prefork.protocol;
+
 import java.io.Serializable;
 
 
@@ -12,10 +13,12 @@ public class Message implements Serializable {
         this.ts = ts;
         this.text = text;
 
+
     }
 
     @Override
     public String toString() {
+
      return "Message{" +
              "ts" + ts +
              ", text='" + text + '\'' +
@@ -23,5 +26,6 @@ public class Message implements Serializable {
              "}";
 
     }
+
 
 }

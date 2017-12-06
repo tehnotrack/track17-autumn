@@ -1,5 +1,6 @@
 package ru.track.prefork.protocol;
 
+
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -20,10 +21,12 @@ public class JavaSerializationProtocol<T extends Serializable> implements Protoc
             return bos.toByteArray();
         } catch (IOException e){
             throw new ProtocolException("encoding failed",e);
+
         }
     }
 
     @Override
+
     public T decode (byte[] bytes) throws ProtocolException{
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
         try (ObjectInputStream objIn = new ObjectInputStream(bis)){
@@ -34,6 +37,4 @@ public class JavaSerializationProtocol<T extends Serializable> implements Protoc
             throw new ProtocolException("decoding failed",e);
         }
     }
-
-
 }

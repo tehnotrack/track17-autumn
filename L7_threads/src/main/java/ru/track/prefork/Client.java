@@ -1,6 +1,7 @@
 package ru.track.prefork;
 
 
+
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -18,21 +19,26 @@ import ru.track.prefork.protocol.ProtocolException;
 
 
 
+
 /**
  *
  */
 public class Client {
 
+
     static Logger log = LoggerFactory.getLogger(Server.class);
+
 
     private int port;
     private String host;
     private Protocol<Message> protocol;
 
+
     public Client(int port, String host, Protocol<Message> protocol){
         this.port = port;
         this.host = host;
         this.protocol = protocol;
+
     }
 
 

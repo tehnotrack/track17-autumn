@@ -1,6 +1,7 @@
 package ru.track.prefork;
 
 
+
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +14,13 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.jetbrains.annotations.NotNull;
+
 
 import ru.track.prefork.protocol.Protocol;
 import ru.track.prefork.protocol.Message;
@@ -26,24 +29,36 @@ import ru.track.prefork.protocol.JavaSerializationProtocol;
 
 import static java.lang.Thread.sleep;
 
+
 /**
+ * - multithreaded +
+ * - atomic counter +
+ * - setName() +
+ * - thread -> Worker +
+ * - save threads
+ * - broadcast (fail-safe)
+ *
  *
  */
 
 
 public class Server {
     static Logger log = LoggerFactory.getLogger(Server.class);
+
     private int port;
     private AtomicLong serverCounter = new AtomicLong(0);
     private Protocol<Message> protocol;
 
+
     private ConcurrentMap<Long,Worker> workerMap;
+
 
 
     public Server(int port, Protocol<Message> protocol) {
         this.port = port;
         this.protocol = protocol;
         workerMap = new ConcurrentHashMap<>();
+
     }
 
 
