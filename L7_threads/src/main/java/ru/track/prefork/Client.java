@@ -23,16 +23,23 @@ public class Client {
     public void connect() throws IOException, InterruptedException {
         Socket socket = new Socket(host, port);
 
-        Thread thread = new Thread(() -> {
+        Thread handleServer = new Thread(() -> {
             try {
                 handleServer(socket);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-        thread.start();
+        handleServer.start();
 
-        handleClient(socket);
+        Thread handleClient = new Thread(() -> {
+            try {
+                handleClient(socket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        handleClient.start();
     }
 
     private void handleServer(Socket socket) throws IOException {
@@ -68,7 +75,7 @@ public class Client {
 
     public static void main(String[] args) {
         try {
-            Client client = new Client(8080, "127.0.0.1");
+            Client client = new Client(8000, "127.0.0.1");
             client.connect();
         } catch (Exception e) {
             System.out.println(e.getMessage());

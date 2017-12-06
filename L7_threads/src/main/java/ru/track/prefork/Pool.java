@@ -8,11 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Pool {
     private static final int MAX_SIZE = 1024;
     private static Logger logger = LoggerFactory.getLogger("logger");
-//    private ArrayList<Connection> connections = new ArrayList<>();
+    private AtomicInteger id = new AtomicInteger();
     private Set<Connection> connections = Collections.synchronizedSet(new HashSet<>());
 
     private void serveClient(Connection connection) throws IOException {
@@ -58,8 +59,8 @@ public class Pool {
         }
     }
 
-    public void addClient(int id, Socket socket) throws IOException {
-        Connection connection = new Connection(id, socket.getLocalAddress().toString(), socket.getPort(), socket);
+    public void addClient(Socket socket) throws IOException {
+        Connection connection = new Connection(id.getAndIncrement(), socket.getLocalAddress().toString(), socket.getPort(), socket);
         connections.add(connection);
 
         Thread thread = new Thread(() -> {

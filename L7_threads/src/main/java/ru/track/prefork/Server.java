@@ -23,13 +23,13 @@ public class Server {
         while (true) {
             socket = serverSocket.accept();
 
-            pool.addClient(clientId++, socket);
+            pool.addClient(socket);
         }
     }
 
     public static void main(String[] args) {
         try {
-            Server server = new Server(8080);
+            Server server = new Server(8000);
             server.serve();
         } catch (Exception e) {
             e.printStackTrace();
