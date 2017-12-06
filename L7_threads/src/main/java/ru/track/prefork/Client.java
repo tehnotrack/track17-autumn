@@ -7,8 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  *
@@ -42,22 +40,25 @@ public class Client {
     }
 
     private void getMessagesService(Socket socket) throws IOException, ProtocolException, ServerByteProtocolException  {
-        ServerByteProtocol serverByteProtocol = new ServerByteProtocol(socket);
+        ServerByteProtocol serverByteProtocol = new ServerIOByteProtocol(socket);
         while (!Thread.currentThread().isInterrupted()) {
             log.info("Listening to server...");
             byte[] buffer = serverByteProtocol.read();
-            System.out.print("From server: ");
             Message msg = protocol.decode(buffer);
-            System.out.println(msg.getAuthor() + "> " + msg.getText());
+            System.out.println(((msg.getAuthor() == null) ? "SERVER": msg.getAuthor())+
+                    "> " +
+                    msg.getText());
         }
+        cal.interrupt();
     }
 
     private void sendMessagesService(Socket socket) throws IOException, ProtocolException, ServerByteProtocolException {
-        ServerByteProtocol serverByteProtocol = new ServerByteProtocol(socket);
+        ServerByteProtocol serverByteProtocol = new ServerIOByteProtocol(socket);
         Scanner scan = new Scanner(System.in);
         while (!Thread.currentThread().isInterrupted()) {
             log.info("Reading line...");
             String line = scan.nextLine();
+            if (Thread.currentThread().isInterrupted()) break;
             log.info("Sending line...");
             serverByteProtocol.write(protocol.encode(new Message(System.currentTimeMillis(), line)));
             if (line.equals("exit")) break;
