@@ -7,10 +7,15 @@ import java.util.Objects;
  *
  */
 public class Car implements Serializable {
+
+
+
     private long id;
     private String model;
 
     private Engine engine;
+
+    private String brand;
 
     public Car() {
     }
@@ -36,12 +41,17 @@ public class Car implements Serializable {
         return Objects.hash(id, model, engine);
     }
 
-    @Override
-    public String toString() {
-        return "Car{" +
-                "id=" + id +
-                ", model='" + model + '\'' +
-                ", engine=" + engine +
-                '}';
+//    @Override
+//    public String toString() {
+//        return "Car hello!{" +
+//                "id=" + id +
+//                ", model='" + model + '\'' +
+//                ", engine=" + engine +
+//                '}';
+//    }
+
+    public static void main(String[] args) {
+        Car car = new Car(1L, null, null);
+        System.out.println(car);
     }
 }

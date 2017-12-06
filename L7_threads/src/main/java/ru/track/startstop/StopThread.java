@@ -35,6 +35,7 @@ public class StopThread {
             while (!pleaseStop) {
                 randomSleep();
             }
+            // освобождение ресурсов
         }
 
         public void stopThread() {
