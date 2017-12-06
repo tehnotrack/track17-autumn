@@ -77,7 +77,7 @@ public class Server {
                         Message dropNotificationMsg = new Message(0, "Your connection was deactivated");
                         workerMap.get(id).send(dropNotificationMsg);
                         try {
-                            workerMap.get(id).socket.close();
+                            workerMap.get(id).socket.close();// method close() вынести наружу
                         } catch (IOException e) {
                             System.err.println("Socket was not closed correctly");
                             e.printStackTrace();
@@ -107,6 +107,8 @@ public class Server {
 
                 final Socket socket = serverSocket.accept(); //Listens for a connection to be made to this socket and accepts it.
                 final long workerId = serverCounter.getAndIncrement();
+                //limit for number of clients
+
                 Worker worker = new Worker(socket, protocol, workerId);
                 workerMap.put(workerId, worker);
                 worker.start();
