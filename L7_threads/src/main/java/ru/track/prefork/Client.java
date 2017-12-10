@@ -1,5 +1,9 @@
 package ru.track.prefork;
 
+import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,17 +15,31 @@ import java.util.Scanner;
  */
 public class Client {
     private static final int MAX_SIZE = 1024;
+    private static Logger logger = LoggerFactory.getLogger("logger");
 
     private int port;
     private String host;
 
+    private String username;
+
     public Client(int port, String host) {
         this.port = port;
         this.host = host;
+
+        System.out.print("Enter your username: ");
+
+        Scanner scanner = new Scanner(System.in);
+        this.username = scanner.next();
+
+        // TODO: check if username is unique
+
+        System.out.println("Thank you! You have logged in...");
     }
 
     public void connect() throws IOException, InterruptedException {
         Socket socket = new Socket(host, port);
+
+        logger.info("Connected to server on host " + host + " and port " + port);
 
         Thread handleServer = new Thread(() -> {
             try {
@@ -30,6 +48,8 @@ public class Client {
                 e.printStackTrace();
             }
         });
+        handleServer.setDaemon(true);
+        handleServer.setName("Getter");
         handleServer.start();
 
         Thread handleClient = new Thread(() -> {
@@ -39,37 +59,51 @@ public class Client {
                 e.printStackTrace();
             }
         });
+        handleClient.setName("Sender");
         handleClient.start();
     }
 
     private void handleServer(Socket socket) throws IOException {
-        InputStream inputStream = socket.getInputStream();
-
-        byte[] message = new byte[MAX_SIZE];
+        byte[] byteMessage = new byte[MAX_SIZE];
         int size;
 
-        while ((size = inputStream.read(message)) != -1) {
-            System.out.println("new message: " + new String(message, 0, size));
+        InputStream inputStream = socket.getInputStream();
+
+        while ((size = inputStream.read(byteMessage)) != -1) {
+            String text = new String(byteMessage, 0, size);
+
+            Gson gson = new Gson();
+            Message message = gson.fromJson(text, Message.class);
+
+            String infoMessage = "Got from " + message.getUsername() + ": " + message.getText();
+            logger.info(infoMessage);
+            System.out.println(infoMessage);
         }
     }
 
     private void handleClient(Socket socket) throws IOException {
-        OutputStream outputStream = socket.getOutputStream();
-
         Scanner scanner = new Scanner(System.in);
-        String message;
-        while (!(message = scanner.nextLine()).equals("exit")) {
-            if (message.isEmpty()) {
+        String text;
+
+        while (!(text = scanner.nextLine()).equals("exit")) {
+            if (text.isEmpty()) {
                 continue;
             }
 
-            if (message.length() > MAX_SIZE) {
+            if (text.length() > MAX_SIZE) {
                 System.out.println("The message is too long. Try one more time.");
 
                 continue;
             }
 
-            outputStream.write(message.getBytes());
+            Message message = new Message(username, text, System.currentTimeMillis());
+            Gson gson = new Gson();
+            String convertedMessage = gson.toJson(message);
+
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(convertedMessage.getBytes());
+
+            logger.info("Sent message " + text);
         }
     }
 

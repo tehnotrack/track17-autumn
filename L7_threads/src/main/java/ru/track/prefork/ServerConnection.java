@@ -2,14 +2,14 @@ package ru.track.prefork;
 
 import java.net.Socket;
 
-public class Connection {
+public class ServerConnection {
     private int id;
     private String host;
     private int port;
     private Socket socket;
     private String clientInfo;
 
-    public Connection(int id, String host, int port, Socket socket) {
+    public ServerConnection(int id, String host, int port, Socket socket) {
         this.id = id;
         this.host = host;
         this.port = port;

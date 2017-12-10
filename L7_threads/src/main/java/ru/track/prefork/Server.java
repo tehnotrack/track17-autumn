@@ -9,7 +9,6 @@ import java.net.Socket;
  */
 public class Server {
     private int port;
-    private int clientId = 0;
 
     public Server(int port) {
         this.port = port;
