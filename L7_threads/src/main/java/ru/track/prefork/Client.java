@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ProtocolException;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -27,12 +28,14 @@ public class Client {
     public void loop() throws IOException {
 
         final Socket socket = new Socket(host, port);
+        final AtomicBoolean closed = new AtomicBoolean(false);
 
         try {
 
             final InputStream in = socket.getInputStream();
             final OutputStream out = socket.getOutputStream();
             Scanner scanner = new Scanner(System.in);
+
 
             Thread scannerThread = new Thread(() -> {
                 try {
@@ -41,7 +44,9 @@ public class Client {
                         String line = scanner.nextLine();
                         if(line.equals("exit"))
                         {
-                            break;
+                            closed.set(true);
+                            IOUtils.closeQuietly(socket);
+                            //break;
                         }
                         Message msg = new Message(System.currentTimeMillis(), line);
                         out.write(protocol.encode(msg));
@@ -51,7 +56,9 @@ public class Client {
                     }
 
                 } catch (IOException e) {
+
                     e.printStackTrace();
+
                 }
                 finally{
                     Thread.currentThread().interrupt();
@@ -84,8 +91,10 @@ public class Client {
             }
 
         } catch (IOException e) {
-
+            if(!closed.get())
+            {
             e.printStackTrace();
+            }
         } finally {
 
             IOUtils.closeQuietly(socket);
@@ -98,8 +107,7 @@ public class Client {
         try {
             client.loop();
         } catch (IOException e) {
-
-            e.printStackTrace();
+                e.printStackTrace();
         }
     }
 
