@@ -29,7 +29,6 @@ public class Client {
         final Socket socket = new Socket(host, port);
 
         try {
-            //socket = new Socket(host, port);
 
             final InputStream in = socket.getInputStream();
             final OutputStream out = socket.getOutputStream();
@@ -38,7 +37,7 @@ public class Client {
             Thread scannerThread = new Thread(() -> {
                 try {
                     while (true) {
-                        
+
                         String line = scanner.nextLine();
                         if(line.equals("exit"))
                         {
@@ -55,7 +54,7 @@ public class Client {
                     e.printStackTrace();
                 }
                 finally{
-
+                    Thread.currentThread().interrupt();
                     IOUtils.closeQuietly(socket);
                 }
 

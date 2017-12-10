@@ -2,7 +2,7 @@ package ru.track.prefork;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
-import java.examples.SimpleExample;
+//import java.examples.SimpleExample;
 import java.sql.Connection;
 import java.util.*;
 import java.net.InetAddress;
@@ -141,9 +141,6 @@ public class Server {
         }
 
         private void handleSocket(Socket socket) throws IOException, ProtocolException {
-            Connection connection = SimpleExample.getConnection();
-            SimpleExecutor exec = new SimpleExecutor();
-
             final InputStream in = socket.getInputStream();
             byte[] buf = new byte[1024];
             while (true) {
