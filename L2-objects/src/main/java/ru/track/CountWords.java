@@ -1,7 +1,6 @@
 package ru.track;
 
 import java.io.File;
-import java.util.Scanner;
 
 
 /**
@@ -41,18 +40,7 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-
-        Scanner in = new Scanner(file);
-        long count = 0 ;
-
-        while(in.hasNextLine())
-        {
-            try {
-                count += Integer.parseInt(in.nextLine());
-            } catch ( Exception e) {}
-        }
-        in.close();
-        return count;
+        return 0;
     }
 
 
@@ -64,32 +52,7 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-            //Этот спец. объект для построения строки
-            StringBuilder sb = new StringBuilder();
-            Scanner in = new Scanner(file);
-
-            String strLine = "";
-            while (in.hasNextLine()){
-                try{
-                    strLine = in.nextLine();
-                    Integer.parseInt(strLine);
-                    continue;
-                }
-                catch(Exception e)
-                {
-                }
-
-                if(strLine.equals("")  || strLine.equals(this.skipWord))
-                    continue;
-                sb.append(strLine);
-                sb.append(" ");
-
-            }
-            in.close();
-            //Возвращаем полученный текст с файла
-
-
-        return sb.toString();
+        return null;
     }
 
 }
