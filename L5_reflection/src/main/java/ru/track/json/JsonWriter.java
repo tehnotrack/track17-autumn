@@ -29,7 +29,7 @@ public class JsonWriter {
                 || clazz.isEnum()
                 ) {
             return String.format("\"%s\"", object);
-            
+
         }
 
         if (object instanceof Boolean || object instanceof Number) {
