@@ -14,7 +14,7 @@ import examples.TExample;
 public class Main {
     public static void main(String[] args) {
        // SimpleExample.connect();
-       ConnectWithStatements.connect();
+        ConnectWithStatements.connect();
 //        PreparedExample.connect();
 //        TExample.connect();
 //        DataSetExample.connect();
