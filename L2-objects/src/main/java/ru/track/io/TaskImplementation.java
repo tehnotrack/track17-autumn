@@ -7,7 +7,6 @@ import ru.track.io.vendor.FileEncoder;
 import ru.track.io.vendor.ReferenceTaskImplementation;
 
 import java.io.*;
-import java.util.Scanner;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -23,10 +22,15 @@ public final class TaskImplementation implements FileEncoder {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
 
         File finFile = new File(finPath);
-        File foutFile = new File(foutPath == null ? "./createdFile.txt" : foutPath);
+        File foutFile;
+            if (foutPath == null) {
+                foutFile = File.createTempFile("taskimp_tmpfile", ".tmp");
+                foutFile.deleteOnExit();
+            } else foutFile = new File(foutPath);
+
 
         try (
-            BufferedInputStream reader = new BufferedInputStream(new FileInputStream(finPath));
+            BufferedInputStream reader = new BufferedInputStream(new FileInputStream(finFile));
             FileWriter writer = new FileWriter(foutFile);
         ) {
             byte[] byteArray = new byte[3];
@@ -62,7 +66,6 @@ public final class TaskImplementation implements FileEncoder {
 
             return foutFile;
         }
-//        throw new UnsupportedOperationException(); // TODO: implement
     }
 
     private static final char[] toBase64 = {
@@ -74,10 +77,8 @@ public final class TaskImplementation implements FileEncoder {
     };
 
     public static void main(String[] args) throws IOException {
-//        final FileEncoder encoder = new ReferenceTaskImplementation();
         final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
-//        String[] argc = {"/Users/alexander/Desktop/Track/Java/gitfolder/track17-autumn/L2-objects/image_256.png","/Users/alexander/Desktop/Track/Java/gitfolder/track17-autumn/L2-objects/image_1112.txt"};
 
         new Bootstrapper(args, encoder).bootstrap(9000);
     }

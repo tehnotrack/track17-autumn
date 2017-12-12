@@ -102,13 +102,5 @@ public final class CountWords {
         concated += " "; // Вероятно это зря, но без этого тест не проходит((
         return concated != null ? concated : "";
     }
-    
-//    public static void main(String[] args) throws Exception{
-//        CountWords cw = new CountWords("");
-//        System.out.println(cw.countNumbers());
-//        System.out.println(cw.concatWords());
-//
-//    }
-    
 }
 
