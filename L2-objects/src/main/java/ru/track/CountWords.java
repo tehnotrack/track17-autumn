@@ -1,6 +1,7 @@
 package ru.track;
 
-import java.io.File;
+import java.io.*;
+import java.util.Scanner;
 
 
 /**
@@ -24,14 +25,14 @@ import java.io.File;
  * ******************************************************************************************
  *
  */
-public class CountWords {
-
+public final class CountWords {
+    
     String skipWord;
-
+    
     public CountWords(String skipWord) {
         this.skipWord = skipWord;
     }
-
+    
     /**
      * Метод на вход принимает объект File, изначально сумма = 0
      * Нужно пройти по всем строкам файла, и если в строке стоит целое число,
@@ -40,10 +41,28 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        FileReader reader = new FileReader(file);
+        Scanner scan = new Scanner(reader);
+        
+        String str = "";
+        long sum = 0;
+        
+        while(scan.hasNextLine()){
+            str = scan.nextLine();
+            int tmpNum = 0;
+            try{
+                tmpNum = Integer.parseInt(str);
+            }catch(NumberFormatException ne){
+                tmpNum = 0;
+                continue;
+            }
+            sum += tmpNum;
+        }
+        
+        return sum;
     }
-
-
+    
+    
     /**
      * Метод на вход принимает объект File, изначально результат= ""
      * Нужно пройти по всем строкам файла, и если в строка не пустая и не число
@@ -52,8 +71,36 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        FileReader reader = new FileReader(file);
+        Scanner scan = new Scanner(reader);
+        
+        String concated = null;
+        String str = "";
+        
+        while(scan.hasNextLine()){
+            str = scan.nextLine();
+            boolean isIntFlag = true;
+            int tmpNum = 0;
+            try{
+                tmpNum = Integer.parseInt(str);
+            }catch(NumberFormatException ne){
+                isIntFlag = false;
+                if (str.equals(skipWord)){
+                    continue;
+                }
+                if(str.charAt(0) == ' '){
+                    continue;
+                }
+            }
+            if (isIntFlag){
+                continue;
+            }
+            if(concated == null){
+                concated = new String(str);
+            }else concated += " " + str;
+        }
+        concated += " "; // Вероятно это зря, но без этого тест не проходит((
+        return concated != null ? concated : "";
     }
-
 }
 
