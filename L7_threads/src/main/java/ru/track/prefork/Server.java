@@ -1,17 +1,25 @@
 package ru.track.prefork;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.track.prefork.exceptions.NoThreadSpecified;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  *
  */
 public class Server {
+    private static Logger logger = LoggerFactory.getLogger("logger");
+
     private int port;
+    private Pool pool = new Pool();
 
     public Server(int port) {
         this.port = port;
@@ -24,7 +32,6 @@ public class Server {
 
         ServerSocket serverSocket = new ServerSocket(port);
         Socket socket;
-        Pool pool = new Pool();
 
         while (true) {
             socket = serverSocket.accept();
@@ -78,7 +85,49 @@ public class Server {
         }
 
         private void list(String[] commandLines) {
-            System.out.println("list command");
+            if (!checkSubCommands(commandLines, "list command does not any arguments", 0)) {
+                return;
+            }
+
+            Set<String> users = pool.getUsers();
+
+            if (users.isEmpty()) {
+                System.out.println("No users connected!");
+            } else {
+                System.out.println("Connected users:");
+            }
+
+            users.forEach(System.out::println);
+        }
+
+        private void drop(String[] commandLines) {
+            if (!checkSubCommands(commandLines, "drop command takes only 1 argument: id to drop the client!", 1)) {
+                return;
+            }
+
+            int id = Integer.parseInt(commandLines[1]);
+
+            try {
+                if (pool.dropClient(id)) {
+                    System.out.println("Dropped client #" + id);
+                } else {
+                    System.out.println("No client with id " + id);
+                }
+            } catch (IOException | NoThreadSpecified e) {
+                logger.error(e.getMessage());
+
+                System.out.println("Could not drop client! Try one more time...");
+            }
+        }
+
+        private boolean checkSubCommands(String[] commandLines, String errorMessage, int count) {
+            if ((count + 1) != commandLines.length) {
+                System.out.println(errorMessage);
+
+                return false;
+            }
+
+            return true;
         }
     }
 

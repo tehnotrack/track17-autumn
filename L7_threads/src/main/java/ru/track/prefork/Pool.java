@@ -5,11 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.track.prefork.database.Database;
 import ru.track.prefork.database.exceptions.InvalidAuthor;
+import ru.track.prefork.exceptions.NoThreadSpecified;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -34,8 +36,25 @@ public class Pool {
 
         InputStream inputStream = socket.getInputStream();
 
-        int messageSize;
-        while ((messageSize = inputStream.read(bytes)) != -1) {
+        while (true) {
+            int messageSize;
+
+            if (!Thread.interrupted()) {
+                try {
+                    messageSize = inputStream.read(bytes);
+                } catch (SocketException e) {
+                    logger.warn(e.getMessage());
+
+                    break;
+                }
+            } else {
+                break;
+            }
+
+            if (messageSize == -1) {
+                break;
+            }
+
             String text = new String(bytes, 0, messageSize);
 
             if (text.equals("exit")) {
@@ -98,6 +117,39 @@ public class Pool {
         });
 
         thread.setName(serverConnection.getClientInfo());
+        thread.setDaemon(true);
         thread.start();
+
+        serverConnection.setThread(thread);
+    }
+
+    public boolean dropClient(int id) throws IOException, NoThreadSpecified {
+        ServerConnection clientConnection = null;
+
+        for (ServerConnection connection : serverConnections) {
+            if (connection.getId() == id) {
+                clientConnection = connection;
+            }
+        }
+
+        if (clientConnection != null) {
+            clientConnection.drop();
+
+            serverConnections.remove(clientConnection);
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public Set<String> getUsers() {
+        Set<String> users = new HashSet<>();
+
+        for (ServerConnection connection : serverConnections) {
+            users.add(connection.getClientInfo());
+        }
+
+        return users;
     }
 }

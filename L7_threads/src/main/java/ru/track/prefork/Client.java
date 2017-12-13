@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
 /**
@@ -101,7 +102,16 @@ public class Client {
             String convertedMessage = gson.toJson(message);
 
             OutputStream outputStream = socket.getOutputStream();
-            outputStream.write(convertedMessage.getBytes());
+
+            try {
+                outputStream.write(convertedMessage.getBytes());
+            } catch (SocketException e) {
+                System.out.println("Connection lost with the server!");
+
+                logger.info("Connection lost");
+
+                break;
+            }
 
             logger.info("Sent message " + text);
         }
