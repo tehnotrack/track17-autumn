@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.track.prefork.database.Database;
-import ru.track.prefork.database.exceptions.InvalidAuthor;
 import ru.track.prefork.exceptions.NoThreadSpecified;
 
 import java.io.IOException;
@@ -12,8 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,6 +23,7 @@ public class Pool {
 
     private AtomicInteger id = new AtomicInteger();
     private Set<ServerConnection> serverConnections = Collections.synchronizedSet(new HashSet<>());
+    private Database database = new Database();
 
     private void serveClient(ServerConnection serverConnection) throws IOException {
         logger.info("connected");
@@ -66,7 +64,7 @@ public class Pool {
 
             logger.info("new message from " + message.getUsername() + ": " + message.getText());
 
-            // saveMessage(message); // TODO: save messages after the server is ready
+            database.store(message);
 
             broadcast(serverConnection, bytes, messageSize);
 
@@ -79,18 +77,6 @@ public class Pool {
         serverConnections.remove(serverConnection);
 
         logger.info("connection lost");
-    }
-
-    private void saveMessage(String message) {
-        String author = "luthor";
-
-        try {
-            Connection connection = Database.getConnection(author);
-
-            Database.save(connection, message, author);
-        } catch (InvalidAuthor | SQLException e) {
-            e.printStackTrace();
-        }
     }
 
     private void broadcast(ServerConnection currentServerConnection, byte[] message, int size) throws IOException {

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class ServerConnection {
-    private int id;
+    private long id;
     private String host;
     private int port;
     private Socket socket;
@@ -30,7 +30,7 @@ public class ServerConnection {
         return socket;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 

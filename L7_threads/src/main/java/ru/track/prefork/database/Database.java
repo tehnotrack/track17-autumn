@@ -4,11 +4,13 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.track.prefork.Message;
 import ru.track.prefork.database.exceptions.InvalidAuthor;
 
 import java.sql.*;
+import java.util.List;
 
-public class Database {
+public class Database implements ConversationService {
     private static final String[] DATABASES = {"tdb-1.trail5.net", "tdb-2.trail5.net", "tdb-3.trail5.net"};
     private static Logger logger = LoggerFactory.getLogger("logger");
 
@@ -36,7 +38,7 @@ public class Database {
                 "password=7EsH.H6x";     // password
     }
 
-    public static Connection getConnectionById(int id) throws SQLException {
+    private static Connection getConnectionById(int id) throws SQLException {
         String url = DATABASES[id + 1];
 
         Connection connection = DriverManager.getConnection(url);
@@ -64,7 +66,7 @@ public class Database {
         return database;
     }
 
-    public static void save(Connection connection, String message, String author) throws SQLException {
+    private static void save(Connection connection, String message, String author) throws SQLException {
         connection.setAutoCommit(false);
 
         String query = "INSERT INTO messages (user_name, text, ts) VALUES (?, ?, ?)";
@@ -81,5 +83,30 @@ public class Database {
         logger.info("Saved into database message: " + message + ", author: " + author);
 
         statement.close();
+    }
+
+    @Override
+    public long store(Message msg) {
+        String author = msg.getUsername();
+
+        try {
+            Connection connection = getConnection(author);
+
+            save(connection, msg.getText(), author);
+        } catch (InvalidAuthor | SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    @Override
+    public List<Message> getHistory(long from, long to, long limit) {
+        return null;
+    }
+
+    @Override
+    public List<Message> getByUser(String username, long limit) {
+        return null;
     }
 }
