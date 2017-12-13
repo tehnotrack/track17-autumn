@@ -101,7 +101,7 @@ public class Server {
         }
 
         private void drop(String[] commandLines) {
-            if (!checkSubCommands(commandLines, "drop command takes only 1 argument: id to drop the client!", 1)) {
+            if (!checkSubCommands(commandLines, "drop command takes only 1 argument: id to drop the client", 1)) {
                 return;
             }
 
@@ -111,7 +111,7 @@ public class Server {
                 if (pool.dropClient(id)) {
                     System.out.println("Dropped client #" + id);
                 } else {
-                    System.out.println("No client with id " + id);
+                    System.out.println("No client with id " + 1);
                 }
             } catch (IOException | NoThreadSpecified e) {
                 logger.error(e.getMessage());
