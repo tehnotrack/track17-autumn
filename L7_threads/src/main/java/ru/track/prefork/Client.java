@@ -27,12 +27,22 @@ public class Client {
         this.port = port;
         this.host = host;
 
-        System.out.print("Enter your username: ");
-
         Scanner scanner = new Scanner(System.in);
-        this.username = scanner.next();
+        String  username;
 
-        // TODO: check if username is unique
+        while (true) {
+            System.out.print("Enter your username: ");
+
+            username = scanner.next();
+
+            if (Character.isLetter(username.charAt(0))) {
+                this.username = username;
+
+                break;
+            } else {
+                System.out.println("Username must start with letter");
+            }
+        }
 
         System.out.println("Thank you! You have logged in...");
     }

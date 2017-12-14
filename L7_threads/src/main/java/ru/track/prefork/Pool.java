@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.track.prefork.database.Database;
+import ru.track.prefork.database.exceptions.InvalidAuthor;
 import ru.track.prefork.exceptions.NoThreadSpecified;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,7 +27,7 @@ public class Pool {
     private Set<ServerConnection> serverConnections = Collections.synchronizedSet(new HashSet<>());
     private Database database = new Database();
 
-    private void serveClient(ServerConnection serverConnection) throws IOException {
+    private void serveClient(ServerConnection serverConnection) throws IOException, SQLException {
         logger.info("connected");
 
         byte[] bytes = new byte[MAX_SIZE];
@@ -64,7 +66,13 @@ public class Pool {
 
             logger.info("new message from " + message.getUsername() + ": " + message.getText());
 
-            database.store(message);
+            try {
+                database.store(message);
+            } catch (InvalidAuthor e) {
+                logger.warn(e.getMessage());
+
+                continue;
+            }
 
             broadcast(serverConnection, bytes, messageSize);
 
@@ -97,7 +105,7 @@ public class Pool {
         Thread thread = new Thread(() -> {
             try {
                 serveClient(serverConnection);
-            } catch (IOException e) {
+            } catch (IOException | SQLException e) {
                 e.printStackTrace();
             }
         });
@@ -127,6 +135,10 @@ public class Pool {
         } else {
             return false;
         }
+    }
+
+    public Database getDatabase() {
+        return database;
     }
 
     public Set<String> getUsers() {

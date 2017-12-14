@@ -1,7 +1,9 @@
 package ru.track.prefork.database;
 
 import ru.track.prefork.Message;
+import ru.track.prefork.database.exceptions.InvalidAuthor;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public interface ConversationService {
@@ -13,7 +15,7 @@ public interface ConversationService {
      * <p>
      * 4 балла
      */
-    long store(Message msg);
+    long store(Message msg) throws SQLException, InvalidAuthor;
 
     /**
      * Получить историю сообщений за период времени. Важно учесть лимит, чтобы не свалить базы слишком большой выборкой.
@@ -26,7 +28,7 @@ public interface ConversationService {
      * <p>
      * 4 балла
      */
-    List<Message> getHistory(long from, long to, long limit);
+    List<Message> getHistory(long from, long to, long limit) throws SQLException;
 
 
     /**
@@ -34,5 +36,5 @@ public interface ConversationService {
      * <p>
      * 4 балла
      */
-    List<Message> getByUser(String username, long limit);
+    List<Message> getByUser(String username, long limit) throws SQLException, InvalidAuthor;
 }
