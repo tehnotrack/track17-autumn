@@ -159,8 +159,8 @@ public class Database implements ConversationService {
         connection.commit();
         
         statement.close();
-        
-    } // TODO: change algorithm
+    
+    }
     
     @Override
     public List<Message> getByUser(String username, long limit) throws SQLException, InvalidAuthor {
