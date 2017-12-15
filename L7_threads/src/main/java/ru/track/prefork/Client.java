@@ -85,6 +85,14 @@ public class Client {
 
             Gson gson = new Gson();
             Message message = gson.fromJson(text, Message.class);
+    
+            if (message.getUsername().equals("exit") && message.getText().equals("exit")) {
+                String msg;
+                System.out.println(msg = "Connection lost with the server!");
+                logger.info(msg);
+        
+                System.exit(0);
+            }
 
             String infoMessage = "Got from " + message.getUsername() + ": " + message.getText();
             logger.info(infoMessage);

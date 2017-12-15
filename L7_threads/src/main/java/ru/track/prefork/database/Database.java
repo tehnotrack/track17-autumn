@@ -9,10 +9,7 @@ import ru.track.prefork.Message;
 import ru.track.prefork.database.exceptions.InvalidAuthor;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Database implements ConversationService {
     private static final String[]                DATABASES   = {"tdb-1.trail5.net", "tdb-2.trail5.net", "tdb-3.trail5.net"};
@@ -117,8 +114,23 @@ public class Database implements ConversationService {
         for (String database : DATABASES) {
             getMessage(database, messages, from, to, limit);
         }
+    
+        messages.sort((Message msg1, Message msg2) -> {
+            long ts1 = msg1.getTimestamp();
+            long ts2 = msg2.getTimestamp();
         
-        return messages;
+            return Long.compare(ts2, ts1);
+        });
+    
+        List<Message> result = new ArrayList<>();
+    
+        for (int i = 0; i < limit; ++i) {
+            result.add(messages.get(i));
+        }
+    
+        Collections.reverse(result);
+    
+        return result;
     }
     
     private void getMessage(String database, List<Message> messages, long from, long to, long limit)
@@ -126,8 +138,8 @@ public class Database implements ConversationService {
         Connection connection = connections.get(database);
         
         connection.setAutoCommit(false);
-        
-        String query = "SELECT * FROM messages WHERE ts > ? AND ts < ? ORDER BY ts ASC LIMIT ?";
+    
+        String query = "SELECT * FROM messages WHERE ts > ? AND ts < ? ORDER BY ts DESC LIMIT ?";
         
         PreparedStatement statement = connection.prepareStatement(query);
         
