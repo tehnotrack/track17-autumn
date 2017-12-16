@@ -124,7 +124,7 @@ public class Database implements ConversationService {
     
         List<Message> result = new ArrayList<>();
     
-        for (int i = 0; i < result.size(); ++i) {
+        for (int i = 0; i < Math.min(limit, messages.size()); ++i) {
             result.add(messages.get(i));
         }
     
