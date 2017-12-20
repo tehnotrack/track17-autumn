@@ -52,14 +52,8 @@ public class AdminConsole {
                     
                     String[] arguments = ArrayUtils.remove(splitCommands, 0);
                     commandMethod.invoke(this, (Object) arguments);
-                } catch (NoSuchMethodException | IllegalAccessException e) {
+                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     System.out.println(e.toString());
-                    
-                    commandFound = false;
-                } catch (InvocationTargetException e) {
-                    logger.error(e.toString() + ": " + e.getMessage());
-                    
-                    e.printStackTrace();
                     
                     commandFound = false;
                 }
