@@ -11,13 +11,13 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 /**
  *
  */
 public class NioClient {
-    static Logger log = LoggerFactory.getLogger(NioClient.class);
+//    static Logger log = LoggerFactory.getLogger(NioClient.class);
 
     private int port;
     private String host;
@@ -67,9 +67,9 @@ public class NioClient {
     private void loop(Selector selector, SocketChannel socketChannel) throws IOException {
         final ByteBuffer buffer = ByteBuffer.allocate(1024);
         while (true) {
-            log.info("on select()");
+//            log.info("on select()");
             selector.select();
-            log.info("select(): " + selector.selectedKeys().size() + " active");
+//            log.info("select(): " + selector.selectedKeys().size() + " active");
 
             Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
             while (keyIterator.hasNext()) {
@@ -77,12 +77,12 @@ public class NioClient {
                 keyIterator.remove();
 
                 if (key.isConnectable()) {
-                    log.info("connect: " + key.channel().toString());
+//                    log.info("connect: " + key.channel().toString());
                     socketChannel.finishConnect();
                     // теперь в канал можно писать
                     key.interestOps(SelectionKey.OP_WRITE);
                 } else if (key.isReadable()) {
-                    log.info("read: " + key.channel().toString());
+//                    log.info("read: " + key.channel().toString());
                     buffer.clear();
                     int numRead = socketChannel.read(buffer);
                     if (numRead < 0) {
@@ -90,7 +90,7 @@ public class NioClient {
                     }
                     System.out.println("From server: " + new String(buffer.array()));
                 } else if (key.isWritable()) {
-                    log.info("write: " + key.channel().toString());
+//                    log.info("write: " + key.channel().toString());
                     String line = queue.poll();
                     if (line != null) {
                         socketChannel.write(ByteBuffer.wrap(line.getBytes()));

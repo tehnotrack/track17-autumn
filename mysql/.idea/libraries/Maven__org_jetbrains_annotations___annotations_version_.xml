@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.jetbrains:annotations:${annotations.version}">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/${annotations.version}/annotations-${annotations.version}.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/${annotations.version}/annotations-${annotations.version}-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/${annotations.version}/annotations-${annotations.version}-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

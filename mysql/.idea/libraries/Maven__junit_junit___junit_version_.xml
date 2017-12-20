@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: junit:junit:${junit.version}">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/junit/junit/${junit.version}/junit-${junit.version}.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/junit/junit/${junit.version}/junit-${junit.version}-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/junit/junit/${junit.version}/junit-${junit.version}-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: ru.odnoklassniki:one-nio:${one-nio.version}">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/ru/odnoklassniki/one-nio/${one-nio.version}/one-nio-${one-nio.version}.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/ru/odnoklassniki/one-nio/${one-nio.version}/one-nio-${one-nio.version}-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/ru/odnoklassniki/one-nio/${one-nio.version}/one-nio-${one-nio.version}-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
