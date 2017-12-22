@@ -22,18 +22,23 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
+            <!--<plugin>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-compiler-plugin</artifactId>-->
+            <!--<configuration>-->
+            <!--<source>1.8</source>-->
+            <!--<target>1.8</target>-->
+            <!--</configuration>-->
+            <!--</plugin>-->
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
+                <configuration>
+                    <webApp>
+                        <defaultsDescriptor>${project.basedir}/src/main/webapp/WEB_INF/web.xml</defaultsDescriptor>
+                    </webApp>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -41,6 +46,7 @@
     <url>http://maven.apache.org</url>
     <properties>
 
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <annotations.version>13.0</annotations.version>
         <junit.version>4.12</junit.version>
         <junit-addons.version>1.4</junit-addons.version>
@@ -48,7 +54,9 @@
         <commons-lang3.version>3.6</commons-lang3.version>
         <one-nio.version>1.0.0</one-nio.version>
         <jetty.version>9.4.0.RC2</jetty.version>
+        <spring.version>4.2.4.RELEASE</spring.version>
         <jackson.version>1.9.13</jackson.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     </properties>
     <dependencies>
@@ -162,6 +170,11 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>4.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.5</version>
         </dependency>
 
     </dependencies>

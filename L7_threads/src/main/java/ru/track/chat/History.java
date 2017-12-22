@@ -26,7 +26,7 @@ public class History extends HttpServlet {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
+    
         request.getRequestDispatcher("/history.jsp").forward(request, response);
     }
 }

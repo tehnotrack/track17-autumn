@@ -13,21 +13,5 @@
     <title>Title</title>
 </head>
 <body>
-
-<h2>${msg}</h2>
-
-<table border="1">
-    <tr>
-        <td>Name:</td>
-        <td>Age:</td>
-    </tr>
-    <c:forEach items="${allUsers}" var="user">
-        <tr>
-            <td>${user.login}</td>
-            <td>${user.pass}</td>
-        </tr>
-    </c:forEach>
-</table>
-
 </body>
 </html>
