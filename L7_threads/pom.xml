@@ -36,7 +36,7 @@
                 <version>${jetty.version}</version>
                 <configuration>
                     <webApp>
-                        <defaultsDescriptor>${project.basedir}/src/main/webapp/WEB_INF/web.xml</defaultsDescriptor>
+                        <defaultsDescriptor>${project.basedir}/src/main/webapp/WEB_INF/web.xm3l</defaultsDescriptor>
                     </webApp>
                 </configuration>
             </plugin>
