@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+        metadata-complete="false"
+        version="3.1">
+
+    <servlet>
+        <servlet-name>send</servlet-name>
+        <servlet-class>ru.track.chat.SendMessage</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>history</servlet-name>
+        <servlet-class>ru.track.chat.History</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>user_history</servlet-name>
+        <servlet-class>ru.track.chat.UserHistory</servlet-class>
+    </servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>send</servlet-name>
+        <url-pattern>/send</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>history</servlet-name>
+        <url-pattern>/history</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>user_history</servlet-name>
+        <url-pattern>/user_history</url-pattern>
+    </servlet-mapping>
+
+</web-app>

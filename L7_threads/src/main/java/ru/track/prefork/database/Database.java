@@ -16,7 +16,13 @@ public class Database implements ConversationService {
     private static       Logger                  logger      = LoggerFactory.getLogger("logger");
     private static       Map<String, Connection> connections = new HashMap<>();
     
-    public Database() {
+    private static Database instance = null;
+    
+    public static Database getInstance() {
+        return instance == null ? new Database() : instance;
+    }
+    
+    private Database() {
         for (String database : DATABASES) {
             Connection connection = getConnectionByDbUrl(database);
             

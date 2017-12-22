@@ -25,7 +25,7 @@ public class Pool {
     
     private AtomicInteger         id                = new AtomicInteger();
     private Set<ServerConnection> serverConnections = Collections.synchronizedSet(new HashSet<>());
-    private Database              database          = new Database();
+    private Database              database          = Database.getInstance();
     
     private void serveClient(ServerConnection serverConnection) throws IOException, SQLException {
         logger.info("connected");
