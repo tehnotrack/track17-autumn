@@ -1,28 +1,22 @@
 package ru.track.prefork;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.ProtocolException;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import ru.track.prefork.protocol.JavaSerializationProtocol;
-import ru.track.prefork.protocol.Message;
-import ru.track.prefork.protocol.Protocol;
-import ru.track.prefork.protocol.ProtocolException;
 
 /**
  *
  */
 public class Client {
-
-    static Logger log = LoggerFactory.getLogger(Client.class);
-
     private int port;
     private String host;
+    static Logger log = LoggerFactory.getLogger(Client.class);
     private Protocol<Message> protocol;
 
     public Client(int port, String host, Protocol<Message> protocol) {
@@ -31,44 +25,90 @@ public class Client {
         this.protocol = protocol;
     }
 
-    public void loop() throws Exception {
-        Socket socket = new Socket(host, port);
+    public void loop() throws IOException {
 
-        final OutputStream out = socket.getOutputStream();
-        final InputStream in = socket.getInputStream();
+        final Socket socket = new Socket(host, port);
+        final AtomicBoolean closed = new AtomicBoolean(false);
 
-        Scanner scanner = new Scanner(System.in);
-        Thread scannerThread = new Thread(() -> {
-            try {
-                while (true) {
-                    String line = scanner.nextLine();
-                    Message msg = new Message(System.currentTimeMillis(), line);
-                    msg.username = "Dima";
-                    out.write(protocol.encode(msg));
-                    out.flush();
+        try {
+
+            final InputStream in = socket.getInputStream();
+            final OutputStream out = socket.getOutputStream();
+            Scanner scanner = new Scanner(System.in);
+
+
+            Thread scannerThread = new Thread(() -> {
+                try {
+                    while (true) {
+
+                        String line = scanner.nextLine();
+                        if(line.equals("exit"))
+                        {
+                            closed.set(true);
+                            IOUtils.closeQuietly(socket);
+                            //break;
+                        }
+                        Message msg = new Message(System.currentTimeMillis(), line);
+                        out.write(protocol.encode(msg));
+                        out.flush();
+
+
+                    }
+
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ProtocolException e) {
-                e.printStackTrace();
-            }
-        });
-        scannerThread.start();
+                finally{
+                    Thread.currentThread().interrupt();
+                    IOUtils.closeQuietly(socket);
+                }
 
-        byte[] buf = new byte[1024];
-        while (true) {
-            int nRead = in.read(buf);
-            if (nRead != -1) {
-                protocol.decode(buf);
-            } else {
-                log.error("Connection failed");
-                return;
+
+
+            });
+            scannerThread.setDaemon(true);
+            scannerThread.start();
+
+
+            byte[] buff = new byte[1024];
+
+            while (!socket.isClosed() && !Thread.interrupted()) {
+
+                int nRead = in.read(buff);
+                if (nRead != -1) {
+
+                    Message msg = protocol.decode(buff);
+
+                    System.out.println(msg.text);
+
+
+                } else {
+                    log.error("Connection failed");
+                    return;
+                }
             }
+
+        } catch (IOException e) {
+            if(!closed.get())
+            {
+            e.printStackTrace();
+            }
+        } finally {
+
+            IOUtils.closeQuietly(socket);
         }
     }
 
+
     public static void main(String[] args) throws Exception {
-        Client client = new Client(9000, "localhost", new JavaSerializationProtocol());
-        client.loop();
+        Client client = new Client(9000, "localhost", new BinaryProtocol<>());
+        try {
+            client.loop();
+        } catch (IOException e) {
+                e.printStackTrace();
+        }
     }
+
 }

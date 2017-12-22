@@ -15,13 +15,31 @@ public class SimpleExample {
 
             url.
                     append("jdbc:mysql://").        //db type
-                    append("tdb-1.trail5.net:").    //host name
+                    append("tdb-2.trail5.net:").            //host name
                     append("3306/").                //port
-                    append("track17?").             //db name
-                    append("user=track_student&").  //login
-                    append("password=7EsH.H6x");    //password
+                    append("track17?").            //db name
+                    append("user=track_student&").            //login
+                    append("password=7EsH.H6x");
+
+           // url.
+                    //append("jdbc:mysql://").        //db type
+                    /*append("tdb-2.trail5.net:").            //host name
+                    append("3306/").                //port
+                    append("track17?").            //db name
+                    append("user=track_student&").            //login
+                    append("password=7EsH.H6x");
+
+            url.
+                    append("jdbc:mysql://").        //db type
+                    append("tdb-3.trail5.net:").            //host name
+                    append("3306/").                //port
+                    append("track17?").            //db name
+                    append("user=track_student&").            //login
+                    append("password=7EsH.H6x");        //password*/
+                                                                                    //password
 
             System.out.append("URL: " + url + "\n");
+
             Connection connection = DriverManager.getConnection(url.toString());
             return connection;
         } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {

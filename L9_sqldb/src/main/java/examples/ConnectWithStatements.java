@@ -1,5 +1,5 @@
 package examples;
-
+import java.sql.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,6 +28,9 @@ public class ConnectWithStatements {
         SimpleExecutor exec = new SimpleExecutor();
         try {
             String uuid = UUID.randomUUID().toString();
+            //String user_name = "liza";
+            //Long ts = System.currentTimeMillis();
+
 
             // 1
 //            String query = "INSERT INTO users (user_name) VALUES ('" + uuid + "')";
@@ -36,15 +39,14 @@ public class ConnectWithStatements {
 //            stmt.close();
 
             //2 INSERT
-            /*
-            INSERT INTO messages (user_name, text, ts) VALUES ('myusername', 'helloworld', now())
-            now() <- System.currentTimeMillis()
 
-             */
-            String insert = "INSERT INTO users(user_name) values(?)";
+            //INSERT INTO messages (user_name, text, ts) VALUES ('myusername', 'helloworld', now())
+           // now() <- System.currentTimeMillis()
+            long time = System.currentTimeMillis();
+            String insert = "INSERT INTO messages (user_name, text, ts) VALUES ('Liza', 'Privet', ?)";
             PreparedStatement preparedStmt = connection.prepareStatement(
                     insert, Statement.RETURN_GENERATED_KEYS);
-            preparedStmt.setString(1, "hello_" + uuid);
+            preparedStmt.setTimestamp(1, new Timestamp(time));
             preparedStmt.execute();
 
 
