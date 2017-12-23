@@ -3,6 +3,8 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,9 +62,17 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
+        StringBuilder sb = new StringBuilder("[");
 
-        return null;
+        for(int i = 0; i < length; i++){
+            sb.append(toJson(Array.get(object, i)));
+            if(i != length - 1){
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+
+        return sb.toString();
     }
 
     /**
@@ -82,9 +92,25 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        HashMap map = (HashMap) object;
+        StringBuilder sb = new StringBuilder("{");
 
-        return null;
+        int i = 0;
+        for(Object ob : map.entrySet()){
+            Map.Entry entry = (Map.Entry) ob;
+            if(entry.getKey() instanceof String) {
+                sb.append(toJson(entry.getKey()) + ":" + toJson(entry.getValue()));
+            }
+            else{
+                sb.append(String.format("\"%s\"", entry.getKey()) + ":" + toJson(entry.getValue()));
+            }
+            if(i++ != map.size() - 1){
+                sb.append(",");
+            }
+        }
+        sb.append("}");
+
+        return sb.toString();
         // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
 //        return formatObject(stringMap);
     }
@@ -108,10 +134,28 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
+        Field[] fields = clazz.getDeclaredFields();
+        LinkedHashMap<Object, Object> map = new LinkedHashMap<>();
+        boolean writeNullField = clazz.getAnnotation(JsonNullable.class) != null;
 
+        for(Field field : fields){
+            try {
+                field.setAccessible(true);
+                if(field.get(object) != null || writeNullField) {
+                    SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+                    if(serializedTo == null) {
+                        map.put(field.getName(), field.get(object));
+                    }
+                    else{
+                        map.put(serializedTo.value(), field.get(object));
+                    }
+                }
+            } catch (IllegalAccessException e){
+                System.out.println(e.getMessage());
+            }
+        }
 
-        return null;
+        return toJsonMap(map);
     }
 
     /**
