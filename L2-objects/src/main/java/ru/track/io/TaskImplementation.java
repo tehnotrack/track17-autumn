@@ -2,12 +2,13 @@ package ru.track.io;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+//import com.sun.istack.internal.NotNull;
+//import com.sun.istack.internal.Nullable;
 import ru.track.io.vendor.Bootstrapper;
 import ru.track.io.vendor.FileEncoder;
-import ru.track.io.vendor.ReferenceTaskImplementation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
 
@@ -17,11 +18,111 @@ public final class TaskImplementation implements FileEncoder {
      * @return file to read encoded data from
      * @throws IOException is case of input/output errors
      */
+
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
-        /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        throw new UnsupportedOperationException(); // TODO: implement
+        final int bufferSize = 3;
+        File fileOut;
+        if (foutPath == null) {
+            fileOut = File.createTempFile("base64", ".txt");
+            fileOut.deleteOnExit();
+        } else {
+            fileOut = new File(foutPath);
+        }
+        FileWriter writer = new FileWriter(fileOut);
+        File file = new File(finPath);
+        InputStream in = new FileInputStream(file);
+        BufferedInputStream bis;
+
+        byte[] buffer = new byte[bufferSize];
+
+        int a;
+        int b = 0;
+        int bytesRead = 0;
+        int counter = 0;
+        try {
+            bis = new BufferedInputStream(in);
+            while ((bytesRead = bis.read(buffer))>=0){
+                for (int i = 0; i < bytesRead; i++) {
+                    if (i == 0) {
+                        a = buffer[i];
+                        a = a & 0xFF;
+                        a >>>= 2;
+                        writer.write(toBase64[a + b]);
+                        b = buffer[i] & 3;
+                        b <<= 4;
+                    } else if (i == 1) {
+                        a = buffer[i];
+                        a = a & 0xFF;
+                        a >>>= 4;
+                        writer.write(toBase64[a + b]);
+                        b = buffer[i] & 0x0F;
+                        b <<= 2;
+                    } else {
+                        a = buffer[i];
+                        a = a & 0xFF;
+                        a >>>= 6;
+                        writer.write(toBase64[a + b]);
+                        b = buffer[i] & 63;
+                        writer.write(toBase64[b]);
+                        b = 0;
+                    }
+                    counter = bytesRead;
+                }
+            }
+            if (counter % 3 == 2) {
+                writer.write(toBase64[b]);
+                writer.write("=");
+            } else if (counter % 3 == 1) {
+                writer.write(toBase64[b]);
+                writer.write("==");
+            }
+            bis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                writer.flush();
+                writer.close();
+                in.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+//        while ((bytesRead = in.read(buffer)) >= 0) {
+//            for (int i = 0; i < bytesRead; i++) {
+//                if (i == 0) {
+//                    a = buffer[i];
+//                    a = a & 0xFF;
+//                    a >>>= 2;
+//                    writer.write(toBase64[a + b]);
+//                    b = buffer[i] & 3;
+//                    b <<= 4;
+//                } else if (i == 1) {
+//                    a = buffer[i];
+//                    a = a & 0xFF;
+//                    a >>>= 4;
+//                    writer.write(toBase64[a + b]);
+//                    b = buffer[i] & 0x0F;
+//                    b <<= 2;
+//                } else {
+//                    a = buffer[i];
+//                    a = a & 0xFF;
+//                    a >>>= 6;
+//                    writer.write(toBase64[a + b]);
+//                    b = buffer[i] & 63;
+//                    writer.write(toBase64[b]);
+//                    b = 0;
+//                }
+//                counter = bytesRead;
+//            }
+//        }
+
+
+
+        return fileOut;
     }
+
 
     private static final char[] toBase64 = {
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -31,10 +132,17 @@ public final class TaskImplementation implements FileEncoder {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
+    private static @NotNull
+    File createTempFile() throws IOException {
+        final File f = File.createTempFile("test_tempfile_", ".tmp");
+        f.deleteOnExit();
+        return f;
+    }
+
+
     public static void main(String[] args) throws IOException {
-        final FileEncoder encoder = new ReferenceTaskImplementation();
+        final FileEncoder encoder = new TaskImplementation();
         // NOTE: open http://localhost:9000/ in your web browser
         new Bootstrapper(args, encoder).bootstrap(9000);
     }
-
 }
