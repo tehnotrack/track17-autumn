@@ -8,7 +8,10 @@ import java.io.IOException;
 
 public class SendMessage extends HttpServlet {
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doPost(req, resp);
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.getParameterMap().forEach((key, value) -> {
+            System.out.println(key + ": " + value[0]);
+        });
     }
 }
