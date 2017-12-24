@@ -74,7 +74,7 @@ public final class TaskImplementation implements FileEncoder {
             }
             if (i > 0)
                 out.write(translateBytes(arr, i));
-        } catch (IOException e) {}
+        }
 
         return outFile;
     }
