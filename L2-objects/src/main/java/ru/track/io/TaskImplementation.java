@@ -9,8 +9,8 @@ import ru.track.io.vendor.ReferenceTaskImplementation;
 import java.io.*;
 
 public final class TaskImplementation implements FileEncoder {
-
-    public static byte[] _3to4(byte in[], int size) {
+    //encode 3-element 8-bit array with base64 algorithm to 6-bit 4-element array
+    public static byte[] translateBytes(byte in[], int size) {
         //6-bit symbols array
         byte result[] = new byte[4];
 
@@ -20,13 +20,13 @@ public final class TaskImplementation implements FileEncoder {
             result[2] = (byte) '=';
             result[3] = (byte) '=';
         }
-        if (size >= 2) {
+        else if (size == 2) {
             result[0] = (byte) toBase64[(in[0] & 0xFC) >> 2];
             result[1] = (byte) toBase64[((in[0] & 0x03) << 4) | ((in[1] & 0xF0) >> 4)];
             result[2] = (byte) toBase64[((in[2] & 0xC0) >> 6) | ((in[1] & 0x0F) << 2)];
             result[3] = (byte) '=';
         }
-        if (size == 3) {
+        else if (size == 3) {
             result[0] = (byte) toBase64[(in[0] & 0xFC) >> 2];
             result[1] = (byte) toBase64[((in[0] & 0x03) << 4) | ((in[1] & 0xF0) >> 4)];
             result[2] = (byte) toBase64[((in[2] & 0xC0) >> 6) | ((in[1] & 0x0F) << 2)];
@@ -44,21 +44,19 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-        FileInputStream in = null;
-        OutputStream out = null;
-        File outFile;
 
-        try {
-            in = new FileInputStream(finPath);
-
-            if (foutPath != null) {
-                outFile = new File(foutPath);
-            } else {
-                outFile = File.createTempFile("based_file_", ".txt");
-                outFile.deleteOnExit();
-            }
-            out = new FileOutputStream(outFile);
-
+        String fileName;
+        if (foutPath != null) {
+            fileName = foutPath;
+        } else {
+            fileName = "based_file_" + ".txt";
+        }
+        File outFile = new File(fileName);
+        outFile.deleteOnExit();
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(finPath));
+             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(outFile));
+        )
+        {
             int c, i=0;
             byte arr[] = new byte[3];
 
@@ -67,7 +65,7 @@ public final class TaskImplementation implements FileEncoder {
 
                 i++;
                 if (i > 2) { //перекодировать байты в выходной массив
-                    out.write(_3to4(arr, i));
+                    out.write(translateBytes(arr, i));
                     i=0;
                     arr[0]=0;
                     arr[1]=0;
@@ -75,15 +73,9 @@ public final class TaskImplementation implements FileEncoder {
                 }
             }
             if (i > 0)
-                out.write(_3to4(arr, i));
-        } finally {
-            if (in != null) {
-                in.close();
-            }
-            if (out != null) {
-                out.close();
-            }
-        }
+                out.write(translateBytes(arr, i));
+        } catch (IOException e) {}
+
         return outFile;
     }
 
