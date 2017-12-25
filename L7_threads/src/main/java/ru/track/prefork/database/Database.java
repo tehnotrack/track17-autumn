@@ -41,8 +41,8 @@ public class Database implements ConversationService {
     @NotNull
     @Contract(pure = true)
     private static String getConnectionUrl(String databaseUrl) {
-        
-        return "jdbc:mysql://" +         //db type
+    
+        return "jdbc:mysql://" +        //db type
                databaseUrl + ":" +      //host name
                "3306/" +                //port
                "track17?" +             //db name

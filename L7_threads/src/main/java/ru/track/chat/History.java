@@ -29,9 +29,11 @@ public class History extends HttpServlet {
         long toDefault    = System.currentTimeMillis();
         long limitDefault = 10;
     
-        long from  = Parameters.getParameter(parameters.get("from"), fromDefault, new LongConverter());
-        long to    = Parameters.getParameter(parameters.get("to"), toDefault, new LongConverter());
-        long limit = Parameters.getParameter(parameters.get("limit"), limitDefault, new LongConverter());
+        LongConverter longConverter = new LongConverter();
+    
+        long from  = Parameters.getParameter(parameters.get("from"), fromDefault, longConverter);
+        long to    = Parameters.getParameter(parameters.get("to"), toDefault, longConverter);
+        long limit = Parameters.getParameter(parameters.get("limit"), limitDefault, longConverter);
     
         List<Message> messages = null;
         try {
