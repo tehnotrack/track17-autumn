@@ -23,7 +23,7 @@ public class CheckNewMessages extends HttpServlet {
         List<Message> messages = null;
         
         try {
-            messages = database.getHistory(currentTime - 5 * 1000, currentTime, 10);
+            messages = database.getHistory(currentTime - 2 * 1000, currentTime, 10);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -33,7 +33,5 @@ public class CheckNewMessages extends HttpServlet {
         SendInfo sendInfo = new SendInfo();
         
         sendInfo.sendMessage(errors, messages, response);
-        
-        System.out.println("sent to client");
     }
 }

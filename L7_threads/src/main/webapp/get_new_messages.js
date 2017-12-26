@@ -6,11 +6,10 @@ function getNewMessages() {
             async: true
         }
     ).done(function (data, status, response) {
-        console.log("server replied");
-        printNewMessages(data);
+        handleData(data);
     });
 }
 
 $(document).ready(function () {
-    setInterval(getNewMessages, 5000);
+    setInterval(getNewMessages, 2000);
 });

@@ -1,8 +1,16 @@
-function printNewMessages(data) {
+function handleData(data) { // TODO: add error handling
+    printMessages(data.messages)
+}
+
+function printMessages(messages, printPending) {
+    if (printPending === undefined) {
+        printPending = false;
+    }
+
     var table = document.getElementById('table');
 
-    for (var i = 0; i < data.messages.length; ++i) {
-        var message = data.messages[i];
+    for (var i = 0; i < messages.length; ++i) {
+        var message = messages[i];
 
         table.rows[1].remove();
 
@@ -24,6 +32,16 @@ function printNewMessages(data) {
 
         tr.appendChild(username_td);
         tr.appendChild(text_td);
-        tr.appendChild(timestamp_td);
+
+        if (printPending) {
+            var pendingMessage = document.createElement('td');
+            pendingMessage.innerHTML = 'Sending...';
+
+            tr.setAttribute('class', 'pending');
+
+            tr.appendChild(pendingMessage);
+        } else {
+            tr.appendChild(timestamp_td);
+        }
     }
 }
