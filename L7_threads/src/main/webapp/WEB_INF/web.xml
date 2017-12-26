@@ -21,6 +21,11 @@
         <servlet-class>ru.track.chat.UserHistory</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>check_new_messages</servlet-name>
+        <servlet-class>ru.track.chat.CheckNewMessages</servlet-class>
+    </servlet>
+
 
     <servlet-mapping>
         <servlet-name>send</servlet-name>
@@ -35,6 +40,11 @@
     <servlet-mapping>
         <servlet-name>user_history</servlet-name>
         <url-pattern>/user_history</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>check_new_messages</servlet-name>
+        <url-pattern>/check_new_messages</url-pattern>
     </servlet-mapping>
 
 </web-app>

@@ -7,6 +7,8 @@
 
     <script type="text/javascript" src="jquery.js"></script>
     <script type="text/javascript" src="send_message.js"></script>
+    <script type="text/javascript" src="get_new_messages.js"></script>
+    <script type="text/javascript" src="print_new_messages.js"></script>
 
 </head>
 <body>
