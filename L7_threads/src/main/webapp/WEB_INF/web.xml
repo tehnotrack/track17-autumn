@@ -12,13 +12,8 @@
     </servlet>
 
     <servlet>
-        <servlet-name>history</servlet-name>
-        <servlet-class>ru.track.chat.History</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>user_history</servlet-name>
-        <servlet-class>ru.track.chat.UserHistory</servlet-class>
+        <servlet-name>chat</servlet-name>
+        <servlet-class>ru.track.chat.Chat</servlet-class>
     </servlet>
 
     <servlet>
@@ -33,13 +28,8 @@
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>history</servlet-name>
+        <servlet-name>chat</servlet-name>
         <url-pattern>/history</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>user_history</servlet-name>
-        <url-pattern>/user_history</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

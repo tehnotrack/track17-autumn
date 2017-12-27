@@ -11,7 +11,11 @@ function print(data) {
             message.remove();
         }, 1000);
 
-        message.lastChild.innerHTML = 'Successfully sent!';
+        if (data.errors.length === 0) {
+            message.lastChild.innerHTML = 'Successfully sent!';
+        } else {
+            printErrors(data);
+        }
     });
 }
 

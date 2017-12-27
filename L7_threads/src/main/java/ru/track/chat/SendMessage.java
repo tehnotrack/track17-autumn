@@ -5,11 +5,13 @@ import ru.track.chat.parameters.Parameters;
 import ru.track.chat.utils.SendInfo;
 import ru.track.prefork.Message;
 import ru.track.prefork.database.Database;
+import ru.track.prefork.database.exceptions.InvalidAuthor;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -42,13 +44,13 @@ public class SendMessage extends HttpServlet {
     
         try {
             database.store(message);
-        } catch (Exception e) {
-            e.printStackTrace(); // TODO: improve this
+        } catch (SQLException | InvalidAuthor e) {
+            errors.add(e.getMessage());
         }
     
         messages.add(message);
     
-        sendInfo.sendMessage(errors, messages, response); // TODO: exception here, improve it
+        sendInfo.sendMessage(errors, messages, response);
     }
     
 }

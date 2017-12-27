@@ -6,6 +6,7 @@ import ru.track.chat.parameters.Convertible;
 import ru.track.chat.parameters.Parameters;
 import ru.track.prefork.Message;
 import ru.track.prefork.database.Database;
+import ru.track.prefork.database.exceptions.InvalidAuthor;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -13,10 +14,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class History extends HttpServlet {
+public class Chat extends HttpServlet {
     private static Logger logger = LoggerFactory.getLogger("logger");
     
     @Override
@@ -34,16 +36,29 @@ public class History extends HttpServlet {
         long from  = Parameters.getParameter(parameters.get("from"), fromDefault, longConverter);
         long to    = Parameters.getParameter(parameters.get("to"), toDefault, longConverter);
         long limit = Parameters.getParameter(parameters.get("limit"), limitDefault, longConverter);
-    
+        String user = Parameters.getParameter(parameters.get("user"), "", new Convertible<String>() {
+        });
+        
         List<Message> messages = null;
+        List<String>  errors   = new LinkedList<>();
+        
         try {
-            messages = database.getHistory(from, to, limit);
+            if (user.isEmpty()) {
+                messages = database.getHistory(from, to, limit);
+            } else {
+                messages = database.getByUser(user, limit);
+            }
         } catch (SQLException e) {
             logger.error(e.getMessage());
+    
+            errors.add(e.getMessage());
+        } catch (InvalidAuthor e) {
+            errors.add(e.getMessage());
         }
     
+        request.setAttribute("errors", errors);
         request.setAttribute("messages", messages);
-        request.getRequestDispatcher("/history.jsp").forward(request, response);
+        request.getRequestDispatcher("/chat.jsp").forward(request, response);
     }
     
     private static class LongConverter implements Convertible<Long> {

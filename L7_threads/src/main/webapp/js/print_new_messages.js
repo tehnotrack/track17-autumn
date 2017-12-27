@@ -1,5 +1,13 @@
-function handleData(data) { // TODO: add error handling
-    printMessages(data.messages)
+function printErrors(data) {
+    for (var i = 0; i < data.errors.length; ++i) {
+        $('#errors').html(data.errors[i]);
+    }
+}
+
+function handleData(data) {
+    printErrors(data);
+
+    printMessages(data.messages);
 }
 
 function printMessages(messages, printPending) {
