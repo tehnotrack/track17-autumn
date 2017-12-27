@@ -44,16 +44,16 @@ public final class TaskImplementation implements FileEncoder {
     @NotNull
     public File encodeFile(@NotNull String finPath, @Nullable String foutPath) throws IOException {
         /* XXX: https://docs.oracle.com/javase/8/docs/api/java/io/File.html#deleteOnExit-- */
-
-        String fileName;
-        if (foutPath != null) {
-            fileName = foutPath;
-        } else {
-            fileName = "based_file_" + ".txt";
+        File inFile = new File(finPath);
+        File outFile;
+            
+        if (foutPath != null)
+            outFile = new File(foutPath);
+        else {
+            outFile = File.createTempFile("based_file_" , ".txt");
+            outFile.deleteOnExit();
         }
-        File outFile = new File(fileName);
-        outFile.deleteOnExit();
-        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(finPath));
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(inFile));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(outFile));
         )
         {
