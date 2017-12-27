@@ -10,7 +10,9 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ public class Server {
     private Protocol<Message> protocol;
 
     private ConcurrentMap<Long, Worker> workerMap;
+    private SynchronousQueue<Socket> socketQueue;
 
     private Server(int port, Protocol<Message> protocol) {
         this.port = port;
@@ -77,47 +80,66 @@ public class Server {
         });
         adminThread.setName("AdminThread");
         adminThread.start();
+        socketQueue = new SynchronousQueue<Socket>();
+        for (int i = 0; i < 4; i++) {
+//            final long workerId = serverCounter.getAndIncrement();
+            Worker worker = new Worker(socketQueue, protocol);
+            workerMap.put(new Long(i), worker);
+            worker.start();
+        }
 
         while (!serverSocket.isClosed()) {
             final Socket socket = serverSocket.accept();
-            final long workerId = serverCounter.getAndIncrement();
-            Worker worker = new Worker(socket, protocol, workerId);
-            workerMap.put(workerId, worker);
-            worker.start();
+            socketQueue.put(socket);
+//            final long socketId = serverCounter.getAndIncrement();
+//            Worker worker = new Worker(socketQueue, protocol);
+//            workerMap.put(workerId, worker);
+//            worker.start();
         }
     }
 
     class Worker extends Thread {
 
         @NotNull
-        final OutputStream out;
+        OutputStream out;
         @NotNull
-        final InputStream in;
+        InputStream in;
         @NotNull
         Socket socket;
         @NotNull
         Protocol<Message> protocol;
+        SynchronousQueue<Socket> socketQueue;
         private long id;
 
-        Worker(@NotNull Socket socket, @NotNull Protocol<Message> protocol, long id)
-            throws IOException {
-            this.socket = socket;
+        Worker(SynchronousQueue<Socket> socketQueue, @NotNull Protocol<Message> protocol)
+            throws IOException, InterruptedException {
+            this.socketQueue = socketQueue;
             this.protocol = protocol;
-            this.id = id;
-            setName(
-                String.format("Client[%d]@%s:%d", id, socket.getInetAddress(), socket.getPort()));
-
-            out = socket.getOutputStream();
-            in = socket.getInputStream();
         }
 
         @Override
         public void run() {
-            try {
-                log.info("Connected");
-                handleSocket(socket);
-            } catch (Exception e) {
-                workerMap.remove(id);
+            while(true) {
+                try {
+                    this.socket = socketQueue.take();
+
+                    this.id = serverCounter.getAndIncrement();
+                    setName(
+                        String
+                            .format("Client[%d]@%s:%d", id, socket.getInetAddress(),
+                                socket.getPort()));
+
+                    out = socket.getOutputStream();
+                    in = socket.getInputStream();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    log.info("Connected");
+                    handleSocket(socket);
+                } catch (Exception e) {
+//                    workerMap.remove(id);
+                }
             }
         }
 
@@ -169,12 +191,12 @@ public class Server {
                 e.printStackTrace();
             } finally {
                 try {
-                    in.close();
-                    out.close();
-                    socket.close();
-                    workerMap.remove(id);
+//                    in.close();
+//                    out.close();
+                    IOUtils.closeQuietly(socket);
+//                    workerMap.remove(id);
                     log.info("Dropped");
-                } catch (IOException e) {
+                } catch (Exception e) {
                     log.error("Can't drop client. " + e);
                 }
             }

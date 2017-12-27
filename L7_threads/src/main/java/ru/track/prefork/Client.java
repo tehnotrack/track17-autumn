@@ -3,7 +3,9 @@ package ru.track.prefork;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +19,6 @@ import ru.track.prefork.protocol.ProtocolException;
 public class Client {
 
     private Logger log = LoggerFactory.getLogger(Client.class);
-
     private int port;
     private String host;
     private Protocol<Message> protocol;
@@ -36,6 +37,7 @@ public class Client {
     private void loop() throws IOException {
         int count = 0;
         final int maxTries = 10;
+        int timeout = 1;
         Socket tryToConnectSocket;
         while (true) {
             try {
@@ -46,9 +48,10 @@ public class Client {
                     log.error("Can't connect, exiting ");
                     return;
                 }
-                log.info("Can't connect, try again in 2 sec ");
+                log.info(String.format("Can't connect, next try in %d sec ", timeout));
                 try {
-                    TimeUnit.SECONDS.sleep(2);
+                    TimeUnit.SECONDS.sleep(timeout);
+                    timeout *= 2;
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
@@ -102,11 +105,11 @@ public class Client {
             } finally {
                 scannerThread.interrupt();
             }
+        } catch (SocketTimeoutException e) {
+
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            socket.close();
-            log.info("Connection dropped, exiting...");
         }
     }
+
 }
