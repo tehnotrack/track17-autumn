@@ -22,6 +22,39 @@
         <url-pattern>/rest/*</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>send</servlet-name>
+        <servlet-class>track.servlet.container.SendToBase</servlet-class>
+    </servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>send</servlet-name>
+        <url-pattern>/send/*</url-pattern>
+  </servlet-mapping>
+
+    <servlet>
+        <servlet-name>history</servlet-name>
+        <servlet-class>track.servlet.container.History</servlet-class>
+    </servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>history</servlet-name>
+        <url-pattern>/history/*</url-pattern>
+  </servlet-mapping>
+
+    <servlet>
+        <servlet-name>user_history</servlet-name>
+        <servlet-class>track.servlet.container.UserHistory</servlet-class>
+    </servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>user_history</servlet-name>
+        <url-pattern>/user_history/*</url-pattern>
+  </servlet-mapping>
+
     <servlet-mapping>
         <servlet-name>users</servlet-name>
         <url-pattern>/users/*</url-pattern>
