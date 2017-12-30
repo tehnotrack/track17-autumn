@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.Time;
+import java.util.Date;
 import java.util.Scanner;
 
 
@@ -16,6 +18,7 @@ public class Client {
     static Logger log = LoggerFactory.getLogger(Client.class);
     private int port;
     private String host;
+    private String username;
 
     public Client(int port, String host) {
         this.port = port;
@@ -49,13 +52,22 @@ public class Client {
 
     private void send(ObjectOutputStream os, Socket sock) {
         try (Scanner in = new Scanner(System.in)) {
+            while(true) {
+                System.out.print("Enter username: ");
+                username = in.nextLine();
+                char c = username.charAt(0);
+                if(Character.isLetter(c))
+                    break;
+                else
+                    System.out.println("Invalid username");
+            }
             String str;
             Message msg;
             while (true) {
                 str = in.nextLine();
                 if (str.equals("exit")) break;
                 else if (str.length() > 0) {
-                    msg = new Message(System.currentTimeMillis(), str);
+                    msg = new Message(System.currentTimeMillis(), str, username);
                     os.writeObject(msg);
                     os.flush();
                 }

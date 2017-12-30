@@ -1,9 +1,5 @@
 package ru.track.server;
 
-import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,7 +11,13 @@ import java.security.Signature;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.track.server.SignatureUtils.*;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import static ru.track.server.SignatureUtils.forSigning;
+import static ru.track.server.SignatureUtils.sign;
+import static ru.track.server.SignatureUtils.update;
 
 public class SignatureServer {
 
@@ -70,7 +72,7 @@ public class SignatureServer {
             ssock = ssockFinal;
             //noinspection InfiniteLoopStatement
             while (true) {
-                handle(ssockFinal);
+                pool.execute(() -> handle(ssockFinal));
             }
         } finally {
             IOUtils.closeQuietly(ssock);
@@ -78,7 +80,8 @@ public class SignatureServer {
     }
 
     public static void main(String[] args) throws Exception {
-        final SignatureServer server = new SignatureServer(8100, 10, null, null);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        final SignatureServer server = new SignatureServer(8100, 10, null, pool);
         server.serve();
     }
 

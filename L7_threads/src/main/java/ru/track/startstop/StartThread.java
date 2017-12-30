@@ -22,8 +22,8 @@ public class StartThread {
     }
 
     public static void main(String[] args) throws Exception {
-        inParallel();
-//        join();
+//        inParallel();
+        join();
 
     }
 
@@ -31,12 +31,7 @@ public class StartThread {
     Код исполнется в потоке main и в кастомном потоке в параллель
      */
     private static void inParallel() {
-        Thread t1 = new Thread() {
-            @Override
-            public void run() {
-                doWork();
-            }
-        };
+        Thread t1 = new Thread(() -> doWork());
         t1.setName("T1");
         t1.start();
 
@@ -58,7 +53,7 @@ public class StartThread {
         System.out.println("Starting thread...");
         t1.start();
         System.out.println("Joining...");
-        t1.join();
+        //t1.join(); //
         System.out.println("Joined");
     }
 

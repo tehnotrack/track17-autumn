@@ -12,7 +12,7 @@ public class Lambda {
      */
     @FunctionalInterface
     interface Listener {
-        void onAction();
+        void onAction(String cmd);
     }
 
     /*
@@ -20,7 +20,7 @@ public class Lambda {
      */
     static class MyListener implements Listener {
         @Override
-        public void onAction() {
+        public void onAction(String cmd) {
             System.out.println("MyListener!");
         }
     }
@@ -31,13 +31,13 @@ public class Lambda {
 
         button.addListener(new Listener() {
             @Override
-            public void onAction() {
+            public void onAction(String cmd) {
                 System.out.println("Anonym!");
             }
         });
-        button.addListener(() -> {
-            System.out.println("Lambda!");
-        });
+
+
+        button.addListener((cmd) -> System.out.println("Lambda!"));
 
         button.press();
 

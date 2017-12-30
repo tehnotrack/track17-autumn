@@ -8,6 +8,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,11 +25,18 @@ public class Server {
     private int port;
     private AtomicLong counter;
     private ConcurrentMap<Long, Worker> workersMap;
+    private MessageStorage msgDb;
 
-    public Server(int port) {
-        this.port = port;
-        counter = new AtomicLong(0);
-        workersMap = new ConcurrentHashMap<>();
+    public Server(int port){
+            this.port = port;
+            counter = new AtomicLong(0);
+            workersMap = new ConcurrentHashMap<>();
+            try {
+                msgDb = new MessageStorage();
+            } catch(Exception e) {
+                log.error("Connection to database failed");
+                logexception(e);
+            }
     }
 
     private void logexception(Exception e){
@@ -122,7 +131,52 @@ public class Server {
                     try {
                         final Message msg = (Message) is.readObject();
                         log.info("msg: " + msg.getData());
-                        workersMap.forEach((id, worker) -> worker.send(this.id, msg));
+                        if (msg.getData().startsWith("history ")) {
+                            String[] cmd = msg.getData().split(" ");
+                            Long limit = null;
+                            if (cmd.length == 3) {
+                                try {
+                                    limit = Long.parseLong(cmd[2]);
+                                } catch (NumberFormatException e) {
+                                    send(-1L, new Message(System.currentTimeMillis(), "Invalid arguments", ""));
+                                }
+                                try {
+                                    List<Message> history = msgDb.getByUser(cmd[1], limit);
+                                    for (Message msgHist : history)
+                                        send(-1L, msgHist);
+                                } catch (SQLException e) {
+                                    log.error("Access to database failed");
+                                    logexception(e);
+                                }
+                            } else if (cmd.length == 4) {
+                                Long from = null;
+                                Long to = null;
+                                try {
+                                    from = Long.parseLong(cmd[1]);
+                                    to = Long.parseLong(cmd[2]);
+                                    limit = Long.parseLong(cmd[3]);
+                                } catch (NumberFormatException e) {
+                                    send(-1L, new Message(System.currentTimeMillis(), "Invalid arguments", ""));
+                                }
+                                try {
+                                    List<Message> history = msgDb.getHistory(0, System.currentTimeMillis(), 50);
+                                    for (Message msgHist : history)
+                                        send(-1L, msgHist);
+                                } catch (SQLException e) {
+                                    log.error("Access to database failed");
+                                    logexception(e);
+                                }
+                            } else
+                                send(-1L, new Message(System.currentTimeMillis(), "Invalid arguments", ""));
+                        } else {
+                            try {
+                                msgDb.store(msg);
+                            } catch (Exception e) {
+                                log.error("Writing message to database failed");
+                                logexception(e);
+                            }
+                            workersMap.forEach((id, worker) -> worker.send(this.id, msg));
+                        }
                     } catch (ClassNotFoundException e) {
                         log.error("Decoding failed");
                         logexception(e);
