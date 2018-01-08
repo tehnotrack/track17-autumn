@@ -2,8 +2,9 @@ package ru.track.chat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.track.chat.parameters.Convertible;
+import ru.track.chat.parameters.Converter;
 import ru.track.chat.parameters.Parameters;
+import ru.track.chat.parameters.StringConverter;
 import ru.track.prefork.Message;
 import ru.track.prefork.database.Database;
 import ru.track.prefork.database.exceptions.InvalidAuthor;
@@ -20,27 +21,26 @@ import java.util.Map;
 
 public class Chat extends HttpServlet {
     private static Logger logger = LoggerFactory.getLogger("logger");
+    private Database database = Database.getInstance();
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        Database              database   = Database.getInstance();
         Map<String, String[]> parameters = request.getParameterMap();
     
-        long fromDefault  = System.currentTimeMillis() - 60 * 60 * 24 * 7 * 1000;
-        long toDefault    = System.currentTimeMillis();
+        long fromDefault = System.currentTimeMillis() - 60 * 60 * 24 * 7 * 1000;
+        long toDefault = System.currentTimeMillis();
         long limitDefault = 10;
     
         LongConverter longConverter = new LongConverter();
     
-        long from  = Parameters.getParameter(parameters.get("from"), fromDefault, longConverter);
-        long to    = Parameters.getParameter(parameters.get("to"), toDefault, longConverter);
+        long from = Parameters.getParameter(parameters.get("from"), fromDefault, longConverter);
+        long to = Parameters.getParameter(parameters.get("to"), toDefault, longConverter);
         long limit = Parameters.getParameter(parameters.get("limit"), limitDefault, longConverter);
-        String user = Parameters.getParameter(parameters.get("user"), "", new Convertible<String>() {
-        });
+        String user = Parameters.getParameter(parameters.get("user"), "", new StringConverter());
         
         List<Message> messages = null;
-        List<String>  errors   = new LinkedList<>();
+        List<String> errors = new LinkedList<>();
         
         try {
             if (user.isEmpty()) {
@@ -61,7 +61,7 @@ public class Chat extends HttpServlet {
         request.getRequestDispatcher("/chat.jsp").forward(request, response);
     }
     
-    private static class LongConverter implements Convertible<Long> {
+    private static class LongConverter implements Converter<Long> {
         @Override
         public Long convert(String value, Long defaultValue) {
             try {

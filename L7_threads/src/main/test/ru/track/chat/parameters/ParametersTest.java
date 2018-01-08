@@ -29,7 +29,7 @@ public class ParametersTest {
         Assert.assertEquals(str3, "124j");
     }
     
-    static class LongConverter implements Convertible<Long> {
+    static class LongConverter implements Converter<Long> {
         @Override
         public Long convert(String value, Long defaultValue) {
             try {
@@ -40,6 +40,6 @@ public class ParametersTest {
         }
     }
     
-    static class StringConverter implements Convertible<String> {
+    static class StringConverter implements Converter<String> {
     }
 }

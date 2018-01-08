@@ -18,8 +18,8 @@ public class SendInfo {
     }
     
     private static class Info {
-        List<String>  errors;
-        List<Message> messages;
+        final List<String> errors;
+        final List<Message> messages;
         
         private Info(List<String> errors, List<Message> messages) {
             this.errors = errors;

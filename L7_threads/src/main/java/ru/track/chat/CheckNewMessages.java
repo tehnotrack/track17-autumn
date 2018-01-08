@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CheckNewMessages extends HttpServlet {
@@ -27,8 +27,8 @@ public class CheckNewMessages extends HttpServlet {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
-        LinkedList<String> errors = new LinkedList<>();
+    
+        ArrayList<String> errors = new ArrayList<>();
         
         SendInfo sendInfo = new SendInfo();
         

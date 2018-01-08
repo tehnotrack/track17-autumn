@@ -1,7 +1,7 @@
 package ru.track.chat;
 
-import ru.track.chat.parameters.Convertible;
 import ru.track.chat.parameters.Parameters;
+import ru.track.chat.parameters.StringConverter;
 import ru.track.chat.utils.SendInfo;
 import ru.track.prefork.Message;
 import ru.track.prefork.database.Database;
@@ -22,17 +22,17 @@ public class SendMessage extends HttpServlet {
         
         Map<String, String[]> parameters = request.getParameterMap();
     
-        String username = Parameters.getParameter(parameters.get("username"), "", new Convertible<String>() {
-        });
-        String text = Parameters.getParameter(parameters.get("text"), "", new Convertible<String>() {
-        });
+        StringConverter stringConverter = new StringConverter();
     
-        LinkedList<String>  errors   = new LinkedList<>();
+        String username = Parameters.getParameter(parameters.get("username"), "", stringConverter);
+        String text = Parameters.getParameter(parameters.get("text"), "", stringConverter);
+    
+        LinkedList<String> errors = new LinkedList<>();
         LinkedList<Message> messages = new LinkedList<>();
     
         if (username.isEmpty()) {
             errors.add("Username is required");
-    
+        
             sendInfo.sendMessage(errors, messages, response);
         
             return;
@@ -52,5 +52,4 @@ public class SendMessage extends HttpServlet {
     
         sendInfo.sendMessage(errors, messages, response);
     }
-    
 }
