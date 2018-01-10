@@ -16,7 +16,7 @@ public class Button {
     public void press() {
 
         for (Lambda.Listener listener : listeners) {
-            listener.onAction();
+            listener.onAction("");
         }
 //        listeners.forEach((l) -> l.onAction());
     }
