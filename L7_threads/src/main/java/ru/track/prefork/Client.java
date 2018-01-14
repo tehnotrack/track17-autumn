@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.track.prefork.protocol.JsonProtocol;
@@ -19,6 +20,7 @@ import ru.track.prefork.protocol.ProtocolException;
 public class Client {
 
     private Logger log = LoggerFactory.getLogger(Client.class);
+
     private int port;
     private String host;
     private Protocol<Message> protocol;
@@ -37,21 +39,25 @@ public class Client {
     private void loop() throws IOException {
         int count = 0;
         final int maxTries = 10;
-        int timeout = 1;
+        int connect_timeout = 200;
+        int retry_timeout = 2;
+        int request_timeout = 200;
         Socket tryToConnectSocket;
         while (true) {
             try {
-                tryToConnectSocket = new Socket(host, port);
+                tryToConnectSocket = new Socket();
+                tryToConnectSocket.connect(new InetSocketAddress(host, port), connect_timeout);
+                tryToConnectSocket.setSoTimeout(request_timeout);
                 break;
             } catch (Exception e) {
                 if (++count == maxTries) {
                     log.error("Can't connect, exiting ");
                     return;
                 }
-                log.info(String.format("Can't connect, next try in %d sec ", timeout));
+                log.info(String.format("Can't connect, try again in %d sec ", retry_timeout));
                 try {
-                    TimeUnit.SECONDS.sleep(timeout);
-                    timeout *= 2;
+                    TimeUnit.SECONDS.sleep(retry_timeout);
+                    retry_timeout *= 2;
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
@@ -91,8 +97,15 @@ public class Client {
             byte[] buffer = new byte[1024];
             try {
                 while (!scannerThread.isInterrupted()) {
-                    int nbytes = in.read(buffer);
-                    if (nbytes != -1) {
+                    int nbytes = 0;
+                    try {
+                        nbytes = in.read(buffer);
+                    } catch (SocketTimeoutException ste) {
+                        TimeUnit.MILLISECONDS.sleep(500);
+                    }
+                    if (nbytes == 0) {
+                        continue;
+                    } else if (nbytes != -1) {
                         Message msgFromServer = protocol
                             .decode(Arrays.copyOfRange(buffer, 0, nbytes),
                                 Message.class);
@@ -105,11 +118,11 @@ public class Client {
             } finally {
                 scannerThread.interrupt();
             }
-        } catch (SocketTimeoutException e) {
-
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(socket);
+            log.info("Connection dropped, exiting...");
         }
     }
-
 }

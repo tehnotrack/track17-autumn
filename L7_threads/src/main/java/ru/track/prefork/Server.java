@@ -1,5 +1,7 @@
 package ru.track.prefork;
 
+import static java.lang.Math.toIntExact;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,12 +10,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.track.prefork.protocol.JsonProtocol;
@@ -25,22 +33,37 @@ import ru.track.prefork.protocol.ProtocolException;
 public class Server {
 
     private static Logger log = LoggerFactory.getLogger(Server.class);
-
+    @Nullable
+    private final ExecutorService pool;
     private int port;
     private AtomicLong serverCounter = new AtomicLong(0);
     private Protocol<Message> protocol;
+    private Future[] fut;
+    private int maxPoolSize;
+    private int maxClientsNum;
+
 
     private ConcurrentMap<Long, Worker> workerMap;
-    private SynchronousQueue<Socket> socketQueue;
 
-    private Server(int port, Protocol<Message> protocol) {
+    private Server(int port, Protocol<Message> protocol, ExecutorService pool, int maxPoolSize) {
         this.port = port;
         this.protocol = protocol;
+        this.pool = pool;
+        this.maxClientsNum = 100;
         workerMap = new ConcurrentHashMap<>();
+        this.maxPoolSize = maxPoolSize;
+        fut = new Future[this.maxClientsNum];
     }
 
     public static void main(String[] args) {
-        Server server = new Server(9000, new JsonProtocol());
+        int maxPoolSize = 3;
+        final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+
+        final ThreadPoolExecutor pool = new ThreadPoolExecutor(3, maxPoolSize, 0L,
+            TimeUnit.MILLISECONDS,
+            queue);
+
+        Server server = new Server(9000, new JsonProtocol(), pool, maxPoolSize);
         try {
             server.serve();
         } catch (Exception e) {
@@ -65,7 +88,7 @@ public class Server {
                     if (command.length == 2) {
                         try {
                             Worker worker = workerMap.get(Long.parseLong(command[1]));
-                            worker.interrupt();
+                            fut[toIntExact(worker.id)].cancel(true);
                             log.info(String.format("Interrupting: %s", worker.getName()));
                         } catch (NumberFormatException e) {
                             log.error(line + " <- Wrong syntax of drop.", e);
@@ -80,66 +103,48 @@ public class Server {
         });
         adminThread.setName("AdminThread");
         adminThread.start();
-        socketQueue = new SynchronousQueue<Socket>();
-        for (int i = 0; i < 4; i++) {
-//            final long workerId = serverCounter.getAndIncrement();
-            Worker worker = new Worker(socketQueue, protocol);
-            workerMap.put(new Long(i), worker);
-            worker.start();
-        }
-
-        while (!serverSocket.isClosed()) {
+        while (!serverSocket.isClosed() && serverCounter.get() < maxClientsNum) {
             final Socket socket = serverSocket.accept();
-            socketQueue.put(socket);
-//            final long socketId = serverCounter.getAndIncrement();
-//            Worker worker = new Worker(socketQueue, protocol);
-//            workerMap.put(workerId, worker);
-//            worker.start();
+            log.info("accepted");
+            TimeUnit.MILLISECONDS.sleep(500);
+            final long workerId = serverCounter.getAndIncrement();
+            Worker worker = new Worker(socket, protocol, workerId);
+            workerMap.put(workerId, worker);
+            fut[toIntExact(workerId)] = pool.submit(worker);
         }
     }
 
     class Worker extends Thread {
 
         @NotNull
-        OutputStream out;
+        final OutputStream out;
         @NotNull
-        InputStream in;
+        final InputStream in;
         @NotNull
         Socket socket;
         @NotNull
         Protocol<Message> protocol;
-        SynchronousQueue<Socket> socketQueue;
         private long id;
 
-        Worker(SynchronousQueue<Socket> socketQueue, @NotNull Protocol<Message> protocol)
-            throws IOException, InterruptedException {
-            this.socketQueue = socketQueue;
+        Worker(@NotNull Socket socket, @NotNull Protocol<Message> protocol, long id)
+            throws IOException {
+            this.socket = socket;
             this.protocol = protocol;
+            this.id = id;
+            setName(
+                String.format("Client[%d]@%s:%d", id, socket.getInetAddress(), socket.getPort()));
+
+            out = socket.getOutputStream();
+            in = socket.getInputStream();
         }
 
         @Override
         public void run() {
-            while(true) {
-                try {
-                    this.socket = socketQueue.take();
-
-                    this.id = serverCounter.getAndIncrement();
-                    setName(
-                        String
-                            .format("Client[%d]@%s:%d", id, socket.getInetAddress(),
-                                socket.getPort()));
-
-                    out = socket.getOutputStream();
-                    in = socket.getInputStream();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    log.info("Connected");
-                    handleSocket(socket);
-                } catch (Exception e) {
-//                    workerMap.remove(id);
-                }
+            try {
+                log.info("Connected");
+                handleSocket(socket);
+            } catch (Exception e) {
+                workerMap.remove(id);
             }
         }
 
@@ -157,7 +162,6 @@ public class Server {
         private void handleSocket(Socket socket) throws IOException {
             try {
                 while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-                    if (in.available() > 0) {
                         byte[] buffer = new byte[1024];
                         int nbytes = in.read(buffer);
                         if (nbytes != -1) {
@@ -183,22 +187,15 @@ public class Server {
                         } else {
                             Thread.currentThread().interrupt();
                         }
-                    }
                 }
             } catch (IOException e) {
                 log.error("IOException", e);
             } catch (ProtocolException e) {
                 e.printStackTrace();
             } finally {
-                try {
-//                    in.close();
-//                    out.close();
-                    IOUtils.closeQuietly(socket);
-//                    workerMap.remove(id);
-                    log.info("Dropped");
-                } catch (Exception e) {
-                    log.error("Can't drop client. " + e);
-                }
+                IOUtils.closeQuietly(socket);
+                workerMap.remove(id);
+                log.info("Dropped");
             }
         }
     }
