@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 public class History extends HttpServlet {
+    private String param = "limit";
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Map<String, String[]> params = req.getParameterMap();
 
-        if (params.containsKey("limit")){
+        if (params.containsKey(param)){
             ConversationService conv = new ConversationService();
 
             List<Message> msgHistory = conv.getHistory(0, System.currentTimeMillis(),Long.parseLong(req.getParameter("limit")));

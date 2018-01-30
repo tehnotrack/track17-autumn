@@ -10,19 +10,19 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class SendToBase extends HttpServlet {
-
+    private String[] param = {"username", "text"};
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         Map<String, String[]> params = req.getParameterMap();
 
-        if (params.containsKey("username") && params.containsKey("text")) {
-            if (!req.getParameter("username").equals("")) {
+        if (params.containsKey(param[0]) && params.containsKey(param[1])) {
+            if (!req.getParameter(param[0]).equals("")) {
                 ConversationService conv = new ConversationService();
 
                 Message msg = new Message();
-                msg.ownerLogin = req.getParameter("username");
-                msg.text = req.getParameter("text");
+                msg.ownerLogin = req.getParameter(param[0]);
+                msg.text = req.getParameter(param[1]);
                 conv.store(msg);
             }else {
                 resp.setContentType("text/html");

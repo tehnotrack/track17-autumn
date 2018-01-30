@@ -18,18 +18,7 @@ public class ConversationService {
     private void connect() {
         String baseName = null;
         for (int i = 0; i < 3; i++){
-            switch (i){
-                case 0:
-                    baseName = "tdb-1.trail5.net:";
-                    break;
-                case 1:
-                    baseName = "tdb-2.trail5.net:";
-                    break;
-                case 2:
-                    baseName = "tdb-3.trail5.net:";
-                    break;
-                default: break;
-            }
+            baseName = "tdb-"+ i +".trail5.net:";
             try {
                 DriverManager.registerDriver((Driver) Class.forName("com.mysql.jdbc.Driver").newInstance());
                 StringBuilder url = new StringBuilder();
@@ -40,7 +29,7 @@ public class ConversationService {
                         append("track17?").             //db name
                         append("user=track_student&").  //login
                         append("password=7EsH.H6x");    //password
-                connectionsMap.put(new Integer(i), DriverManager.getConnection(url.toString()));
+                connectionsMap.put(i, DriverManager.getConnection(url.toString()));
             } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -48,7 +37,7 @@ public class ConversationService {
     }
 
     private Connection returnDbconnection(String username) throws IllegalArgumentException{
-        char firstLetter = username.toLowerCase().toCharArray()[0];
+        char firstLetter = username.charAt(0);
         String baseName = null;
         if (('a' <= firstLetter) && (firstLetter <= 'j')){
             return connectionsMap.get(0);
@@ -62,9 +51,11 @@ public class ConversationService {
     }
 
     public long store(Message msg) {
+        PreparedStatement statement = null;
+        ResultSet generatedKeys = null;
         try {
             Connection connection = returnDbconnection(msg.ownerLogin);
-            PreparedStatement statement = connection.prepareStatement
+            statement = connection.prepareStatement
                     ("INSERT INTO messages(user_name, text, ts) VALUE (?, ?, now())",
                             Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, msg.ownerLogin);
@@ -73,28 +64,40 @@ public class ConversationService {
 
             statement.execute();
 
-            ResultSet generatedKeys = statement.getGeneratedKeys();
+            generatedKeys = statement.getGeneratedKeys();
             generatedKeys.next();
             return generatedKeys.getLong(1);
 
 
-        }catch (SQLException | IllegalArgumentException e) {
-            if (e instanceof IllegalArgumentException) {
-                System.out.println("Username must starts with english character!");
-            }
+        }catch (SQLException e) {
             e.printStackTrace();
+        }catch (IllegalArgumentException e){
+            System.out.println("Username must starts with english character!");
+            e.printStackTrace();
+        }finally{
+            try {
+                if (statement != null)
+                    statement.close();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            try{
+                if (generatedKeys != null)
+                generatedKeys.close();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
-        return 0;
-
+        return -1;
     }
 
     List<Message> getHistory(long from, long to, long limit){
 
         try {
-
             PreparedStatement[] statements = new PreparedStatement[3];
             List<Message> msgList = new ArrayList<>();
+            ResultSet resultSet = null;
             for(int i = 0; i < 3; i++){
                 try {
                     statements[i] = connectionsMap.get(i).prepareStatement
@@ -104,10 +107,23 @@ public class ConversationService {
 //                statements[i].setTimestamp(2, new Timestamp(from + 1));
                     statements[i].setLong(2, limit);
 
-                    ResultSet resultSet = statements[i].executeQuery();
+                    resultSet = statements[i].executeQuery();
                     msgList.addAll(toMsgList(resultSet));
                 } catch (Exception e) {
                     e.printStackTrace();
+                }finally {
+                    try {
+                        if (statements[i] != null)
+                            statements[i].close();
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    try{
+                        if (resultSet != null)
+                        resultSet.close();
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             msgList.sort(new Comparator<Message>() {
@@ -118,9 +134,7 @@ public class ConversationService {
             });
             return msgList.subList(0, limit < msgList.size() ? (int) limit : msgList.size());
         }catch (IllegalArgumentException e){
-            if (e instanceof IllegalArgumentException){
-                System.out.println("username must starts with english character!");
-            }
+            System.out.println("Username must starts with english character!");
             e.printStackTrace();
         }
         return null;
@@ -140,23 +154,32 @@ public class ConversationService {
     }
 
     List<Message> getByUser(String username, long limit){
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
         try{
             Connection connection = returnDbconnection(username);
-            PreparedStatement statement = connection.prepareStatement
+            statement = connection.prepareStatement
                     ("SELECT * FROM messages WHERE user_name=? LIMIT ?",
                             Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, username);
             statement.setLong(2, limit);
 
-            ResultSet resultSet = statement.executeQuery();
+            resultSet = statement.executeQuery();
 
             return toMsgList(resultSet);
 
-        }catch (IllegalArgumentException | SQLException e){
-            if (e instanceof IllegalArgumentException){
-                System.out.println("username must starts with english character!");
-            }
+        }catch (IllegalArgumentException e){
+            System.out.println("Username must starts with english character!");
             e.printStackTrace();
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            try {
+                if (statement != null)
+                statement.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
 
         return null;

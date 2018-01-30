@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Map;
 
 public class UserHistory extends HttpServlet {
+    private String[] param = {"limit", "username"};
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Map<String, String[]> params = req.getParameterMap();
 
-        if (params.containsKey("limit") && params.containsKey("username")){
+        if (params.containsKey(param[0]) && params.containsKey(param[1])){
             ConversationService conv = new ConversationService();
 
-            List<Message> msgUserHistory = conv.getByUser(req.getParameter("username"), Long.parseLong(req.getParameter("limit")));
+            List<Message> msgUserHistory = conv.getByUser(req.getParameter(param[1]), Long.parseLong(req.getParameter(param[0])));
             req.setAttribute("msgList", msgUserHistory);
             req.getRequestDispatcher("/history.jsp").forward(req, resp);
         }else {
