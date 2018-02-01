@@ -52,7 +52,7 @@ public class Client {
                         String line = scanner.nextLine();
                         Message msg = new Message(System.currentTimeMillis(), line);
 
-                        if (msg.text.equals("exit")) {
+                        if (msg.text.equals(Server.exitCommand)) {
                             log.info("exiting process initiated");
                             this.exiting = true;
                         }
@@ -77,13 +77,12 @@ public class Client {
             int nRead = in.read(buf);
             if (nRead != -1) {
                 Message fromServer = protocol.decode(buf);
-                if (fromServer.text.equals("bye...")) {
+                if (fromServer.text.equals(Server.exitConfirmation)) {
                     socket.close();
                     exit();
                     return;
-                } else {
-                    log.info("server refused to stop session");
                 }
+                System.out.println(fromServer.username + ": " + fromServer.text);
             } else {
                 log.error("Connection failed");
                 return;

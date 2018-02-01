@@ -19,6 +19,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Server {
+    public static final String exitCommand = "/exit";
+    public static final String exitConfirmation = "bye...";
+    public static final String broadcastCommand = "/broadcast";
+
     static Logger log = LoggerFactory.getLogger(Server.class);
 
     private int port;
@@ -98,18 +102,28 @@ public class Server {
 
                     log.info(fromClient.text);
 
-                    if (fromClient.text.equals("exit")) {
+                    if (fromClient.text.equals(exitCommand)) {
 
-                        send(new Message(System.currentTimeMillis(), "bye..."));
+                        send(new Message(System.currentTimeMillis(), exitConfirmation));
                         interrupt();
-                        //socket.close();
+                        socket.close();
                         log.info("Session stopped");
 
                         return;
                     }
 
-                    fromClient.text = ">" + fromClient.text;
-                    send(fromClient);
+                    if (fromClient.text.startsWith(broadcastCommand)) {
+                        workerMap.forEach((workerId, worker)-> {
+                            if (worker != this) {
+                                Message broadcast = new Message(fromClient.ts, "[broadcast]: " + fromClient.text.substring(11));
+                                broadcast.username = fromClient.username;
+                                worker.send(broadcast);
+                            }
+                        });
+                    } else {
+                        fromClient.text = ">" + fromClient.text;
+                        send(fromClient);
+                    }
                 } else {
                     log.error("Connection failed");
                     return;
