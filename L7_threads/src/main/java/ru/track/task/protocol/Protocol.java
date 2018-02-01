@@ -8,10 +8,10 @@ import java.io.Serializable;
 /**
  *
  */
-public interface Protocol<T extends Serializable> {
+public interface Protocol {
 
-    byte[] encode(T msg) throws ProtocolException, IOException;
+    byte[] encode(Message msg) throws ProtocolException, IOException;
 
     @Nullable
-    T decode(byte[] data) throws ProtocolException, IOException;
+    Message decode(byte[] data) throws ProtocolException, IOException;
 }

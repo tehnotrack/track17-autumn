@@ -2,7 +2,7 @@ package ru.track.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.track.task.protocol.JavaSerializationProtocol;
+import ru.track.task.protocol.JsonSerialisationProtocol;
 import ru.track.task.protocol.Message;
 import ru.track.task.protocol.Protocol;
 import ru.track.task.protocol.ProtocolException;
@@ -20,10 +20,10 @@ public class Client {
 
     private int port;
     private String host;
-    private Protocol<Message> protocol;
+    private Protocol protocol;
     private boolean exited = false;
 
-    public Client(int port, String host, Protocol<Message> protocol) {
+    public Client(int port, String host, Protocol protocol) {
         this.port = port;
         this.host = host;
         this.protocol = protocol;
@@ -91,7 +91,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        Client client = new Client(9000, "localhost", new JavaSerializationProtocol());
+        Client client = new Client(9000, "localhost", new JsonSerialisationProtocol());
         client.loop();
     }
 }

@@ -3,7 +3,7 @@ package ru.track.task;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.track.task.protocol.JavaSerializationProtocol;
+import ru.track.task.protocol.JsonSerialisationProtocol;
 import ru.track.task.protocol.Message;
 import ru.track.task.protocol.Protocol;
 import ru.track.task.protocol.ProtocolException;
@@ -27,11 +27,11 @@ public class Server {
 
     private int port;
     private AtomicLong serverCounter = new AtomicLong(0);
-    private Protocol<Message> protocol;
+    private Protocol protocol;
 
     private ConcurrentMap<Long, Worker> workerMap;
 
-    public Server(int port, Protocol<Message> protocol) {
+    public Server(int port, Protocol protocol) {
         this.port = port;
         this.protocol = protocol;
         workerMap = new ConcurrentHashMap<>();
@@ -55,12 +55,12 @@ public class Server {
         private Socket socket;
 
         @NotNull
-        private Protocol<Message> protocol;
+        private Protocol protocol;
 
         @NotNull
         private OutputStream out;
 
-        public Worker(@NotNull Socket socket, @NotNull Protocol<Message> protocol, long id) throws Exception {
+        public Worker(@NotNull Socket socket, @NotNull Protocol protocol, long id) throws Exception {
             this.socket = socket;
             this.id = id;
             this.protocol = protocol;
@@ -133,7 +133,7 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        Server server = new Server(9000, new JavaSerializationProtocol());
+        Server server = new Server(9000, new JsonSerialisationProtocol());
         server.serve();
     }
 }
