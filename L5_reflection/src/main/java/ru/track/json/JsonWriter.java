@@ -3,16 +3,13 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-
-/**
- * сериализатор в json
- */
 public class JsonWriter {
 
     // В зависимости от типа объекта вызывает соответствующий способ сериализации
@@ -49,77 +46,67 @@ public class JsonWriter {
         return toJsonObject(object);
     }
 
-    /**
-     * Используется вспомогательный класс {@link Array}, чтобы работать с object instanceof Array
-     * <p>
-     * То есть чтобы получить i-й элемент массива, нужно вызвать {@link Array#get(Object, int)}, где i - это число от 0 до {@link Array#getLength(Object)}
-     *
-     * @param object - который Class.isArray()
-     * @return строковое представление массива: [item1, item2, ...]
-     */
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
 
-        return null;
+        StringBuilder jsonArrayString = new StringBuilder();
+        jsonArrayString.append("[");
+
+        for (int i = 0; i < length-1; i++) {
+            jsonArrayString.append(toJson(Array.get(object, i))).append(",");
+        }
+
+        jsonArrayString.append(toJson(Array.get(object, length - 1))).append("]");
+
+        return jsonArrayString.toString();
     }
 
-    /**
-     * В 1 шаг приводится к Collection
-     */
     @NotNull
     private static String toJsonCollection(@NotNull Object object) {
         Collection collection = (Collection) object;
         return toJsonArray(collection.toArray());
     }
 
-    /**
-     * Сконвертить мап в json. Формат:
-     * {key:value, key:value,..}
-     * <p>
-     * На входе мы проверили, что это Map, можно просто кастовать Map map = (Map) object;
-     */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map<?, ?> map = (Map) object;
+        Map<String, String> jsonStringMap = new LinkedHashMap<>();
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        for (Map.Entry entry : map.entrySet()) {
+            jsonStringMap.put(entry.getKey().toString(), toJson(entry.getValue()));
+        }
+
+        return formatObject(jsonStringMap);
     }
 
-    /**
-     * 1) Чтобы распечатать объект, нужно знать его внутреннюю структуру, для этого нужно получить его Class-объект:
-     * {@link Class} с помощью {@link Object#getClass()}
-     * <p>
-     * Получить поля класса можно с помощью {@link Class#getDeclaredFields()}
-     * Приватные поля недоступны, нужно изменить в рантайм их accessibility: {@link Field#setAccessible(boolean)}
-     * <p>
-     * 2) Вторая часть задачи: {@link JsonNullable} и {@link SerializedTo}
-     * Нужно проверить, что у класса/поля есть аннотация
-     * <p>
-     * {@link Class#getAnnotation(Class)} / {@link Field#getAnnotation(Class)}
-     * и в зависимости от этого изменить поведение
-     * <p>
-     * NOTE: Удобно сложить все поля объекта в Map<String, String> то етсь {имя поля -> значение поля в json}
-     * и воспользоваться методом {@link #formatObject(Map)}
-     */
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
 
+        Field[] fields = clazz.getDeclaredFields();
+        boolean isNullable = clazz.getAnnotation(JsonNullable.class) != null;
+        Map<String, String> stringMap = new LinkedHashMap<>();
 
-        return null;
+        for (Field field : fields) {
+            field.setAccessible(true);
+
+            String name = field.getName();
+            SerializedTo serializedTo = field.getAnnotation(SerializedTo.class);
+            name = (serializedTo == null) ? name : serializedTo.value();
+            try {
+                Object value = field.get(object);
+                if (value != null || isNullable) {
+                    stringMap.put(name, toJson(value));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return formatObject(stringMap);
     }
 
-    /**
-     * Вспомогательный метод для форматирования содержимого Map<K, V>
-     *
-     * @param map
-     * @return "{key:value, key:value,..}"
-     */
     @NotNull
     private static String formatObject(@NotNull Map<String, String> map) {
         String r = String.join(",", map.entrySet().stream()
